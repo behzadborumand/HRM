@@ -1,0 +1,161 @@
+@model EmployeeFormViewModel
+
+<div class="row g-3">
+    <div class="col-12">
+        <h6 class="text-primary border-bottom pb-2"><i class="bi bi-person-vcard"></i> اطلاعات شخصی</h6>
+    </div>
+    <div class="col-md-3">
+        <label asp-for="EmployeeNumber" class="form-label"></label>
+        <input asp-for="EmployeeNumber" class="form-control" placeholder="خالی بگذارید تا خودکار ساخته شود" />
+        <span asp-validation-for="EmployeeNumber" class="text-danger small"></span>
+    </div>
+    <div class="col-md-3">
+        <label asp-for="FirstName" class="form-label"></label>
+        <input asp-for="FirstName" class="form-control" />
+        <span asp-validation-for="FirstName" class="text-danger small"></span>
+    </div>
+    <div class="col-md-3">
+        <label asp-for="LastName" class="form-label"></label>
+        <input asp-for="LastName" class="form-control" />
+        <span asp-validation-for="LastName" class="text-danger small"></span>
+    </div>
+    <div class="col-md-3">
+        <label asp-for="PreferredName" class="form-label"></label>
+        <input asp-for="PreferredName" class="form-control" />
+    </div>
+    <div class="col-md-4">
+        <label asp-for="Email" class="form-label"></label>
+        <input asp-for="Email" class="form-control" dir="ltr" />
+        <span asp-validation-for="Email" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="Phone" class="form-label"></label>
+        <input asp-for="Phone" class="form-control" dir="ltr" />
+        <span asp-validation-for="Phone" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="DateOfBirth" class="form-label"></label>
+        <input class="form-control" type="text" id="DateOfBirth" name="DateOfBirth" dir="ltr" autocomplete="off"
+               placeholder="۱۴۰۰/۰۱/۰۱" value="@PersianDate.ToJalaliInput(Model.DateOfBirth)" />
+        <span asp-validation-for="DateOfBirth" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="Gender" class="form-label"></label>
+        <select asp-for="Gender" class="form-select">
+            <option value="">انتخاب کنید</option>
+            <option value="Male">مرد</option>
+            <option value="Female">زن</option>
+        </select>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="MaritalStatus" class="form-label"></label>
+        <select asp-for="MaritalStatus" class="form-select">
+            <option value="">انتخاب کنید</option>
+            <option value="Single">مجرد</option>
+            <option value="Married">متاهل</option>
+        </select>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="HireDate" class="form-label"></label>
+        <input class="form-control" type="text" id="HireDate" name="HireDate" dir="ltr" autocomplete="off"
+               placeholder="۱۴۰۵/۰۱/۰۱" value="@PersianDate.ToJalaliInput(Model.HireDate)" />
+        <span asp-validation-for="HireDate" class="text-danger small"></span>
+    </div>
+
+    <div class="col-12 mt-3">
+        <h6 class="text-primary border-bottom pb-2"><i class="bi bi-briefcase"></i> اطلاعات شغلی و حقوقی</h6>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="EmploymentStatus" class="form-label"></label>
+        <select asp-for="EmploymentStatus" class="form-select">
+            <option value="Active">فعال</option>
+            <option value="OnLeave">در مرخصی</option>
+            <option value="Terminated">خروج قطعی</option>
+        </select>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="DepartmentId" class="form-label"></label>
+        <select asp-for="DepartmentId" class="form-select" asp-items="@(new SelectList(Model.Departments, "DepartmentId", "DepartmentName"))">
+            <option value="">انتخاب کنید</option>
+        </select>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="JobTitleId" class="form-label"></label>
+        <select asp-for="JobTitleId" class="form-select" asp-items="@(new SelectList(Model.JobTitles, "JobTitleId", "TitleName"))">
+            <option value="">انتخاب کنید</option>
+        </select>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="ManagerId" class="form-label"></label>
+        <select asp-for="ManagerId" class="form-select" asp-items="@(new SelectList(Model.Managers, "EmployeeId", "FullName"))">
+            <option value="">بدون مدیر</option>
+        </select>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="EmploymentType" class="form-label"></label>
+        <select asp-for="EmploymentType" class="form-select">
+            <option value="">انتخاب کنید</option>
+            <option value="FullTime">تمام وقت</option>
+            <option value="PartTime">پاره وقت</option>
+            <option value="Contract">قراردادی</option>
+            <option value="Intern">کارآموز</option>
+        </select>
+    </div>
+    <div class="col-md-2">
+        <label asp-for="PayType" class="form-label"></label>
+        <select asp-for="PayType" class="form-select">
+            <option value="">انتخاب کنید</option>
+            <option value="Salary">حقوق ثابت</option>
+            <option value="Hourly">ساعتی</option>
+        </select>
+    </div>
+    <div class="col-md-2">
+        <label asp-for="PayRate" class="form-label"></label>
+        <input asp-for="PayRate" class="form-control" dir="ltr" />
+        <span asp-validation-for="PayRate" class="text-danger small"></span>
+    </div>
+
+    <div class="col-12 mt-3">
+        <h6 class="text-primary border-bottom pb-2"><i class="bi bi-geo-alt"></i> نشانی و مخاطب اضطراری</h6>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="AddressLine1" class="form-label"></label>
+        <input asp-for="AddressLine1" class="form-control" />
+    </div>
+    <div class="col-md-2">
+        <label asp-for="City" class="form-label"></label>
+        <input asp-for="City" class="form-control" />
+    </div>
+    <div class="col-md-2">
+        <label asp-for="State" class="form-label"></label>
+        <input asp-for="State" class="form-control" />
+    </div>
+    <div class="col-md-2">
+        <label asp-for="PostalCode" class="form-label"></label>
+        <input asp-for="PostalCode" class="form-control" dir="ltr" />
+    </div>
+    <div class="col-md-2">
+        <label asp-for="Country" class="form-label"></label>
+        <input asp-for="Country" class="form-control" />
+    </div>
+    <div class="col-md-4">
+        <label asp-for="HomePhone" class="form-label"></label>
+        <input asp-for="HomePhone" class="form-control" dir="ltr" />
+    </div>
+    <div class="col-md-4">
+        <label asp-for="MobilePhone" class="form-label"></label>
+        <input asp-for="MobilePhone" class="form-control" dir="ltr" />
+    </div>
+    <div class="col-md-4">
+        <label asp-for="EmergencyContactName" class="form-label"></label>
+        <input asp-for="EmergencyContactName" class="form-control" />
+    </div>
+    <div class="col-md-4">
+        <label asp-for="EmergencyContactRelation" class="form-label"></label>
+        <input asp-for="EmergencyContactRelation" class="form-control" />
+    </div>
+    <div class="col-md-4">
+        <label asp-for="EmergencyContactPhone" class="form-label"></label>
+        <input asp-for="EmergencyContactPhone" class="form-control" dir="ltr" />
+    </div>
+</div>

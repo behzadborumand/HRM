@@ -1,0 +1,70 @@
+@model TimeOffReportViewModel
+@section Hero {
+    <div class="d-flex justify-content-between align-items-end gap-3 flex-wrap">
+        <h1>گزارش خلاصه مرخصی</h1>
+        <div class="d-flex gap-2">
+            <a asp-action="ExportTimeOff" asp-all-route-data="@(new Dictionary<string, string> { ["year"] = Model.Year.ToString(), ["departmentId"] = Model.DepartmentId?.ToString() ?? string.Empty })"
+               class="btn btn-hero"><i class="bi bi-file-earmark-spreadsheet"></i> خروجی CSV</a>
+            <a asp-action="Index" class="btn btn-hero"><i class="bi bi-arrow-right"></i> گزارش‌ها</a>
+        </div>
+    </div>
+}
+
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label" for="year">سال (میلادی)</label>
+                <input type="number" class="form-control" id="year" name="year" value="@Model.Year" min="2015" max="2100" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label" for="departmentId">واحد سازمانی</label>
+                <select class="form-select" id="departmentId" name="departmentId"
+                        asp-items="@(new SelectList(Model.Departments, "DepartmentId", "DepartmentName", Model.DepartmentId))">
+                    <option value="">همه واحدها</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">اجرا</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <table class="table table-striped align-middle text-center">
+            <thead>
+                <tr>
+                    <th>کارمند</th><th>واحد</th><th>نوع مرخصی</th>
+                    <th>تعلق گرفته</th><th>استفاده‌شده</th><th>مانده</th><th>درخواست</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Rows.Count == 0)
+                {
+                    <tr><td colspan="7" class="text-muted py-4">برای این سال مانده‌ای ثبت نشده است.</td></tr>
+                }
+                @foreach (var row in Model.Rows)
+                {
+                    <tr>
+                        <td class="text-start">
+                            <a asp-controller="Employees" asp-action="Details" asp-route-id="@row.EmployeeId">@row.EmployeeName</a>
+                        </td>
+                        <td>@(row.DepartmentName ?? "-")</td>
+                        <td>@row.PolicyName</td>
+                        <td>@PersianDate.ToPersianDigits(row.AccruedHours.ToString("0.##"))</td>
+                        <td>@PersianDate.ToPersianDigits(row.UsedHours.ToString("0.##"))</td>
+                        <td class="@(row.AvailableHours < 0 ? "text-danger fw-semibold" : "text-success")">@PersianDate.ToPersianDigits(row.AvailableHours.ToString("0.##"))</td>
+                        <td>@PersianDate.ToPersianDigits(row.RequestCount.ToString())</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <div class="d-flex justify-content-between fw-semibold">
+            <span>جمع تعلق گرفته: @PersianDate.ToPersianDigits(Model.TotalAccrued.ToString("N0"))</span>
+            <span>جمع استفاده‌شده: @PersianDate.ToPersianDigits(Model.TotalUsed.ToString("N0"))</span>
+            <span>جمع مانده: @PersianDate.ToPersianDigits(Model.TotalAvailable.ToString("N0"))</span>
+        </div>
+    </div>
+</div>

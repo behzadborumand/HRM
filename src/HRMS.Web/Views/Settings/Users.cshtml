@@ -1,0 +1,89 @@
+@model UserAdminViewModel
+@section Hero {
+    <div class="d-flex justify-content-between align-items-end gap-3 flex-wrap">
+        <h1>مدیریت کاربران</h1>
+        <a asp-action="Index" class="btn btn-hero"><i class="bi bi-arrow-right"></i> تنظیمات</a>
+    </div>
+}
+
+<div class="row g-3">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-body">
+                <table class="table table-striped align-middle text-center mb-0">
+                    <thead>
+                        <tr><th>نام کاربری</th><th>کارمند</th><th>نقش</th><th>وضعیت</th><th>آخرین ورود</th><th>عملیات</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var user in Model.Users)
+                        {
+                            <tr>
+                                <td class="fw-semibold" dir="ltr">@user.Username</td>
+                                <td>
+                                    <a asp-controller="Employees" asp-action="Details" asp-route-id="@user.EmployeeId">@user.DisplayName</a>
+                                </td>
+                                <td><span class="badge text-bg-light">@user.RoleName</span></td>
+                                <td>
+                                    <span class="badge text-bg-@(user.IsActive ? "success" : "secondary")">@(user.IsActive ? "فعال" : "غیرفعال")</span>
+                                </td>
+                                <td class="small">@PersianDate.ToJalaliDateTime(user.LastLogin)</td>
+                                <td>
+                                    <a asp-action="Users" asp-route-edit="@user.UserId" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>
+                                    @if (User.HasPermission(Permissions.UsersWrite))
+                                    {
+                                        <form asp-action="DeleteUser" method="post" class="d-inline">
+                                            <input type="hidden" name="id" value="@user.UserId" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('حساب کاربری حذف شود؟');"><i class="bi bi-trash"></i></button>
+                                        </form>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    @if (User.HasPermission(Permissions.UsersWrite))
+    {
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">@(Model.IsEdit ? "ویرایش حساب کاربری" : "حساب کاربری جدید")</div>
+                <div class="card-body">
+                    <form asp-action="Users" method="post">
+                        @if (Model.IsEdit)
+                        {
+                            <input type="hidden" asp-for="UserId" />
+                        }
+                        <div class="mb-3">
+                            <label asp-for="Username" class="form-label"></label>
+                            <input asp-for="Username" class="form-control" dir="ltr" />
+                            <span asp-validation-for="Username" class="text-danger small"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="EmployeeId" class="form-label"></label>
+                            <select asp-for="EmployeeId" class="form-select" asp-items="@(new SelectList(Model.Employees, "EmployeeId", "FullName"))"></select>
+                            <span asp-validation-for="EmployeeId" class="text-danger small"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="RoleId" class="form-label"></label>
+                            <select asp-for="RoleId" class="form-select" asp-items="@(new SelectList(Model.Roles, "RoleId", "RoleName"))"></select>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Password" class="form-label"></label>
+                            <input asp-for="Password" class="form-control" dir="ltr" autocomplete="new-password" />
+                            <div class="form-text">حداقل ۸ نویسه. در ویرایش، برای تغییر رمز وارد کنید.</div>
+                        </div>
+                        <div class="form-check form-switch mb-3">
+                            <input asp-for="IsActive" class="form-check-input" />
+                            <label asp-for="IsActive" class="form-check-label"></label>
+                        </div>
+                        <button type="submit" class="btn btn-success"><i class="bi bi-check-circle"></i> ذخیره</button>
+                        <a asp-action="Users" class="btn btn-light">انصراف</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    }
+</div>

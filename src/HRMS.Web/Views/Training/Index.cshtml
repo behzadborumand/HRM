@@ -1,0 +1,286 @@
+@model TrainingIndexViewModel
+@{
+    var statuses = new Dictionary<string, string>
+    {
+        ["Pending"] = "در انتظار انجام",
+        ["Overdue"] = "از موعد گذشته",
+        ["Completed"] = "انجام شده"
+    };
+}
+@section Hero {
+    <div class="d-flex justify-content-between align-items-end gap-3 flex-wrap">
+        <div>
+            <h1>
+                @(Model.EmployeeId is not null && Model.EmployeeName is not null
+                    ? $"آموزش‌های {Model.EmployeeName}"
+                    : "آموزش‌ها")
+            </h1>
+            <p class="hero-sub">واگذاری دوره‌ها، سررسید و ثبت انجام آموزش</p>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            @if (User.HasPermission(Permissions.OrgRead))
+            {
+                <a asp-action="Courses" class="btn btn-hero"><i class="bi bi-journal-text"></i> کاتالوگ دوره‌ها</a>
+            }
+            @if (Model.EmployeeId is not null)
+            {
+                <a asp-controller="Employees" asp-action="Details" asp-route-id="@Model.EmployeeId" class="btn btn-hero">
+                    <i class="bi bi-arrow-right"></i> بازگشت به پرونده
+                </a>
+            }
+        </div>
+    </div>
+}
+
+<div class="row g-3">
+    <div class="col-lg-8">
+        <div class="card mb-3">
+            <div class="card-body">
+                <form method="get" asp-action="Index" class="row g-2 align-items-end">
+                    @if (Model.EmployeeId is not null)
+                    {
+                        <input type="hidden" name="employeeId" value="@Model.EmployeeId" />
+                    }
+                    <div class="col-md-4">
+                        <label class="form-label" for="keyword">جستجو</label>
+                        <input class="form-control" id="keyword" name="keyword" value="@Model.Keyword" placeholder="نام کارمند یا دوره" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label" for="courseId">دوره</label>
+                        <select class="form-select" id="courseId" name="courseId" asp-items="@(new SelectList(Model.Courses, "CourseId", "Title", Model.CourseId))">
+                            <option value="">همه دوره‌ها</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label" for="status">وضعیت</label>
+                        <select class="form-select" id="status" name="status" asp-items="@(new SelectList(statuses, "Key", "Value", Model.Status))">
+                            <option value="">همه وضعیت‌ها</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-grid">
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-funnel"></i> فیلتر</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header bg-white fw-semibold d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-mortarboard"></i> ثبت‌های آموزشی (@PersianDate.ToPersianDigits(Model.Rows.Count.ToString()))</span>
+            </div>
+            <div class="card-body table-responsive">
+                <table class="table table-sm table-striped align-middle text-center mb-0">
+                    <thead>
+                        <tr>
+                            @if (Model.EmployeeId is null)
+                            {
+                                <th>کارمند</th>
+                            }
+                            <th>دوره</th>
+                            <th>واگذاری</th>
+                            <th>سررسید</th>
+                            <th>وضعیت</th>
+                            <th>انجام / مدرک</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Rows.Count == 0)
+                        {
+                            <tr><td colspan="7" class="text-muted">ثبت آموزشی با این فیلترها پیدا نشد.</td></tr>
+                        }
+                        @foreach (var row in Model.Rows)
+                        {
+                            <tr>
+                                @if (Model.EmployeeId is null)
+                                {
+                                    <td class="text-start">
+                                        <a asp-controller="Employees" asp-action="Details" asp-route-id="@row.EmployeeId">@row.EmployeeName</a>
+                                        <div class="small text-muted">@(row.DepartmentName ?? "-")</div>
+                                    </td>
+                                }
+                                <td class="text-start">
+                                    @row.CourseTitle
+                                    @if (row.CourseCategory is not null)
+                                    {
+                                        <div class="small text-muted">@row.CourseCategory</div>
+                                    }
+                                </td>
+                                <td>@PersianDate.ToJalali(row.AssignedDate)</td>
+                                <td>
+                                    @(row.DueDate is null ? "-" : PersianDate.ToJalali(row.DueDate))
+                                    <div class="small @(row.DaysRemaining is < 0 ? "text-danger" : "text-muted")">@FaLabels.TrainingDueHint(row.DaysRemaining)</div>
+                                </td>
+                                <td>
+                                    <span class="badge text-bg-@FaLabels.TrainingStatusBadge(row.Status)">@FaLabels.TrainingStatus(row.Status)</span>
+                                </td>
+                                <td>
+                                    @if (row.CompletedDate is not null)
+                                    {
+                                        <div>@PersianDate.ToJalali(row.CompletedDate)</div>
+                                        <div class="small text-muted" dir="ltr">@(row.CertificateNumber ?? "بدون شماره مدرک")</div>
+                                        @if (row.RenewalDueDate is not null)
+                                        {
+                                            <div class="small text-muted">تکرار تا @PersianDate.ToJalali(row.RenewalDueDate)</div>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">-</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (Model.CanWrite)
+                                    {
+                                        <div class="d-flex gap-1 justify-content-center">
+                                            @if (row.CompletedDate is null)
+                                            {
+                                                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#completeModal"
+                                                        data-assignment="@row.AssignmentId" data-employee="@row.EmployeeId"
+                                                        data-course="@row.CourseTitle" data-assigned="@PersianDate.ToJalali(row.AssignedDate)">
+                                                    <i class="bi bi-check2"></i> ثبت انجام
+                                                </button>
+                                            }
+                                            <form asp-action="Delete" method="post"
+                                                  onsubmit="return confirm('این ثبت آموزشی حذف شود؟');">
+                                                <input type="hidden" name="assignmentId" value="@row.AssignmentId" />
+                                                <input type="hidden" name="employeeId" value="@row.EmployeeId" />
+                                                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                            </form>
+                                        </div>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        @if (Model.CanWrite)
+        {
+            <div class="card">
+                <div class="card-header bg-primary text-white"><i class="bi bi-plus-circle"></i> واگذاری یا ثبت آموزش</div>
+                <div class="card-body">
+                    <form asp-action="Assign" method="post">
+                        @if (Model.EmployeeId is not null)
+                        {
+                            <input type="hidden" asp-for="Form.EmployeeId" />
+                        }
+                        else
+                        {
+                            <div class="mb-3">
+                                <label asp-for="Form.EmployeeId" class="form-label"></label>
+                                <select class="form-select" asp-for="Form.EmployeeId"
+                                        asp-items="@(new SelectList(Model.Employees, "EmployeeId", "FullName", Model.Form.EmployeeId))">
+                                    <option value="0">کارمند را انتخاب کنید</option>
+                                </select>
+                                <span asp-validation-for="Form.EmployeeId" class="text-danger small"></span>
+                            </div>
+                        }
+                        <div class="mb-3">
+                            <label asp-for="Form.CourseId" class="form-label"></label>
+                            <select class="form-select" asp-for="Form.CourseId"
+                                    asp-items="@(new SelectList(Model.Courses, "CourseId", "Title", Model.Form.CourseId))">
+                                <option value="0">دوره را انتخاب کنید</option>
+                            </select>
+                            <span asp-validation-for="Form.CourseId" class="text-danger small"></span>
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label class="form-label" for="Form_AssignedDate">تاریخ واگذاری</label>
+                                <input class="form-control" type="text" id="Form_AssignedDate" name="Form.AssignedDate" dir="ltr" autocomplete="off"
+                                       placeholder="۱۴۰۵/۰۸/۱۲" value="@PersianDate.ToJalaliInput(Model.Form.AssignedDate)" required />
+                                <span asp-validation-for="Form.AssignedDate" class="text-danger small"></span>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label" for="Form_DueDate">سررسید</label>
+                                <input class="form-control" type="text" id="Form_DueDate" name="Form.DueDate" dir="ltr" autocomplete="off"
+                                       placeholder="اختیاری" value="@PersianDate.ToJalaliInput(Model.Form.DueDate)" />
+                            </div>
+                        </div>
+                        <div class="form-text mb-3">سررسید خالی بر پایه دوره تکرار دوره محاسبه می‌شود.</div>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label class="form-label" for="Form_CompletedDate">تاریخ انجام</label>
+                                <input class="form-control" type="text" id="Form_CompletedDate" name="Form.CompletedDate" dir="ltr" autocomplete="off"
+                                       placeholder="خالی = انجام نشده" value="@PersianDate.ToJalaliInput(Model.Form.CompletedDate)" />
+                            </div>
+                            <div class="col-6">
+                                <label asp-for="Form.CertificateNumber" class="form-label"></label>
+                                <input class="form-control" asp-for="Form.CertificateNumber" dir="ltr" />
+                            </div>
+                        </div>
+                        <div class="mb-3 mt-2">
+                            <label asp-for="Form.Notes" class="form-label"></label>
+                            <textarea class="form-control" asp-for="Form.Notes" rows="2"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100"><i class="bi bi-save"></i> ثبت</button>
+                    </form>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-light border">
+                <i class="bi bi-info-circle"></i> شما فقط ثبت‌های آموزشی خود را می‌بینید؛ برای واگذاری دوره با منابع انسانی تماس بگیرید.
+            </div>
+        }
+    </div>
+</div>
+
+<div class="modal fade" id="completeModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <form asp-action="Complete" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title">ثبت انجام آموزش</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="assignmentId" id="completeAssignmentId" value="0" />
+                    <input type="hidden" name="employeeId" id="completeEmployeeId" value="0" />
+                    <p class="mb-2" id="completeCourseTitle"></p>
+                    <div class="mb-3">
+                        <label class="form-label" for="completeDate">تاریخ انجام</label>
+                        <input class="form-control" type="text" id="completeDate" name="completedDate" dir="ltr" autocomplete="off"
+                               value="@PersianDate.ToJalaliInput(DateTime.Today)" required />
+                        <div class="form-text">تاریخ واگذاری: <span id="completeAssignedDate"></span></div>
+                    </div>
+                    <div class="mb-0">
+                        <label class="form-label" for="completeCertificate">شماره مدرک</label>
+                        <input class="form-control" type="text" id="completeCertificate" name="certificateNumber" dir="ltr" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">انصراف</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle"></i> ثبت انجام</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // One modal serves every row; the row's data attributes fill it before it opens.
+        (function () {
+            var modal = document.getElementById('completeModal');
+            if (!modal || !window.bootstrap) { return; }
+            var dateField = modal.querySelector('#completeDate');
+            var today = dateField.value;
+            modal.addEventListener('show.bs.modal', function (event) {
+                var button = event.relatedTarget;
+                if (!button) { return; }
+                modal.querySelector('#completeAssignmentId').value = button.dataset.assignment;
+                modal.querySelector('#completeEmployeeId').value = button.dataset.employee;
+                modal.querySelector('#completeCourseTitle').textContent = button.dataset.course;
+                modal.querySelector('#completeAssignedDate').textContent = button.dataset.assigned;
+                dateField.value = today;
+                modal.querySelector('#completeCertificate').value = '';
+            });
+        })();
+    </script>
+}

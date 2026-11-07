@@ -1,0 +1,147 @@
+@model BulkEditViewModel
+@{
+    var employmentTypes = new[]
+    {
+        ("FullTime", "تمام وقت"), ("PartTime", "پاره وقت"), ("Contract", "قراردادی"), ("Intern", "کارآموز")
+    };
+}
+
+@section Hero {
+    <div class="d-flex justify-content-between align-items-end gap-3 flex-wrap">
+        <div>
+            <h1>ویرایش گروهی کارکنان</h1>
+            <p class="hero-sub">@PersianDate.ToPersianDigits(Model.Employees.Count.ToString()) کارمند انتخاب شده - فیلد خالی یعنی «تغییر نده»</p>
+        </div>
+        <a asp-action="Index" class="btn btn-hero"><i class="bi bi-arrow-right"></i> بازگشت به لیست</a>
+    </div>
+}
+
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-header bg-white fw-semibold"><i class="bi bi-people"></i> وضعیت فعلی انتخاب‌شده‌ها</div>
+            <div class="card-body table-responsive">
+                <table class="table table-sm table-striped align-middle text-center mb-0">
+                    <thead>
+                        <tr><th>کارمند</th><th>واحد</th><th>عنوان شغلی</th><th>مدیر</th><th>وضعیت</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var employee in Model.Employees)
+                        {
+                            <tr>
+                                <td class="text-start">
+                                    <a asp-action="Details" asp-route-id="@employee.EmployeeId" class="text-decoration-none">@employee.FullName</a>
+                                    <div class="text-muted small">@employee.EmployeeNumber</div>
+                                </td>
+                                <td>@(employee.DepartmentName ?? "-")</td>
+                                <td>@(employee.JobTitleName ?? "-")</td>
+                                <td>@(employee.ManagerName ?? "-")</td>
+                                <td><span class="badge text-bg-@FaLabels.EmploymentStatusBadge(employee.EmploymentStatus)">@FaLabels.EmploymentStatus(employee.EmploymentStatus)</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card">
+            <div class="card-header bg-primary text-white"><i class="bi bi-swap"></i> تغییرات موردنظر</div>
+            <div class="card-body">
+                <form asp-action="BulkApply" method="post">
+                    @foreach (var id in Model.EmployeeIds)
+                    {
+                        <input type="hidden" name="EmployeeIds" value="@id" />
+                    }
+                    <div class="mb-3">
+                        <label asp-for="DepartmentId" class="form-label"></label>
+                        <select asp-for="DepartmentId" class="form-select" data-preview="واحد سازمانی"
+                                asp-items="@(new SelectList(Model.Departments, "DepartmentId", "DepartmentName"))">
+                            <option value="">تغییر نده</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="JobTitleId" class="form-label"></label>
+                        <select asp-for="JobTitleId" class="form-select" data-preview="عنوان شغلی"
+                                asp-items="@(new SelectList(Model.JobTitles, "JobTitleId", "TitleName"))">
+                            <option value="">تغییر نده</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="ManagerId" class="form-label"></label>
+                        <select asp-for="ManagerId" class="form-select" data-preview="مدیر مستقیم"
+                                asp-items="@(new SelectList(Model.Managers, "EmployeeId", "FullName"))">
+                            <option value="">تغییر نده</option>
+                        </select>
+                        <div class="form-text">اگر مدیر انتخابی خودِ کارمند باشد، برای همان کارمند تغییری اعمال نمی‌شود.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="EmploymentType" class="form-label"></label>
+                        <select asp-for="EmploymentType" class="form-select" data-preview="نوع استخدام">
+                            <option value="">تغییر نده</option>
+                            @foreach (var (value, label) in employmentTypes)
+                            {
+                                <option value="@value">@label</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="EmploymentStatus" class="form-label"></label>
+                        <select asp-for="EmploymentStatus" class="form-select" data-preview="وضعیت اشتغال">
+                            <option value="">تغییر نده</option>
+                            <option value="Active">فعال</option>
+                            <option value="OnLeave">در مرخصی</option>
+                        </select>
+                        <div class="form-text">برای خروج قطعی از همان پرونده کارمند استفاده کنید تا شغل او بسته و تاریخ خروج ثبت شود.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="ChangeDate">تاریخ تغییر</label>
+                        <input class="form-control" type="text" id="ChangeDate" name="ChangeDate" dir="ltr" autocomplete="off"
+                               placeholder="۱۴۰۵/۰۸/۱۲" value="@PersianDate.ToJalaliInput(Model.ChangeDate)" />
+                        <span class="text-danger small field-validation-valid" data-valmsg-for="ChangeDate" data-valmsg-replace="true"></span>
+                        <div class="form-text">تاریخ شروع سابقه شغلی جدید؛ تغییرات قبلی در سوابق باقی می‌ماند.</div>
+                    </div>
+
+                    <div class="border rounded p-2 mb-3 bg-light">
+                        <div class="fw-semibold small mb-1">پیش‌نمایش تغییرات</div>
+                        <ul class="mb-0 small" id="bulkPreview"><li class="text-muted">تغییری انتخاب نشده است.</li></ul>
+                    </div>
+
+                    <button type="submit" class="btn btn-success"><i class="bi bi-check-circle"></i> اعمال روی انتخاب‌شده‌ها</button>
+                    <a asp-action="Index" class="btn btn-light">انصراف</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // The change list mirrors the selects so the reviewer sees the effect before posting.
+        const previewList = document.getElementById("bulkPreview");
+        document.querySelectorAll("[data-preview]").forEach((field) => {
+            field.addEventListener("change", () => {
+                const lines = [];
+                document.querySelectorAll("[data-preview]").forEach((input) => {
+                    if (input.value !== "") {
+                        lines.push(input.getAttribute("data-preview") + ": " + input.options[input.selectedIndex].text);
+                    }
+                });
+                previewList.innerHTML = "";
+                if (lines.length === 0) {
+                    const item = document.createElement("li");
+                    item.className = "text-muted";
+                    item.textContent = "تغییری انتخاب نشده است.";
+                    previewList.appendChild(item);
+                    return;
+                }
+                lines.forEach((text) => {
+                    const item = document.createElement("li");
+                    item.textContent = text;
+                    previewList.appendChild(item);
+                });
+            });
+        });
+    </script>
+}

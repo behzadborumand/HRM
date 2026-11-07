@@ -1,0 +1,91 @@
+@model RoleAdminViewModel
+@section Hero {
+    <div class="d-flex justify-content-between align-items-end gap-3 flex-wrap">
+        <h1>نقش‌ها و دسترسی‌ها</h1>
+        <a asp-action="Index" class="btn btn-hero"><i class="bi bi-arrow-right"></i> تنظیمات</a>
+    </div>
+}
+
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-body">
+                <table class="table align-middle text-center mb-0">
+                    <thead><tr><th>نقش</th><th>توضیح</th><th>کاربر</th><th>دسترسی‌ها</th><th></th></tr></thead>
+                    <tbody>
+                        @foreach (var role in Model.Rows)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@role.RoleName</td>
+                                <td class="small text-muted">@(role.Description ?? "-")</td>
+                                <td>@PersianDate.ToPersianDigits(role.UserCount.ToString())</td>
+                                <td class="text-start">
+                                    @if (role.RoleName == "Admin")
+                                    {
+                                        <span class="badge text-bg-dark">دسترسی کامل</span>
+                                    }
+                                    @foreach (var permission in role.Permissions)
+                                    {
+                                        <span class="badge text-bg-light border mb-1">
+                                            @(Model.PermissionLabels.TryGetValue(permission, out var label) ? label : permission)
+                                        </span>
+                                    }
+                                </td>
+                                <td>
+                                    <a asp-action="Roles" asp-route-edit="@role.RoleId" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>
+                                    @if (User.HasPermission(Permissions.UsersWrite))
+                                    {
+                                        <form asp-action="DeleteRole" method="post" class="d-inline">
+                                            <input type="hidden" name="id" value="@role.RoleId" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('این نقش حذف شود؟');"><i class="bi bi-trash"></i></button>
+                                        </form>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    @if (User.HasPermission(Permissions.UsersWrite))
+    {
+        <div class="col-lg-5">
+            <div class="card">
+                <div class="card-header bg-primary text-white">@(Model.IsEdit ? "ویرایش نقش" : "نقش جدید")</div>
+                <div class="card-body">
+                    <form asp-action="Roles" method="post">
+                        @if (Model.IsEdit)
+                        {
+                            <input type="hidden" asp-for="RoleId" />
+                        }
+                        <div class="mb-3">
+                            <label asp-for="RoleName" class="form-label"></label>
+                            <input asp-for="RoleName" class="form-control" />
+                            <span asp-validation-for="RoleName" class="text-danger small"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Description" class="form-label"></label>
+                            <input asp-for="Description" class="form-control" />
+                        </div>
+                        <fieldset class="mb-3">
+                            <legend class="form-label">دسترسی‌ها</legend>
+                            @foreach (var permission in Model.AvailablePermissions)
+                            {
+                                var label = Model.PermissionLabels.TryGetValue(permission, out var text) ? text : permission;
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="SelectedPermissions" value="@permission"
+                                           id="perm-@permission" checked="@Model.SelectedPermissions.Contains(permission)" />
+                                    <label class="form-check-label" for="perm-@permission">@label <code class="small" dir="ltr">@permission</code></label>
+                                </div>
+                            }
+                        </fieldset>
+                        <button type="submit" class="btn btn-success"><i class="bi bi-check-circle"></i> ذخیره</button>
+                        <a asp-action="Roles" class="btn btn-light">انصراف</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    }
+</div>

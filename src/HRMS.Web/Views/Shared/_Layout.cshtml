@@ -1,0 +1,134 @@
+﻿@{
+    var controller = (string?)ViewContext.RouteData.Values["controller"] ?? string.Empty;
+    var action = (string?)ViewContext.RouteData.Values["action"] ?? string.Empty;
+    var isAuthed = User.Identity?.IsAuthenticated == true;
+    var isProfile = controller == "Employees" && action == "Details";
+    var isDashboard = controller == "Home" && action == "Index";
+
+    string NavClass(string navController, string? navAction = null) =>
+        string.Equals(controller, navController, StringComparison.OrdinalIgnoreCase) &&
+        (navAction is null || string.Equals(action, navAction, StringComparison.OrdinalIgnoreCase))
+            ? "nav-link active"
+            : "nav-link";
+}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - سامانه منابع انسانی HRMS_BHR</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.rtl.min.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap-icons/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    @if (isDashboard)
+    {
+        <link rel="stylesheet" href="~/css/home.css" asp-append-version="true" />
+    }
+</head>
+<body class="@(isProfile ? "page-profile" : isDashboard ? "page-dashboard" : "page-standard")">
+    <nav class="topbar">
+        <div class="topbar-inner">
+            <a class="brand" asp-controller="Home" asp-action="Index">
+                <svg class="brand-mark" width="25" height="28" viewBox="0 0 25 28" aria-hidden="true"><path d="M12 26V10M12 17C3 18 1 12 1 8c7 0 11 2 11 9Zm0-6C12 4 18 1 24 1c0 8-4 11-12 10Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg><span>hrms<span class="brand-suffix">BHR</span></span>
+            </a>
+
+            @if (isAuthed)
+            {
+                <ul class="topnav">
+                    <li><a class="@NavClass("Home", "Index")" asp-controller="Home" asp-action="Index"><i class="bi bi-speedometer2"></i> خانه</a></li>
+                    <li><a class="@NavClass("Home", "Profile")" asp-controller="Home" asp-action="Profile"><i class="bi bi-person"></i> اطلاعات من</a></li>
+                    @if (User.HasPermission(Permissions.EmployeesRead))
+                    {
+                        <li><a class="@NavClass("Employees")" asp-controller="Employees" asp-action="Index"><i class="bi bi-person-lines-fill"></i> کارکنان</a></li>
+                    }
+                    @if (User.HasPermission(Permissions.TimeOffRead) && (User.EmployeeId() is not null || User.IsInRole("Admin") || User.IsInRole("Manager")))
+                    {
+                        <li><a class="@NavClass("TimeOff", "Index")" asp-controller="TimeOff" asp-action="Index"><i class="bi bi-calendar-check"></i> مرخصی</a></li>
+                    }
+                    @if (User.EmployeeId() is not null || User.HasPermission(Permissions.EmployeesRead))
+                    {
+                        <li><a class="@NavClass("Training", "Index")" asp-controller="Training" asp-action="Index"><i class="bi bi-mortarboard"></i> آموزش‌ها</a></li>
+                    }
+                    @if (User.HasPermission(Permissions.ReportsRead))
+                    {
+                        <li><a class="@NavClass("Reports")" asp-controller="Reports" asp-action="Index"><i class="bi bi-file-earmark-bar-graph"></i> گزارش‌ها</a></li>
+                    }
+                    @if (User.HasPermission(Permissions.OrgRead) || User.HasPermission(Permissions.UsersRead) || User.HasPermission(Permissions.TimeOffApprove))
+                    {
+                        <li class="dropdown">
+                            <button class="nav-link dropdown-toggle @(controller == "Settings" || action == "Approvals" ? "active" : "")" data-bs-toggle="dropdown" type="button" aria-expanded="false">بیشتر</button>
+                            <ul class="dropdown-menu">
+                                @if (User.HasPermission(Permissions.TimeOffApprove))
+                                {
+                                    <li><a class="dropdown-item" asp-controller="TimeOff" asp-action="Approvals">تأیید مرخصی</a></li>
+                                }
+                                @if (User.HasPermission(Permissions.OrgRead) || User.HasPermission(Permissions.UsersRead))
+                                {
+                                    <li><a class="dropdown-item" asp-controller="Settings" asp-action="Index">تنظیمات</a></li>
+                                }
+                            </ul>
+                        </li>
+                    }
+                </ul>
+
+                @if (User.HasPermission(Permissions.EmployeesRead))
+                {
+                    <form class="searchbox" asp-controller="Employees" asp-action="Index" method="get" role="search">
+                        <i class="bi bi-search"></i>
+                        <input type="search" name="keyword" value="@Context.Request.Query["keyword"]"
+                               placeholder="جستجوی کارمند..." aria-label="جستجوی کارمند" dir="rtl" />
+                    </form>
+                }
+
+                <div class="user-chip dropdown">
+                    <button class="user-menu-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="حساب کاربری @User.DisplayName()"><i class="bi bi-person-circle"></i></button>
+                    <div class="dropdown-menu dropdown-menu-end account-menu">
+                        <div class="px-3 py-2"><strong>@User.DisplayName()</strong><div class="small text-muted">@User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value</div></div>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" asp-controller="Home" asp-action="Profile">پروندهٔ من</a>
+                        <form asp-controller="Account" asp-action="Logout" method="post">
+                            <button type="submit" class="dropdown-item"><i class="bi bi-box-arrow-left"></i> خروج</button>
+                        </form>
+                    </div>
+                </div>
+            }
+        </div>
+    </nav>
+
+    @if (isAuthed)
+    {
+        <div class="hero-band">
+            <div class="page-width">
+                @if (IsSectionDefined("Hero"))
+                {
+                    @await RenderSectionAsync("Hero", required: false)
+                }
+                else
+                {
+                    <h1>@(ViewData["Title"] ?? "سامانه منابع انسانی")</h1>
+                    @if (ViewData["HeroSub"] is string heroSub && !string.IsNullOrWhiteSpace(heroSub))
+                    {
+                        <p class="hero-sub">@heroSub</p>
+                    }
+                }
+            </div>
+        </div>
+    }
+
+    <div class="page-width content-wrap">
+        <main role="main" class="pb-3">
+            <partial name="_Alerts" />
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted">
+        <div class="container text-center">
+            &copy; @PersianDate.ToPersianDigits(new System.Globalization.PersianCalendar().GetYear(DateTime.Today).ToString()) - سامانه منابع انسانی HRMS_BHR
+        </div>
+    </footer>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

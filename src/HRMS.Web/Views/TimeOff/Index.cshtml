@@ -1,0 +1,148 @@
+﻿@model TimeOffIndexViewModel
+@{
+    var routeData = new Dictionary<string, string>
+    {
+        ["status"] = Model.Status ?? string.Empty,
+        ["employeeId"] = Model.EmployeeId == 0 ? string.Empty : Model.EmployeeId.ToString()
+    };
+}
+@section Hero {
+    <div class="d-flex justify-content-between align-items-end gap-3 flex-wrap">
+        <div>
+            <h1>مرخصی @(string.IsNullOrWhiteSpace(Model.EmployeeName) ? "" : Model.EmployeeName)</h1>
+            <p class="hero-sub">سال @PersianDate.ToPersianDigits(Model.Year.ToString())</p>
+        </div>
+        <div class="d-flex gap-2">
+            @if (User.HasPermission(Permissions.TimeOffRequest))
+            {
+                <a asp-action="CreateRequest" asp-route-employeeId="@Model.EmployeeId" class="btn btn-hero"><i class="bi bi-calendar-plus"></i> درخواست مرخصی</a>
+            }
+            @if (Model.CanApprove)
+            {
+                <a asp-action="Approvals" class="btn btn-hero"><i class="bi bi-check2-circle"></i> صف تایید</a>
+            }
+        </div>
+    </div>
+}
+
+<div class="row g-3 mb-3">
+    @foreach (var balance in Model.Balances)
+    {
+        <div class="col-md-4 col-lg-3">
+            <div class="card stat-card h-100 @(balance.Unlimited || balance.AvailableHours > 0 ? "border-info" : "border-danger")">
+                <div class="card-body text-center">
+                    <h6>@balance.PolicyName</h6>
+                    <p class="stat-value mb-0 @(balance.Unlimited || balance.AvailableHours > 0 ? "text-info" : "text-danger")">
+                        @(balance.Unlimited ? "بدون سقف" : PersianDate.ToPersianDigits(balance.AvailableHours.ToString("0.##")))
+                    </p>
+                    <div class="small text-muted">
+                        @(balance.Unlimited ? "ساعت" : "ساعت مانده")
+                        @if (!balance.Unlimited)
+                        {
+                            <text>از @PersianDate.ToPersianDigits(balance.AccruedHours.ToString("0.##"))</text>
+                        }
+                    </div>
+                    <div class="small text-muted">استفاده‌شده: @PersianDate.ToPersianDigits($"{balance.UsedHours:0.##}") - در انتظار: @PersianDate.ToPersianDigits($"{balance.PendingHours:0.##}")</div>
+                </div>
+            </div>
+        </div>
+    }
+    @if (Model.Balances.Count == 0 && Model.EmployeeId > 0)
+    {
+        <div class="col-12"><div class="alert alert-light border mb-0">برای این کارمند مانده مرخصی در سال جاری ساخته نشده است.</div></div>
+    }
+</div>
+
+<div class="card">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <span class="fw-semibold"><i class="bi bi-list-task"></i> درخواست‌های مرخصی</span>
+        <form method="get" class="d-flex gap-2">
+            <input type="hidden" name="employeeId" value="@(Model.EmployeeId == 0 ? null : Model.EmployeeId.ToString())" />
+            <select class="form-select form-select-sm" name="status">
+                <option value="">همه وضعیت‌ها</option>
+                <option value="Pending" selected="@(Model.Status == "Pending")">در انتظار تایید</option>
+                <option value="Approved" selected="@(Model.Status == "Approved")">تایید شده</option>
+                <option value="Rejected" selected="@(Model.Status == "Rejected")">رد شده</option>
+                <option value="Cancelled" selected="@(Model.Status == "Cancelled")">لغو شده</option>
+            </select>
+            <button class="btn btn-sm btn-outline-primary" type="submit">فیلتر</button>
+        </form>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped text-center align-middle">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>کارمند</th>
+                        <th>نوع مرخصی</th>
+                        <th>از</th>
+                        <th>تا</th>
+                        <th>ساعت</th>
+                        <th>وضعیت</th>
+                        <th>تاییدکننده</th>
+                        <th>عملیات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Requests.Items.Count == 0)
+                    {
+                        <tr><td colspan="9" class="text-muted py-4">درخواستی ثبت نشده است.</td></tr>
+                    }
+                    @foreach (var request in Model.Requests.Items)
+                    {
+                        <tr>
+                            <td>@PersianDate.ToPersianDigits(request.RequestId.ToString())</td>
+                            <td>@request.EmployeeName</td>
+                            <td>@request.PolicyName</td>
+                            <td>@PersianDate.ToJalali(request.StartDate)</td>
+                            <td>@PersianDate.ToJalali(request.EndDate)</td>
+                            <td>@PersianDate.ToPersianDigits($"{request.TotalHours:0.##}")</td>
+                            <td><span class="badge text-bg-@FaLabels.RequestStatusBadge(request.Status)">@FaLabels.RequestStatus(request.Status)</span></td>
+                            <td>@(request.ApprovedBy ?? "-")</td>
+                            <td>
+                                @if (request.Status == "Pending" && request.EmployeeId == (User.EmployeeId() ?? 0))
+                                {
+                                    <form asp-action="Cancel" method="post" class="d-inline">
+                                        <input type="hidden" name="requestId" value="@request.RequestId" />
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('این درخواست لغو شود؟');">لغو</button>
+                                    </form>
+                                }
+                                else if (request.Status == "Pending" && Model.CanApprove)
+                                {
+                                    <a asp-action="Approvals" class="btn btn-sm btn-outline-primary">تایید</a>
+                                }
+                                else
+                                {
+                                    <span class="text-muted small">-</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (Model.Requests.PageCount > 1)
+        {
+            <nav class="d-flex justify-content-center gap-1">
+                @if (Model.Requests.HasPreviousPage)
+                {
+                    <a class="btn btn-sm btn-outline-primary" asp-action="Index" asp-all-route-data="routeData" asp-route-page="@(Model.Page - 1)">قبلی</a>
+                }
+                <span class="btn btn-sm btn-light">صفحه @PersianDate.ToPersianDigits(Model.Page.ToString()) از @PersianDate.ToPersianDigits(Model.Requests.PageCount.ToString())</span>
+                @if (Model.Requests.HasNextPage)
+                {
+                    <a class="btn btn-sm btn-outline-primary" asp-action="Index" asp-all-route-data="routeData" asp-route-page="@(Model.Page + 1)">بعدی</a>
+                }
+            </nav>
+        }
+    </div>
+</div>
+
+@if (User.IsInRole("Admin") || User.IsInRole("Manager"))
+{
+    <div class="mt-3">
+        <a asp-action="Index" class="btn btn-link">نمایش همه درخواست‌ها</a>
+    </div>
+}

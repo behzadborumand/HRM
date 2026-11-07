@@ -1,0 +1,67 @@
+@model CompanyAdminViewModel
+@section Hero {
+    <div class="d-flex justify-content-between align-items-end gap-3 flex-wrap">
+        <h1>شرکت‌ها</h1>
+        <a asp-action="Index" class="btn btn-hero"><i class="bi bi-arrow-right"></i> تنظیمات</a>
+    </div>
+}
+
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-body">
+                <table class="table table-striped align-middle text-center mb-0">
+                    <thead><tr><th>نام شرکت</th><th>تاریخ ثبت</th>@if (User.HasPermission(Permissions.OrgWrite)) { <th class="w-25">عملیات</th> }</tr></thead>
+                    <tbody>
+                        @if (Model.Companies.Count == 0)
+                        {
+                            <tr><td colspan="3" class="text-muted">شرکتی ثبت نشده است.</td></tr>
+                        }
+                        @foreach (var company in Model.Companies)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@company.CompanyName</td>
+                                <td>@PersianDate.ToJalali(company.CreatedDate)</td>
+                                @if (User.HasPermission(Permissions.OrgWrite))
+                                {
+                                    <td>
+                                        <a asp-action="Companies" asp-route-edit="@company.CompanyId" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+                                        <form asp-action="DeleteCompany" method="post" class="d-inline"
+                                              onsubmit="return confirm('حذف این شرکت؟');">
+                                            <input type="hidden" name="id" value="@company.CompanyId" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                        </form>
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    @if (User.HasPermission(Permissions.OrgWrite))
+    {
+        <div class="col-lg-5">
+            <div class="card">
+                <div class="card-header bg-primary text-white">@(Model.IsEdit ? "ویرایش شرکت" : "افزودن شرکت")</div>
+                <div class="card-body">
+                    <form asp-action="Companies" method="post">
+                        @if (Model.IsEdit)
+                        {
+                            <input type="hidden" asp-for="CompanyId" />
+                        }
+                        <div class="mb-3">
+                            <label asp-for="CompanyName" class="form-label"></label>
+                            <input asp-for="CompanyName" class="form-control" />
+                            <span asp-validation-for="CompanyName" class="text-danger small"></span>
+                        </div>
+                        <button type="submit" class="btn btn-success"><i class="bi bi-check-circle"></i> ذخیره</button>
+                        <a asp-action="Companies" class="btn btn-light">انصراف</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    }
+</div>

@@ -1,0 +1,19 @@
+@model DashboardViewModel
+<section class="card home-organization-links">
+    <div class="card-header"><h2><i class="bi bi-link-45deg"></i> پیوندهای سازمانی</h2>
+        @if (User.HasPermission(Permissions.OrgRead))
+        {
+            <a asp-controller="OrganizationLinks" asp-action="Index" class="home-header-link">مدیریت پیوندها</a>
+        }
+    </div>
+    <div class="card-body">
+        @if (Model.OrganizationLinks.Count == 0)
+        {
+            <p class="home-empty">هنوز پیوند فعالی برای سازمان ثبت نشده است.</p>
+        }
+        @foreach (var link in Model.OrganizationLinks)
+        {
+            <a href="@link.Url" target="_blank" rel="noopener noreferrer" class="home-person-row"><i class="bi bi-box-arrow-up-left" aria-hidden="true"></i><span><strong>@link.Title</strong>@if (!string.IsNullOrWhiteSpace(link.Description)) {<small>@link.Description</small>}</span><span class="visually-hidden">(در زبانهٔ جدید)</span></a>
+        }
+    </div>
+</section>

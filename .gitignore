@@ -1,0 +1,23 @@
+## .NET build output
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+*.user
+*.suo
+
+## IDE / tooling
+.vs/
+.vscode/
+.idea/
+*.swp
+
+## Local runtime data
+App_Data/
+*.db
+*.sqlite
+Logs/
+
+## OS
+Thumbs.db
+.DS_Store

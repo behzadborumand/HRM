@@ -1,0 +1,91 @@
+﻿@{
+    ViewData["Title"] = "تنظیمات سیستم";
+}
+@section Hero {
+    <h1>تنظیمات سیستم</h1>
+}
+<div class="row g-3">
+    @if (User.HasPermission(Permissions.OrgRead))
+    {
+        <div class="col-md-4 col-lg-3">
+            <a class="text-decoration-none" asp-controller="OrganizationLinks" asp-action="Index">
+                <div class="card h-100"><div class="card-body text-center"><i class="bi bi-link-45deg fs-2 text-primary"></i><h6 class="mt-2 mb-1">پیوندهای سازمانی</h6><span class="small text-muted">نشانی‌ها و منابع صفحهٔ اصلی</span></div></div>
+            </a>
+        </div>
+        <div class="col-md-4 col-lg-3">
+            <a class="text-decoration-none" asp-action="Departments">
+                <div class="card h-100"><div class="card-body text-center">
+                    <i class="bi bi-diagram-3 fs-2 text-primary"></i>
+                    <h6 class="mt-2 mb-1">واحدهای سازمانی</h6>
+                    <span class="small text-muted">ساختار و زیرمجموعه‌ها</span>
+                </div></div>
+            </a>
+        </div>
+        <div class="col-md-4 col-lg-3">
+            <a class="text-decoration-none" asp-action="JobTitles">
+                <div class="card h-100"><div class="card-body text-center">
+                    <i class="bi bi-briefcase fs-2 text-primary"></i>
+                    <h6 class="mt-2 mb-1">عناوین شغلی</h6>
+                    <span class="small text-muted">تعریف نقش‌های سازمان</span>
+                </div></div>
+            </a>
+        </div>
+        <div class="col-md-4 col-lg-3">
+            <a class="text-decoration-none" asp-action="TimeOffPolicies">
+                <div class="card h-100"><div class="card-body text-center">
+                    <i class="bi bi-calendar-x fs-2 text-primary"></i>
+                    <h6 class="mt-2 mb-1">سیاست‌های مرخصی</h6>
+                    <span class="small text-muted">نوع و سقف ساعت</span>
+                </div></div>
+            </a>
+        </div>
+        <div class="col-md-4 col-lg-3">
+            <a class="text-decoration-none" asp-action="Companies">
+                <div class="card h-100"><div class="card-body text-center">
+                    <i class="bi bi-buildings fs-2 text-primary"></i>
+                    <h6 class="mt-2 mb-1">شرکت‌ها</h6>
+                    <span class="small text-muted">حوادث و شرکت‌های تابعه</span>
+                </div></div>
+            </a>
+        </div>
+        <div class="col-md-4 col-lg-3">
+            <a class="text-decoration-none" asp-controller="Training" asp-action="Courses">
+                <div class="card h-100"><div class="card-body text-center">
+                    <i class="bi bi-mortarboard fs-2 text-primary"></i>
+                    <h6 class="mt-2 mb-1">دوره‌های آموزشی</h6>
+                    <span class="small text-muted">کاتالوگ و دوره تکرار</span>
+                </div></div>
+            </a>
+        </div>
+    }
+    @if (User.HasPermission(Permissions.UsersRead))
+    {
+        <div class="col-md-4 col-lg-3">
+            <a class="text-decoration-none" asp-action="Users">
+                <div class="card h-100"><div class="card-body text-center">
+                    <i class="bi bi-person-badge fs-2 text-success"></i>
+                    <h6 class="mt-2 mb-1">کاربران</h6>
+                    <span class="small text-muted">حساب‌های ورود به سامانه</span>
+                </div></div>
+            </a>
+        </div>
+        <div class="col-md-4 col-lg-3">
+            <a class="text-decoration-none" asp-action="Roles">
+                <div class="card h-100"><div class="card-body text-center">
+                    <i class="bi bi-shield-check fs-2 text-success"></i>
+                    <h6 class="mt-2 mb-1">نقش‌ها و دسترسی‌ها</h6>
+                    <span class="small text-muted">مجوز هر نقش</span>
+                </div></div>
+            </a>
+        </div>
+    }
+    <div class="col-md-4 col-lg-3">
+        <a class="text-decoration-none" asp-controller="Reports" asp-action="Index">
+            <div class="card h-100"><div class="card-body text-center">
+                <i class="bi bi-file-earmark-bar-graph fs-2 text-info"></i>
+                <h6 class="mt-2 mb-1">گزارش‌ها</h6>
+                <span class="small text-muted">کارکنان و مرخصی</span>
+            </div></div>
+        </a>
+    </div>
+</div>

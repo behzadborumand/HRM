@@ -1,0 +1,17 @@
+@model DashboardViewModel
+<section class="card home-celebrations">
+    <div class="card-header"><h2><i class="bi bi-gift"></i> مناسبت‌ها</h2><span class="small text-muted">۳۰ روز آینده</span></div>
+    <div class="card-body">
+        @if (Model.Celebrations.Count == 0)
+        {
+            <p class="home-empty">در این بازه مناسبتی ثبت نشده است.</p>
+        }
+        @foreach (var item in Model.Celebrations)
+        {
+            <a asp-controller="Employees" asp-action="Details" asp-route-id="@item.Person.EmployeeId" class="home-person-row">
+                <span class="home-event-icon" aria-hidden="true"><i class="bi @(item.Kind == "Birthday" ? "bi-gift" : "bi-award")"></i></span>
+                <span><strong>@item.Person.FullName</strong><small>@(item.Kind == "Birthday" ? "تولد" : $"سالگرد {PersianDate.ToPersianDigits(item.Years.GetValueOrDefault().ToString())} سال همکاری") · @PersianDate.ToPersianDigits(PersianDate.ToJalali(item.Date))</small></span>
+            </a>
+        }
+    </div>
+</section>

@@ -1,0 +1,117 @@
+@model EmployeeDocumentsViewModel
+@{
+    var canWrite = User.HasPermission(Permissions.EmployeesWrite);
+}
+@section Hero {
+    <div class="d-flex justify-content-between align-items-end gap-3 flex-wrap">
+        <div>
+            <h1>مدارک @Model.EmployeeName</h1>
+            <p class="hero-sub">کد پرسنلی @Model.EmployeeNumber</p>
+        </div>
+        <a asp-controller="Employees" asp-action="Details" asp-route-id="@Model.EmployeeId" class="btn btn-hero">
+            <i class="bi bi-arrow-right"></i> بازگشت به پرونده
+        </a>
+    </div>
+}
+
+<div class="row g-3">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header bg-white fw-semibold"><i class="bi bi-file-earmark-text"></i> اسناد ثبت‌شده</div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped align-middle text-center mb-0">
+                        <thead>
+                            <tr>
+                                <th>عنوان</th><th>دسته</th><th>فایل</th><th>حجم</th><th>تاریخ بارگذاری</th><th>انقضا</th><th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.Documents.Count == 0)
+                            {
+                                <tr><td colspan="7" class="text-muted">هنوز سندی برای این کارمند ثبت نشده است.</td></tr>
+                            }
+                            @foreach (var document in Model.Documents)
+                            {
+                                <tr>
+                                    <td class="text-start">@document.Title</td>
+                                    <td>@(document.Category ?? "-")</td>
+                                    <td class="text-muted small" dir="ltr">@document.FileName</td>
+                                    <td>@PersianDate.ToPersianDigits($"{document.FileSize / 1024.0:0.#} کیلوبایت")</td>
+                                    <td>@PersianDate.ToJalali(document.UploadDate)</td>
+                                    <td>@(document.ExpiryDate is null ? "-" : PersianDate.ToJalali(document.ExpiryDate))</td>
+                                    <td class="d-flex gap-1 justify-content-center">
+                                        <a asp-action="Download" asp-route-id="@document.DocumentId" class="btn btn-outline-primary btn-sm">
+                                            <i class="bi bi-download"></i> دانلود
+                                        </a>
+                                        @if (canWrite)
+                                        {
+                                            <form asp-action="Delete" method="post" class="d-inline"
+                                                  onsubmit="return confirm('حذف این سند و فایل آن قطعی است؛ ادامه می‌دهید؟');">
+                                                <input type="hidden" name="id" value="@document.DocumentId" />
+                                                <input type="hidden" name="employeeId" value="@Model.EmployeeId" />
+                                                <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i></button>
+                                            </form>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        @if (canWrite)
+        {
+            <div class="card">
+                <div class="card-header bg-primary text-white"><i class="bi bi-upload"></i> افزودن سند</div>
+                <div class="card-body">
+                    <form asp-action="Upload" method="post" enctype="multipart/form-data">
+                        <input type="hidden" asp-for="Upload.EmployeeId" />
+                        <div class="mb-3">
+                            <label asp-for="Upload.Title" class="form-label"></label>
+                            <input asp-for="Upload.Title" class="form-control" />
+                            <span asp-validation-for="Upload.Title" class="text-danger small"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Upload.Category" class="form-label"></label>
+                            <input asp-for="Upload.Category" class="form-control" list="documentCategories" />
+                            <datalist id="documentCategories">
+                                <option value="قرارداد"></option>
+                                <option value="شناسنامه و کارت"></option>
+                                <option value="تحصیلی"></option>
+                                <option value="سوابق شغلی"></option>
+                                <option value="بیمه و مالیاتی"></option>
+                                <option value="سایر"></option>
+                            </datalist>
+                            <span asp-validation-for="Upload.Category" class="text-danger small"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="Upload.ExpiryDate">تاریخ انقضا</label>
+                            <input class="form-control" type="text" id="Upload.ExpiryDate" name="Upload.ExpiryDate" dir="ltr" autocomplete="off"
+                                   placeholder="۱۴۰۵/۰۸/۱۲" value="@PersianDate.ToJalaliInput(Model.Upload.ExpiryDate)" />
+                            <span asp-validation-for="Upload.ExpiryDate" class="text-danger small"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Upload.File" class="form-label"></label>
+                            <input asp-for="Upload.File" class="form-control" type="file" />
+                            <div class="form-text">پسوندهای مجاز: @Model.AllowedExtensions — حداکثر حجم: @Model.MaxSizeLabel</div>
+                        </div>
+                        <button type="submit" class="btn btn-success"><i class="bi bi-check-circle"></i> بارگذاری</button>
+                    </form>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="card">
+                <div class="card-body text-muted">
+                    برای مشاهده و دانلود مدارک مجاز هستید؛ افزودن یا حذف سند نیاز به دسترسی ویرایش کارکنان دارد.
+                </div>
+            </div>
+        }
+    </div>
+</div>

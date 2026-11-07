@@ -1,0 +1,71 @@
+@model JobTitleAdminViewModel
+@section Hero {
+    <div class="d-flex justify-content-between align-items-end gap-3 flex-wrap">
+        <h1>عناوین شغلی</h1>
+        <a asp-action="Index" class="btn btn-hero"><i class="bi bi-arrow-right"></i> تنظیمات</a>
+    </div>
+}
+
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-body">
+                <table class="table table-striped align-middle text-center mb-0">
+                    <thead><tr><th>عنوان</th><th>شرح نقش</th><th>کارمند</th><th>عملیات</th></tr></thead>
+                    <tbody>
+                        @if (Model.Rows.Count == 0)
+                        {
+                            <tr><td colspan="4" class="text-muted">عنوان شغلی‌ای ثبت نشده است.</td></tr>
+                        }
+                        @foreach (var row in Model.Rows)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@row.TitleName</td>
+                                <td class="small text-muted">@(row.Description ?? "-")</td>
+                                <td>@PersianDate.ToPersianDigits(row.Headcount.ToString())</td>
+                                <td>
+                                    <a asp-action="JobTitles" asp-route-edit="@row.JobTitleId" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>
+                                    @if (User.HasPermission(Permissions.OrgWrite))
+                                    {
+                                        <form asp-action="DeleteJobTitle" method="post" class="d-inline">
+                                            <input type="hidden" name="id" value="@row.JobTitleId" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('این عنوان شغلی حذف شود؟');"><i class="bi bi-trash"></i></button>
+                                        </form>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    @if (User.HasPermission(Permissions.OrgWrite))
+    {
+        <div class="col-lg-5">
+            <div class="card">
+                <div class="card-header bg-primary text-white">@(Model.IsEdit ? "ویرایش عنوان شغلی" : "افزودن عنوان شغلی")</div>
+                <div class="card-body">
+                    <form asp-action="JobTitles" method="post">
+                        @if (Model.IsEdit)
+                        {
+                            <input type="hidden" asp-for="JobTitleId" />
+                        }
+                        <div class="mb-3">
+                            <label asp-for="TitleName" class="form-label"></label>
+                            <input asp-for="TitleName" class="form-control" />
+                            <span asp-validation-for="TitleName" class="text-danger small"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Description" class="form-label"></label>
+                            <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-success"><i class="bi bi-check-circle"></i> ذخیره</button>
+                        <a asp-action="JobTitles" class="btn btn-light">انصراف</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    }
+</div>
