@@ -1,0 +1,10 @@
+@page "/Employees/{id:int}/Edit"
+@model HRMS.Next.Pages.Employees.EditModel
+@{
+    ViewData["Title"] = "ویرایش کارمند";
+}
+<h1>ویرایش کارمند</h1>
+<form method="post" class="card">
+    <partial name="_Form" for="Form" />
+    <p><button type="submit">ذخیره</button></p>
+</form>

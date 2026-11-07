@@ -1,0 +1,14 @@
+@page "/Employees/{id:int}"
+@model HRMS.Next.Pages.Employees.DetailsModel
+@{
+    ViewData["Title"] = "پرونده کارمند";
+}
+<h1>پرونده کارمند</h1>
+@if (Model.Employee is not null)
+{
+    <div class="card">
+        <h2>@Model.Employee.FirstName @Model.Employee.LastName</h2>
+        <dl><dt>شماره پرسنلی</dt><dd>@Model.Employee.EmployeeNumber</dd><dt>واحد</dt><dd>@Model.DepartmentName</dd><dt>تاریخ استخدام</dt><dd>@JalaliDate.Format(Model.Employee.HireDate)</dd><dt>ایمیل</dt><dd>@Model.Employee.Email</dd></dl>
+        @if (Model.CanWrite) { <a class="button" asp-page="Edit" asp-route-id="@Model.Employee.Id">ویرایش</a> }
+    </div>
+}

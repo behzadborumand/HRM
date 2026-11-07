@@ -1,0 +1,30 @@
+# Rewrite roadmap
+
+## Stage 0: discovery and isolation
+
+- [x] Preserve existing dirty files and create `rewrite/modular-monolith`.
+- [x] Inventory current source, schema, UI, auth, and tests; see `docs/REWRITE_CAPABILITIES.md`.
+- [x] Run legacy baseline tests: 132 passed on 2026-11-07.
+- [ ] Inspect an actual nonproduction database and validate source documentation against it.
+
+## Stage 1: first working slice
+
+- [x] .NET 10 host source and independent EF contexts/migrations for Access, Organization, Personnel; .NET 10 build pending SDK.
+- [x] Explicit bootstrap and login; use case permission and company scope checks in the initial personnel flow.
+- [x] Company and department bootstrap; employee search, profile, create, edit, audit and row version checks in source.
+- [ ] Complete Persian Razor Pages and UI patterns; basic forms, Jalali input/display, pagination and focus styles exist.
+- [ ] Complete tests and SQL Server integration; 13 model/rule/use case tests pass on temporary .NET 9 compatibility build, SQL connection blocked.
+
+## Stage 2: transfer
+
+- [ ] Legacy-to-new mapping and repeatable transfer tool.
+- [ ] Count, relationship, invalid-data and difference reports.
+- [ ] Trial migration in a disposable database.
+
+## Stage 3: remaining modules
+
+Transfer dependencies in this order: organization and access, personnel, leave and training, documents, job classification and position requirements, orders and contractor personnel, appraisal, insurance and retirement, welfare and medical, external Tavanir exchange, reporting. A stage is complete only when its real workflows and tests pass.
+
+## Constraints
+
+The current machine has .NET SDK 9.0.316, but not SDK 10. The local destination is `D:\SourceCodes\GitProjects\HRM` with `origin` set to `https://github.com/behzadborumand/HRM.git`. The repository has not been pushed. Native .NET 10 validation remains incomplete.

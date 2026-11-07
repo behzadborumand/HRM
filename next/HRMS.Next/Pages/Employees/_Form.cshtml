@@ -1,0 +1,16 @@
+@model HRMS.Next.Pages.Employees.EmployeeForm
+<div asp-validation-summary="All" class="error" role="alert"></div>
+<label asp-for="EmployeeNumber">شماره پرسنلی</label><input asp-for="EmployeeNumber" required />
+<label asp-for="FirstName">نام</label><input asp-for="FirstName" required />
+<label asp-for="LastName">نام خانوادگی</label><input asp-for="LastName" required />
+<label asp-for="Email">ایمیل</label><input asp-for="Email" type="email" />
+<label asp-for="DepartmentId">واحد سازمانی</label>
+<select asp-for="DepartmentId" required>
+    <option value="0">انتخاب کنید</option>
+    @foreach (var department in (IReadOnlyList<HRMS.Next.Modules.Organization.DepartmentOption>)(ViewData["Departments"] ?? Array.Empty<HRMS.Next.Modules.Organization.DepartmentOption>()))
+    {
+        <option value="@department.Id">@department.Name</option>
+    }
+</select>
+<label asp-for="HireDateJalali">تاریخ استخدام شمسی</label><input asp-for="HireDateJalali" placeholder="۱۴۰۳/۰۱/۰۱" required />
+<input asp-for="Version" type="hidden" />

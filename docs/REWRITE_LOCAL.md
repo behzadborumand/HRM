@@ -1,0 +1,7 @@
+# Local setup for rewrite
+
+Install .NET 10 SDK/runtime and SQL Server. Keep a separate empty destination database and supply its connection string through environment or user secrets. Do not use the legacy `HRMS_BHR` database. Run each module's EF migrations explicitly after reviewing the target database name. The host must not migrate or seed automatically on startup.
+
+Set `ConnectionStrings__HrmsNext` to the destination connection string through environment or user secrets. After reviewing and applying each module's migrations, set `HRMS_BOOTSTRAP_USER`, `HRMS_BOOTSTRAP_PASSWORD` (at least 14 characters), and `HRMS_BOOTSTRAP_COMPANY`, then run `dotnet run --project next/HRMS.Next -- --bootstrap` exactly once. The bootstrap creates a company, a default department and an administrator. It will not change an existing account. Remove the bootstrap variables afterward. Run the host with `dotnet run --project next/HRMS.Next`. No publish or IIS deployment has been performed.
+
+For each context, use `dotnet ef database update --project next/HRMS.Next --startup-project next/HRMS.Next --context <AccessDbContext|OrganizationDbContext|PersonnelDbContext>` only after inspecting the destination connection string and installing SDK 10. Initial migrations were generated with EF Core 9 and require verification or regeneration with EF Core 10. The application does not apply migrations automatically.

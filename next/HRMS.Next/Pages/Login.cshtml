@@ -1,0 +1,13 @@
+@page
+@model LoginModel
+@{
+    ViewData["Title"] = "ورود";
+}
+<h1>ورود</h1>
+<form method="post" class="card">
+    <div asp-validation-summary="All" class="error" role="alert"></div>
+    <label asp-for="Username">نام کاربری</label><input asp-for="Username" autocomplete="username" required />
+    <label asp-for="Password">رمز عبور</label><input asp-for="Password" type="password" autocomplete="current-password" required />
+    <input asp-for="ReturnUrl" type="hidden" />
+    <p><button type="submit">ورود</button></p>
+</form>

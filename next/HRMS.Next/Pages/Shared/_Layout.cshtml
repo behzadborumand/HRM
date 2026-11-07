@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] - سامانه منابع انسانی</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <header><a asp-page="/Employees/Index">سامانه منابع انسانی</a>
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <span>@User.Identity.Name</span>
+            <form method="post" asp-page="/Logout"><button type="submit">خروج</button></form>
+        }
+    </header>
+    <main id="main">@RenderBody()</main>
+</body>
+</html>
