@@ -13,7 +13,7 @@
 - [x] Explicit bootstrap and login; use case permission and company scope checks in the initial personnel flow.
 - [x] Company and department bootstrap; employee search, profile, create, edit, audit and row version checks in source.
 - [ ] Complete Persian Razor Pages and UI patterns; basic forms, Jalali input/display, pagination and focus styles exist.
-- [ ] Complete tests and SQL Server integration; 13 model/rule/use case tests pass on temporary .NET 9 compatibility build, SQL connection blocked.
+- [ ] Complete tests and SQL Server integration; 14 tests, including one SQL employee flow test, and an HTTPS login/create/edit smoke test pass on the temporary .NET 9 compatibility build; native .NET 10 check remains.
 
 ## Stage 2: transfer
 

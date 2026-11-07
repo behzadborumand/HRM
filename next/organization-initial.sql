@@ -61,5 +61,38 @@ BEGIN
     VALUES (N'20261107201134_OrganizationInitial', N'9.0.18');
 END;
 
+IF NOT EXISTS (
+    SELECT * FROM [organization].[__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261107201712_OrganizationRelationships'
+)
+BEGIN
+    CREATE INDEX [IX_Departments_ParentId] ON [organization].[Departments] ([ParentId]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [organization].[__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261107201712_OrganizationRelationships'
+)
+BEGIN
+    ALTER TABLE [organization].[Departments] ADD CONSTRAINT [FK_Departments_Companies_CompanyId] FOREIGN KEY ([CompanyId]) REFERENCES [organization].[Companies] ([Id]) ON DELETE NO ACTION;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [organization].[__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261107201712_OrganizationRelationships'
+)
+BEGIN
+    ALTER TABLE [organization].[Departments] ADD CONSTRAINT [FK_Departments_Departments_ParentId] FOREIGN KEY ([ParentId]) REFERENCES [organization].[Departments] ([Id]) ON DELETE NO ACTION;
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [organization].[__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261107201712_OrganizationRelationships'
+)
+BEGIN
+    INSERT INTO [organization].[__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261107201712_OrganizationRelationships', N'9.0.18');
+END;
+
 COMMIT;
 GO
