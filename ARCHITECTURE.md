@@ -1,6 +1,6 @@
 # HRMS_B rewrite architecture
 
-The new application lives under `next/`. The legacy `src/`, `sql/`, and `tests/` remain untouched as behavioral and migration references. The target is one ASP.NET Core 10 Razor Pages host on IIS, one SQL Server database, and a modular monolith. Each module owns its EF model, schema, DbContext, and migrations. The host calls application services directly. No module writes another module's tables.
+The new application lives under `src/HRMS.Next`, with tests in `tests/HRMS.Next.Tests`. The legacy project remains separately at `D:\SourceCodes\GitProjects\HRMS_BHR` for behavioral and migration reference; its files are not included in this rewrite working tree. The target is one ASP.NET Core 10 Razor Pages host on IIS, one SQL Server database, and a modular monolith. Each module owns its EF model, schema, DbContext, and migrations. The host calls application services directly. No module writes another module's tables.
 
 ## Boundaries
 

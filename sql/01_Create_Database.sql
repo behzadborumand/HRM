@@ -1,6 +1,0 @@
-﻿IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = N'HRMS_BHR')
-BEGIN
-    CREATE DATABASE HRMS_BHR;
-END
-GO
-

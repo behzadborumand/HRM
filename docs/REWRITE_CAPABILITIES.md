@@ -1,12 +1,12 @@
 # Current capability inventory and transfer map
 
-Source: `src/HRMS.Web/Controllers`, `src/HRMS.Web/Views`, `src/HRMS.Web/Services`, `src/HRMS.Data/Context`, `sql/`, and `docs/05_Project_Phases.md`. No `AGENTS.md` was found. The progress document records intent and historical completion; running code remains the evidence for behavior.
+Legacy source is the separate `D:\SourceCodes\GitProjects\HRMS_BHR` repository: its `src/HRMS.Web/Controllers`, `src/HRMS.Web/Views`, `src/HRMS.Web/Services`, `src/HRMS.Data/Context`, `sql/`, and `docs/05_Project_Phases.md`. No `AGENTS.md` was found. The progress document records intent and historical completion; running code remains the evidence for behavior.
 
 | Current capability | New owner and location | Transfer status |
 | --- | --- | --- |
 | Cookie login, users, roles, permission claims | Access | Partial: login and scoped administrator/user grants; full roles not transferred |
 | Companies, departments, job titles, organization links | Organization; job classification boundary to be refined | Partial: company/department bootstrap and lookup only |
-| Employee list, profile, CRUD, job history, bulk edit, photos | Personnel | Partial: list/profile/create/edit only; no legacy import or other workflows |
+| Employee list, profile, CRUD, job history, bulk edit, photos | Personnel | Partial: list/profile/create/edit only; core legacy data import only; no other workflows |
 | Leave policies, requests, balances, manager approval | Leave | Planned |
 | Courses and assignments | Training | Planned |
 | Private employee documents | Documents | Planned |

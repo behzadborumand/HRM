@@ -1,37 +1,19 @@
-# HRMS_BHR
+# HRM بازنویسی‌شده
 
-سیستم مدیریت منابع انسانی طراحی شده بر اساس نمونه‌های موجود در پوشه Save site (BambooHR-like).
+این مخزن نسخهٔ در حال بازنویسی سامانهٔ منابع انسانی است. هدف: Modular Monolith روی ASP.NET Core 10، رابط Razor Pages، دسترسی داده با EF Core Code First و SQL Server. هر ماژول DbContext، schema و migration جدا دارد.
 
-## ساختار پروژه
-- docs/ - مستندات طراحی سیستم، اسکیمای دیتابیس، طراحی UI
-- [دستورالعمل به‌روزرسانی پرونده بر اساس تصاویر و منابع BambooHR](docs/13_BambooHR_Profile_Update_Instructions.md)
-- [اصلاحات تأییدشدهٔ صفحهٔ اصلی و نتیجهٔ بررسی](docs/14_Home_Approved_Improvements.md)
-- [ادامهٔ فازهای ۱۶ تا ۱۸ و نتیجهٔ بررسی](docs/15_Home_Next_Phases.md)
-- sql/ - اسکریپت‌های SQL برای ایجاد دیتابیس و جداول
-- src/ - کد منبع پروژه
+## ساختار
 
-## اتصال به دیتابیس
-```json
-"ConnectionStrings": {
-  "HRMSDatabase": "Server=localhost;Database=HRMS_BHR;Integrated Security=True;TrustServerCertificate=True"
-}
-```
+- `src/HRMS.Next` — برنامهٔ جدید و ماژول‌های Access، Organization و Personnel
+- `tests/HRMS.Next.Tests` — آزمون‌های برنامهٔ جدید
+- `database/` — اسکریپت‌های ساخت آزمایشی و انتقال اولیهٔ داده
+- `tools/` — آزمون جریان وب
+- `docs/` — راهنمای اجرا، انتقال و نقشهٔ قابلیت‌ها
 
-## راه‌اندازی دیتابیس
-با استفاده از SQL Server Management Studio یا sqlcmd اسکریپت‌های زیر را به ترتیب اجرا کنید:
-1. sql/01_Create_Database.sql
-2. sql/02_Create_Tables.sql
-3. sql/03_Create_Indexes_Views.sql
-4. sql/04_Alter_TimeOff_Accrual.sql
-5. sql/05_Create_Employee_Documents.sql
-6. sql/06_Create_Training.sql
-7. sql/07_Create_Organization_Links.sql
+کد برنامهٔ قدیمی در این مخزن نگهداری نمی‌شود. منبع قدیمی جداگانه در `D:\SourceCodes\GitProjects\HRMS_BHR` باقی مانده است.
 
-### ارتقای نسخهٔ موجود
+## وضعیت
 
-اگر اسکریپت‌های ۰۱ تا ۰۶ قبلاً اعمال شده‌اند، **پیش از اجرای نسخهٔ جدید** اسکریپت ۰۷ را اجرا کنید. صفحهٔ اصلی به جدول `OrganizationLinks` نیاز دارد؛ ایجاد جدول در شروع برنامه خودکار نیست. این اسکریپت تکرارپذیر است و دادهٔ قبلی را حذف نمی‌کند.
+ورود، راه‌اندازی مدیر اولیه، شرکت/واحد، فهرست و پروندهٔ کارمند، ایجاد/ویرایش، کنترل دسترسی بر اساس شرکت، ثبت تغییر و کنترل هم‌زمانی پیاده‌سازی شده‌اند. انتقال آزمایشی شرکت، واحد و کارمند نیز انجام شده است. سایر جریان‌ها هنوز در [ROADMAP.md](ROADMAP.md) ثبت شده‌اند؛ این نسخه هنوز جایگزین عملیاتی سامانهٔ قدیمی نیست.
 
-```powershell
-sqlcmd -S localhost -E -b -i sql/07_Create_Organization_Links.sql
-dotnet run --project src/HRMS.Web
-```
+برای پیش‌نیازها و اجرای محلی [راهنمای اجرا](docs/REWRITE_LOCAL.md)، برای طراحی [معماری](ARCHITECTURE.md)، و برای آخرین وضعیت [CHECKPOINT.md](CHECKPOINT.md) را ببینید.

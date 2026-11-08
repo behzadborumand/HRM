@@ -17,7 +17,7 @@
 
 ## Stage 2: transfer
 
-- [x] First repeatable core-data transfer: company, department and employee mapping in `next/import-core.sql`; remaining tables are pending.
+- [x] First repeatable core-data transfer: company, department and employee mapping in `database/import-core.sql`; remaining tables are pending.
 - [x] Core import count, relationship, invalid-data and changed-field reports; extend for each later module.
 - [x] Core trial migration and rerun in `HRMS_Next_Trial_20261108`; native EF10 validation remains.
 
