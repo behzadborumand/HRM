@@ -1,5 +1,6 @@
 param(
     [Parameter(Mandatory = $true)][string]$AppExe,
+    [string]$DotnetRoot,
     [string]$Database = 'HRMS_Next_Trial_20261108',
     [int]$Port = 52321
 )
@@ -7,6 +8,11 @@ param(
 $ErrorActionPreference = 'Stop'
 if ($Database -ne 'HRMS_Next_Trial_20261108') { throw 'This smoke test is restricted to the named trial database.' }
 $AppExe = (Resolve-Path -LiteralPath $AppExe).Path
+if ($DotnetRoot) {
+    $DotnetRoot = (Resolve-Path -LiteralPath $DotnetRoot).Path
+    $env:DOTNET_ROOT = $DotnetRoot
+    $env:DOTNET_ROOT_X64 = $DotnetRoot
+}
 $suffix = [Guid]::NewGuid().ToString('N')
 $username = 'smoke_' + $suffix.Substring(0, 12)
 $password = [Guid]::NewGuid().ToString('N') + 'A1!'
@@ -83,11 +89,33 @@ try {
         $messages = [regex]::Matches($updated.Content, '<li>[^<]*</li>') | ForEach-Object { [System.Net.WebUtility]::HtmlDecode($_.Value) }
         throw "Edit returned $($updated.BaseResponse.ResponseUri.AbsolutePath); validation: $($messages -join '; ')"
     }
-    Write-Output 'HTTPS login, employee create, profile and edit: PASS'
+    $leave = Invoke-WebRequest "$baseUrl/Leave" -WebSession $webSession -UseBasicParsing
+    $leaveToken = Get-FormToken $leave.Content
+    $policyCreated = Invoke-WebRequest "$baseUrl/Leave?handler=Policy" -Method Post -WebSession $webSession -UseBasicParsing -Body @{
+        Name = 'Annual smoke'; AnnualHours = '240'; __RequestVerificationToken = $leaveToken
+    }
+    $leave = Invoke-WebRequest "$baseUrl/Leave" -WebSession $webSession -UseBasicParsing
+    $policyId = [regex]::Match($leave.Content, '<option value="([1-9][0-9]*)">Annual smoke</option>').Groups[1].Value
+    if (!$policyId) { throw 'New Leave policy was not listed.' }
+    $leaveToken = Get-FormToken $leave.Content
+    $employeeId = [regex]::Match($profilePath, '/Employees/([0-9]+)').Groups[1].Value
+    $requested = Invoke-WebRequest "$baseUrl/Leave?handler=Request" -Method Post -WebSession $webSession -UseBasicParsing -Body @{
+        EmployeeId = $employeeId; PolicyId = $policyId; StartDateJalali = '1403/02/01'; EndDateJalali = '1403/02/02'; Reason = 'Smoke'; __RequestVerificationToken = $leaveToken
+    }
+    $leave = Invoke-WebRequest "$baseUrl/Leave" -WebSession $webSession -UseBasicParsing
+    $requestId = [regex]::Match($leave.Content, 'data-request-id="([1-9][0-9]*)"').Groups[1].Value
+    if (!$requestId -or $leave.Content -notmatch 'Pending') { throw 'Leave request was not listed as Pending.' }
+    $leaveToken = Get-FormToken $leave.Content
+    $approved = Invoke-WebRequest "$baseUrl/Leave?handler=Approve" -Method Post -WebSession $webSession -UseBasicParsing -Body @{
+        RequestId = $requestId; Comments = 'Smoke approved'; __RequestVerificationToken = $leaveToken
+    }
+    $leave = Invoke-WebRequest "$baseUrl/Leave" -WebSession $webSession -UseBasicParsing
+    if ($leave.Content -notmatch 'Approved') { throw 'Leave request was not approved.' }
+    Write-Output 'HTTPS login, employee create/edit, Leave policy/request/approval: PASS'
 }
 finally {
     if ($process) { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue }
-    $cleanup = "DECLARE @id int=(SELECT Id FROM organization.Companies WHERE Name='$companyName'); DELETE FROM personnel.EmployeeAudits WHERE EmployeeId IN (SELECT Id FROM personnel.Employees WHERE CompanyId=@id); DELETE FROM personnel.Employees WHERE CompanyId=@id; DELETE FROM access.Users WHERE CompanyId=@id; DELETE FROM organization.Departments WHERE CompanyId=@id; DELETE FROM organization.Companies WHERE Id=@id;"
+    $cleanup = "DECLARE @id int=(SELECT Id FROM organization.Companies WHERE Name='$companyName'); DELETE FROM leave.Requests WHERE CompanyId=@id; DELETE FROM leave.Balances WHERE CompanyId=@id; DELETE FROM leave.Policies WHERE CompanyId=@id; DELETE FROM personnel.EmployeeAudits WHERE EmployeeId IN (SELECT Id FROM personnel.Employees WHERE CompanyId=@id); DELETE FROM personnel.Employees WHERE CompanyId=@id; DELETE FROM access.Users WHERE CompanyId=@id; DELETE FROM organization.Departments WHERE CompanyId=@id; DELETE FROM organization.Companies WHERE Id=@id;"
     sqlcmd -S . -E -C -b -d $Database -Q $cleanup | Out-Null
     Remove-Item Env:ConnectionStrings__HrmsNext,Env:HRMS_BOOTSTRAP_USER,Env:HRMS_BOOTSTRAP_PASSWORD,Env:HRMS_BOOTSTRAP_COMPANY,Env:ASPNETCORE_ENVIRONMENT -ErrorAction SilentlyContinue
 }

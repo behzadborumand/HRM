@@ -128,7 +128,7 @@ IF NOT EXISTS (
 )
 BEGIN
     INSERT INTO [leave].[__EFMigrationsHistory] ([MigrationId], [ProductVersion])
-    VALUES (N'20261108040759_LeaveInitial', N'9.0.18');
+    VALUES (N'20261108040759_LeaveInitial', N'10.0.12');
 END;
 
 COMMIT;

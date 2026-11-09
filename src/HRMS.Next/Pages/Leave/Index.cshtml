@@ -1,0 +1,70 @@
+@page "/Leave"
+@using HRMS.Next.Pages.Employees
+@model HRMS.Next.Pages.Leave.IndexModel
+@{
+    ViewData["Title"] = "مرخصی";
+}
+<h1>مدیریت مرخصی</h1>
+<div asp-validation-summary="All" class="error" role="alert"></div>
+<section class="card">
+    <h2>سیاست جدید</h2>
+    <form method="post" asp-page-handler="Policy">
+        <label for="name">نام سیاست</label><input id="name" name="Name" required maxlength="200" />
+        <label for="annualHours">ساعت سالانه (۰ برای بدون سقف)</label><input id="annualHours" name="AnnualHours" type="number" min="0" max="99999999" step="0.01" required />
+        <p><button type="submit">ثبت سیاست</button></p>
+    </form>
+</section>
+<section class="card">
+    <h2>درخواست جدید</h2>
+    <form method="post" asp-page-handler="Request">
+        <label for="employeeId">کارمند</label>
+        <select id="employeeId" name="EmployeeId" required>
+            <option value="">انتخاب کنید</option>
+            @foreach (var employee in Model.EmployeeChoices?.Rows ?? [])
+            {
+                <option value="@employee.Id">@employee.FullName (@employee.EmployeeNumber)</option>
+            }
+        </select>
+        <label for="policyId">سیاست</label>
+        <select id="policyId" name="PolicyId" required>
+            <option value="">انتخاب کنید</option>
+            @foreach (var policy in Model.Policies)
+            {
+                <option value="@policy.Id">@policy.Name</option>
+            }
+        </select>
+        <label for="startDate">شروع (شمسی)</label><input id="startDate" name="StartDateJalali" placeholder="۱۴۰۳/۰۱/۰۱" required />
+        <label for="endDate">پایان (شمسی)</label><input id="endDate" name="EndDateJalali" placeholder="۱۴۰۳/۰۱/۰۲" required />
+        <label for="reason">دلیل</label><input id="reason" name="Reason" maxlength="1000" />
+        <p><button type="submit">ثبت درخواست</button></p>
+    </form>
+</section>
+<section class="card">
+    <h2>درخواست‌ها</h2>
+    @if (Model.Requests.Count == 0)
+    {
+        <p>درخواستی ثبت نشده است.</p>
+    }
+    else
+    {
+        <table><thead><tr><th>کارمند</th><th>سیاست</th><th>از</th><th>تا</th><th>ساعت</th><th>وضعیت</th><th>اقدام</th></tr></thead><tbody>
+        @foreach (var request in Model.Requests)
+        {
+            <tr data-request-id="@request.Id">
+                <td>@(Model.EmployeeChoices?.Rows.FirstOrDefault(x => x.Id == request.EmployeeId)?.FullName ?? request.EmployeeId.ToString())</td>
+                <td>@(Model.Policies.FirstOrDefault(x => x.Id == request.PolicyId)?.Name ?? request.PolicyId.ToString())</td>
+                <td>@JalaliDate.Format(request.StartDate)</td><td>@JalaliDate.Format(request.EndDate)</td>
+                <td>@request.Hours</td><td>@request.Status</td>
+                <td>
+                    @if (request.Status == "Pending")
+                    {
+                        <form method="post" asp-page-handler="Approve"><input type="hidden" name="RequestId" value="@request.Id" /><button type="submit">تأیید</button></form>
+                        <form method="post" asp-page-handler="Reject"><input type="hidden" name="RequestId" value="@request.Id" /><button type="submit">رد</button></form>
+                        <form method="post" asp-page-handler="Cancel"><input type="hidden" name="RequestId" value="@request.Id" /><button type="submit">لغو</button></form>
+                    }
+                </td>
+            </tr>
+        }
+        </tbody></table>
+    }
+</section>

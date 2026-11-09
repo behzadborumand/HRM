@@ -60,9 +60,9 @@
 
 **Files:** Create leave list/request/approval pages and navigation.
 
-- [ ] Write HTTP tests for authorization, anti-forgery and request/decision flows.
-- [ ] Observe failure, implement pages and Persian/Jalali presentation.
-- [ ] Run HTTP smoke test and commit.
+- [x] Write HTTPS smoke flow with antiforgery for policy/request/approval; authorization tests remain pending.
+- [x] Observe 404, implement admin page and Persian/Jalali presentation.
+- [x] Run HTTPS smoke test and commit.
 
 ### Task 5: Import and reconciliation
 

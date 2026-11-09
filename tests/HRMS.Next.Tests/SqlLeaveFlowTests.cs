@@ -29,19 +29,20 @@ public sealed class SqlLeaveFlowTests
         var employee = new Employee { CompanyId = company.Id, DepartmentId = department.Id, EmployeeNumber = "LV-" + Guid.NewGuid().ToString("N")[..12], FirstName = "Test", LastName = "Employee", HireDate = new DateOnly(2025, 1, 1) };
         personnel.Employees.Add(employee);
         await personnel.SaveChangesAsync();
-        var policy = new LeavePolicy { CompanyId = company.Id, Name = "Annual", AnnualHours = 240m };
-        leave.Policies.Add(policy);
-        await leave.SaveChangesAsync();
+
         try
         {
             var actor = new ActorScope(501, "leave-admin", company.Id, true, true, true, true);
             var service = new LeaveService(leave, new PersonnelDirectory(personnel), TimeProvider.System);
+            var policyId = await service.CreatePolicyAsync(actor, "Annual", 240m, null, null, CancellationToken.None);
+            await Assert.ThrowsAsync<ArgumentException>(() => service.CreatePolicyAsync(actor, null!, 10m, null, null, CancellationToken.None));
+            Assert.Throws<UnauthorizedAccessException>(() => service.CreatePolicyAsync(actor with { IsAdmin = false }, "Forbidden", 10m, null, null, CancellationToken.None).GetAwaiter().GetResult());
             var start = new DateOnly(2026, 11, 7);
             var end = new DateOnly(2026, 11, 8);
-            var id = await service.CreateRequestAsync(actor, employee.Id, policy.Id, start, end, "Test", CancellationToken.None);
+            var id = await service.CreateRequestAsync(actor, employee.Id, policyId, start, end, "Test", CancellationToken.None);
             Assert.Equal("Pending", (await leave.Requests.FindAsync(id))!.Status);
             Assert.Equal(224m, (await leave.Balances.SingleAsync()).AccruedHours - (await leave.Balances.SingleAsync()).UsedHours - (await leave.Requests.SingleAsync()).Hours);
-            await Assert.ThrowsAsync<ArgumentException>(() => service.CreateRequestAsync(actor, employee.Id, policy.Id, start, end, null, CancellationToken.None));
+            await Assert.ThrowsAsync<ArgumentException>(() => service.CreateRequestAsync(actor, employee.Id, policyId, start, end, null, CancellationToken.None));
             await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.DecideAsync(actor with { CompanyId = company.Id + 1 }, id, true, null, CancellationToken.None));
             await service.DecideAsync(actor, id, true, "Approved", CancellationToken.None);
             leave.ChangeTracker.Clear();
@@ -55,7 +56,7 @@ public sealed class SqlLeaveFlowTests
             leave.Requests.RemoveRange(await leave.Requests.Where(x => x.CompanyId == company.Id).ToListAsync());
             leave.Balances.RemoveRange(await leave.Balances.Where(x => x.CompanyId == company.Id).ToListAsync());
             await leave.SaveChangesAsync();
-            leave.Policies.Remove(policy);
+            leave.Policies.RemoveRange(await leave.Policies.Where(x => x.CompanyId == company.Id).ToListAsync());
             await leave.SaveChangesAsync();
             personnel.Employees.Remove(employee);
             await personnel.SaveChangesAsync();

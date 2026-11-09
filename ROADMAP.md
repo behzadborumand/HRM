@@ -9,22 +9,22 @@
 
 ## Stage 1: first working slice
 
-- [x] .NET 10 host source and independent EF contexts/migrations for Access, Organization, Personnel; .NET 10 build pending SDK.
+- [x] .NET 10 host source and independent EF contexts/migrations for Access, Organization, Personnel; native .NET 10 build passed.
 - [x] Explicit bootstrap and login; use case permission and company scope checks in the initial personnel flow.
 - [x] Company and department bootstrap; employee search, profile, create, edit, audit and row version checks in source.
 - [ ] Complete Persian Razor Pages and UI patterns; basic forms, Jalali input/display, pagination and focus styles exist.
-- [ ] Complete tests and SQL Server integration; 14 tests, including one SQL employee flow test, and an HTTPS login/create/edit smoke test pass on the temporary .NET 9 compatibility build; native .NET 10 check remains.
+- [ ] Complete tests and SQL Server integration; 21 native .NET 10 tests, including Personnel and Leave SQL integration, plus an HTTPS employee and Leave smoke flow pass.
 
 ## Stage 2: transfer
 
 - [x] First repeatable core-data transfer: company, department and employee mapping in `database/import-core.sql`; remaining tables are pending.
 - [x] Core import count, relationship, invalid-data and changed-field reports; extend for each later module.
-- [x] Core trial migration and rerun in `HRMS_Next_Trial_20261108`; native EF10 validation remains.
+- [x] Core trial migration and rerun in `HRMS_Next_Trial_20261108`; EF Core 10 scripts regenerated and rerun.
 
 ## Stage 3: remaining modules
 
-Leave progress: independent domain rules, DbContext/migration, and administrator request/decision service are implemented and SQL-tested on the disposable trial database. Razor Pages, full grants, manager workflow, and import remain pending. organization and access, personnel, leave and training, documents, job classification and position requirements, orders and contractor personnel, appraisal, insurance and retirement, welfare and medical, external Tavanir exchange, reporting. A stage is complete only when its real workflows and tests pass.
+Leave progress: independent domain rules, DbContext/migration, and administrator request/decision service are implemented and SQL-tested on the disposable trial database. Administrator Razor Page and HTTPS smoke flow now pass; full grants, manager workflow, employee picker pagination, and import remain pending. organization and access, personnel, leave and training, documents, job classification and position requirements, orders and contractor personnel, appraisal, insurance and retirement, welfare and medical, external Tavanir exchange, reporting. A stage is complete only when its real workflows and tests pass.
 
 ## Constraints
 
-The current machine has .NET SDK 9.0.316, but not SDK 10. The local destination is `D:\SourceCodes\GitProjects\HRM` with `origin` set to `https://github.com/behzadborumand/HRM.git`. The repository has not been pushed. Native .NET 10 validation remains incomplete.
+Official SDK 10.0.403 is installed at C:\Users\Behzad\.dotnet for the current user; tools/dotnet10.ps1 selects it. The local destination is `D:\SourceCodes\GitProjects\HRM` with `origin` set to `https://github.com/behzadborumand/HRM.git`. The repository has not been pushed. Native .NET 10 restore, build, tests, EF model checks, and HTTPS smoke test passed.

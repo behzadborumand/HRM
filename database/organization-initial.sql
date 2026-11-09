@@ -58,9 +58,13 @@ IF NOT EXISTS (
 )
 BEGIN
     INSERT INTO [organization].[__EFMigrationsHistory] ([MigrationId], [ProductVersion])
-    VALUES (N'20261107201134_OrganizationInitial', N'9.0.18');
+    VALUES (N'20261107201134_OrganizationInitial', N'10.0.12');
 END;
 
+COMMIT;
+GO
+
+BEGIN TRANSACTION;
 IF NOT EXISTS (
     SELECT * FROM [organization].[__EFMigrationsHistory]
     WHERE [MigrationId] = N'20261107201712_OrganizationRelationships'
@@ -91,7 +95,7 @@ IF NOT EXISTS (
 )
 BEGIN
     INSERT INTO [organization].[__EFMigrationsHistory] ([MigrationId], [ProductVersion])
-    VALUES (N'20261107201712_OrganizationRelationships', N'9.0.18');
+    VALUES (N'20261107201712_OrganizationRelationships', N'10.0.12');
 END;
 
 COMMIT;

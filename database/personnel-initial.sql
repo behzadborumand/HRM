@@ -84,7 +84,7 @@ IF NOT EXISTS (
 )
 BEGIN
     INSERT INTO [personnel].[__EFMigrationsHistory] ([MigrationId], [ProductVersion])
-    VALUES (N'20261107201140_PersonnelInitial', N'9.0.18');
+    VALUES (N'20261107201140_PersonnelInitial', N'10.0.12');
 END;
 
 COMMIT;

@@ -50,7 +50,7 @@ IF NOT EXISTS (
 )
 BEGIN
     INSERT INTO [access].[__EFMigrationsHistory] ([MigrationId], [ProductVersion])
-    VALUES (N'20261107201128_AccessInitial', N'9.0.18');
+    VALUES (N'20261107201128_AccessInitial', N'10.0.12');
 END;
 
 COMMIT;

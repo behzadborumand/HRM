@@ -10,6 +10,7 @@
     <header><a asp-page="/Employees/Index">سامانه منابع انسانی</a>
         @if (User.Identity?.IsAuthenticated == true)
         {
+            <a asp-page="/Leave/Index">مرخصی</a>
             <span>@User.Identity.Name</span>
             <form method="post" asp-page="/Logout"><button type="submit">خروج</button></form>
         }

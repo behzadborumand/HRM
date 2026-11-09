@@ -7,6 +7,24 @@ namespace HRMS.Next.Modules.Leave;
 
 public sealed class LeaveService(LeaveDbContext db, IEmployeeDirectory employees, TimeProvider clock)
 {
+    public async Task<int> CreatePolicyAsync(ActorScope actor, string name, decimal annualHours, string? category, string? description, CancellationToken ct)
+    {
+        RequireAdmin(actor);
+        name = (name ?? "").Trim();
+        if (name.Length is 0 or > 200) throw new ArgumentException("Policy name is required and must fit 200 characters.");
+        if (annualHours < 0 || annualHours > 99999999m) throw new ArgumentException("Annual hours are invalid.");
+        if (category?.Length > 50 || description?.Length > 1000) throw new ArgumentException("Policy text is too long.");
+        if (await db.Policies.AnyAsync(x => x.CompanyId == actor.CompanyId && x.Name == name, ct))
+            throw new ArgumentException("Policy name already exists in this company.");
+        var policy = new LeavePolicy
+        {
+            CompanyId = actor.CompanyId, Name = name, AnnualHours = annualHours,
+            Category = category?.Trim(), Description = description?.Trim(), Active = true
+        };
+        db.Policies.Add(policy);
+        await db.SaveChangesAsync(ct);
+        return policy.Id;
+    }
     public async Task<int> CreateRequestAsync(ActorScope actor, int employeeId, int policyId, DateOnly start, DateOnly end, string? reason, CancellationToken ct)
     {
         RequireAdmin(actor);
