@@ -47,6 +47,9 @@ public sealed class SqlTrainingFlowTests
                 service.CreateCourseAsync(actor with { IsAdmin = false }, "Forbidden", null, null, null, null, false, CancellationToken.None));
             var today = DateOnly.FromDateTime(DateTime.UtcNow);
             var assignmentId = await service.AssignAsync(actor, employee.Id, courseId, today.AddDays(-3), today.AddDays(-1), CancellationToken.None);
+            var createdAssignment = (await training.Assignments.FindAsync(assignmentId))!;
+            Assert.Equal(actor.Id, createdAssignment.AssignedByUserId);
+            Assert.Null(createdAssignment.AssignedByEmployeeId);
             Assert.Equal("Overdue", Assert.Single(await service.AssignmentsAsync(actor, CancellationToken.None)).Status);
             training.Assignments.Add(new TrainingAssignment { CompanyId = company.Id, EmployeeId = employee.Id,
                 CourseId = courseId, AssignedDate = today, AssignedByUserId = actor.Id });

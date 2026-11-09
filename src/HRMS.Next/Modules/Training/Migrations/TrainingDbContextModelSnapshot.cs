@@ -30,7 +30,10 @@ namespace HRMS.Next.Modules.Training.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("AssignedByUserId")
+                    b.Property<int?>("AssignedByEmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("AssignedByUserId")
                         .HasColumnType("int");
 
                     b.Property<DateOnly>("AssignedDate")

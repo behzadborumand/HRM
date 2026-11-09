@@ -15,3 +15,5 @@ For the same disposable trial database, run `database/import-core.sql` and then 
 The Training schema script is `database/training-initial.sql`. It was generated with EF Core 10 and rerun on the disposable trial database. Apply it before using `/Training`.
 
 To trial-transfer Leave requests after the core and Leave foundation imports, run `sqlcmd -S . -E -C -b -d HRMS_Next_Trial_20261108 -i database/import-leave-requests.sql`. The script checks the destination name and reconciles source actor employee IDs. It does not import users or credentials.
+
+After applying the Training schema, run `sqlcmd -S . -E -C -b -d HRMS_Next_Trial_20261108 -i database/import-training.sql`. The importer reads the legacy database and writes only to a trial destination; it is repeatable and verifies mapped course and assignment fields.

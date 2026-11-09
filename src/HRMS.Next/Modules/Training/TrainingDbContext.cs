@@ -61,6 +61,7 @@ public sealed class TrainingAssignment
     public DateOnly? CompletedDate { get; set; }
     public string? CertificateNumber { get; set; }
     public string? Notes { get; set; }
-    public int AssignedByUserId { get; set; }
+    public int? AssignedByUserId { get; set; }
+    public int? AssignedByEmployeeId { get; set; }
     public byte[] RowVersion { get; set; } = [];
 }
