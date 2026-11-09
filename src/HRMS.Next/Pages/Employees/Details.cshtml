@@ -9,6 +9,7 @@
     <div class="card">
         <h2>@Model.Employee.FirstName @Model.Employee.LastName</h2>
         <dl><dt>شماره پرسنلی</dt><dd>@Model.Employee.EmployeeNumber</dd><dt>واحد</dt><dd>@Model.DepartmentName</dd><dt>تاریخ استخدام</dt><dd>@JalaliDate.Format(Model.Employee.HireDate)</dd><dt>ایمیل</dt><dd>@Model.Employee.Email</dd></dl>
+        <a class="button" asp-page="/Documents/Index" asp-route-employeeId="@Model.Employee.Id">اسناد</a>
         @if (Model.CanWrite) { <a class="button" asp-page="Edit" asp-route-id="@Model.Employee.Id">ویرایش</a> }
     </div>
 }

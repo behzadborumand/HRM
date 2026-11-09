@@ -4,6 +4,7 @@ using HRMS.Next.Modules.Organization;
 using HRMS.Next.Modules.Personnel;
 using HRMS.Next.Modules.Leave;
 using HRMS.Next.Modules.Training;
+using HRMS.Next.Modules.Documents;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -18,6 +19,7 @@ builder.Services.AddDbContext<OrganizationDbContext>(o => o.UseSqlServer(connect
 builder.Services.AddDbContext<PersonnelDbContext>(o => o.UseSqlServer(connection, sql => sql.MigrationsHistoryTable("__EFMigrationsHistory", "personnel")));
 builder.Services.AddDbContext<LeaveDbContext>(o => o.UseSqlServer(connection, sql => sql.MigrationsHistoryTable("__EFMigrationsHistory", "leave")));
 builder.Services.AddDbContext<TrainingDbContext>(o => o.UseSqlServer(connection, sql => sql.MigrationsHistoryTable("__EFMigrationsHistory", "training")));
+builder.Services.AddDbContext<DocumentDbContext>(o => o.UseSqlServer(connection, sql => sql.MigrationsHistoryTable("__EFMigrationsHistory", "documents")));
 builder.Services.AddScoped<IPasswordHasher<AppUser>, PasswordHasher<AppUser>>();
 builder.Services.AddScoped<AccessService>();
 builder.Services.AddScoped<IOrganizationDirectory, OrganizationDirectory>();
@@ -25,6 +27,7 @@ builder.Services.AddScoped<EmployeeService>();
 builder.Services.AddScoped<IEmployeeDirectory, PersonnelDirectory>();
 builder.Services.AddScoped<LeaveService>();
 builder.Services.AddScoped<TrainingService>();
+builder.Services.AddScoped<DocumentService>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(o =>
 {

@@ -160,11 +160,59 @@ try {
     if ($training.Content -notmatch ('<option value="' + $courseId + '">Safety smoke edited</option>')) {
         throw 'Reactivated Training course was not available.'
     }
-    Write-Output 'HTTPS login, employee, Leave, Training: PASS'
+    $documentsPage = Invoke-WebRequest "$baseUrl/Employees/$employeeId/Documents" -WebSession $webSession -UseBasicParsing
+    if ($documentsPage.Content -notmatch 'name="UploadFile"') { throw 'Documents page did not load.' }
+    $documentToken = Get-FormToken $documentsPage.Content
+    $boundary = '----HRM' + [Guid]::NewGuid().ToString('N')
+    $newline = [Environment]::NewLine
+    $fileBytes = [Text.Encoding]::ASCII.GetBytes('%PDF-1.4 Smoke document')
+    $header = '--' + $boundary + $newline +
+        'Content-Disposition: form-data; name="Title"' + $newline + $newline + 'Smoke contract' + $newline +
+        '--' + $boundary + $newline +
+        'Content-Disposition: form-data; name="Category"' + $newline + $newline + 'HR' + $newline +
+        '--' + $boundary + $newline +
+        'Content-Disposition: form-data; name="__RequestVerificationToken"' + $newline + $newline + $documentToken + $newline +
+        '--' + $boundary + $newline +
+        'Content-Disposition: form-data; name="UploadFile"; filename="smoke.pdf"' + $newline +
+        'Content-Type: application/pdf' + $newline + $newline
+    $tail = $newline + '--' + $boundary + '--' + $newline
+    $multipart = [Collections.Generic.List[byte]]::new()
+    $multipart.AddRange([Text.Encoding]::UTF8.GetBytes($header))
+    $multipart.AddRange($fileBytes)
+    $multipart.AddRange([Text.Encoding]::UTF8.GetBytes($tail))
+    $uploadBodyPath = Join-Path $env:TEMP ('hrm-multipart-' + $suffix)
+    [IO.File]::WriteAllBytes($uploadBodyPath, $multipart.ToArray())
+    $cookieHeader = ($webSession.Cookies.GetCookies([Uri]$baseUrl) | ForEach-Object { $_.Name + '=' + $_.Value }) -join '; '
+    try {
+        $uploadRaw = & curl.exe --insecure --silent --show-error --include --max-time 20 -X POST -H ("Cookie: " + $cookieHeader) -H ("Content-Type: multipart/form-data; boundary=" + $boundary) --data-binary ("@" + $uploadBodyPath) "$baseUrl/Employees/$employeeId/Documents?handler=Upload"
+        if ($uploadRaw[0] -notmatch 'HTTP/1.1 302' -or ($uploadRaw -join [Environment]::NewLine) -notmatch 'Location: /Employees/[0-9]+/Documents') { throw 'Document upload did not redirect to the private list.' }
+        if ($LASTEXITCODE -ne 0) { throw 'curl upload failed.' }
+    } finally {
+        Remove-Item -LiteralPath $uploadBodyPath -ErrorAction SilentlyContinue
+    }
+    $documentsPage = Invoke-WebRequest "$baseUrl/Employees/$employeeId/Documents" -WebSession $webSession -UseBasicParsing
+    $documentId = [regex]::Match($documentsPage.Content, 'data-document-id="([1-9][0-9]*)"').Groups[1].Value
+    if (!$documentId -or $documentsPage.Content -notmatch 'Smoke contract') { throw 'Uploaded document was not listed.' }
+    $downloadFile = Join-Path $env:TEMP ('hrm-smoke-document-' + $suffix + '.pdf')
+    try {
+        Invoke-WebRequest "$baseUrl/Employees/$employeeId/Documents?handler=Download&id=$documentId" -WebSession $webSession -UseBasicParsing -OutFile $downloadFile | Out-Null
+        if ([Convert]::ToBase64String([IO.File]::ReadAllBytes($downloadFile)) -ne [Convert]::ToBase64String($fileBytes)) {
+            throw 'Private document download bytes differ from upload.'
+        }
+    } finally {
+        Remove-Item -LiteralPath $downloadFile -ErrorAction SilentlyContinue
+    }
+    $documentToken = Get-FormToken $documentsPage.Content
+    $deletedDocument = Invoke-WebRequest "$baseUrl/Employees/$employeeId/Documents?handler=Delete" -Method Post -WebSession $webSession -UseBasicParsing -Body @{
+        DocumentId = $documentId; __RequestVerificationToken = $documentToken
+    }
+    $documentsPage = Invoke-WebRequest "$baseUrl/Employees/$employeeId/Documents" -WebSession $webSession -UseBasicParsing
+    if ($documentsPage.Content -match 'data-document-id=') { throw 'Deleted document remains visible.' }
+    Write-Output 'HTTPS login, employee, Leave, Training, Documents: PASS'
 }
 finally {
     if ($process) { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue }
-    $cleanup = "SET ANSI_NULLS ON; SET ANSI_PADDING ON; SET ANSI_WARNINGS ON; SET ARITHABORT ON; SET CONCAT_NULL_YIELDS_NULL ON; SET NUMERIC_ROUNDABORT OFF; SET QUOTED_IDENTIFIER ON; DECLARE @id int=(SELECT Id FROM organization.Companies WHERE Name='$companyName'); DELETE FROM training.Assignments WHERE CompanyId=@id; DELETE FROM training.Courses WHERE CompanyId=@id; DELETE FROM leave.Requests WHERE CompanyId=@id; DELETE FROM leave.Balances WHERE CompanyId=@id; DELETE FROM leave.Policies WHERE CompanyId=@id; DELETE FROM personnel.EmployeeAudits WHERE EmployeeId IN (SELECT Id FROM personnel.Employees WHERE CompanyId=@id); DELETE FROM personnel.Employees WHERE CompanyId=@id; DELETE FROM access.Users WHERE CompanyId=@id; DELETE FROM organization.Departments WHERE CompanyId=@id; DELETE FROM organization.Companies WHERE Id=@id;"
+    $cleanup = "SET ANSI_NULLS ON; SET ANSI_PADDING ON; SET ANSI_WARNINGS ON; SET ARITHABORT ON; SET CONCAT_NULL_YIELDS_NULL ON; SET NUMERIC_ROUNDABORT OFF; SET QUOTED_IDENTIFIER ON; DECLARE @id int=(SELECT Id FROM organization.Companies WHERE Name='$companyName'); DELETE FROM training.Assignments WHERE CompanyId=@id; DELETE FROM training.Courses WHERE CompanyId=@id; DELETE FROM leave.Requests WHERE CompanyId=@id; DELETE FROM leave.Balances WHERE CompanyId=@id; DELETE FROM leave.Policies WHERE CompanyId=@id; DELETE FROM documents.EmployeeDocuments WHERE CompanyId=@id; DELETE FROM documents.DocumentAudits WHERE CompanyId=@id; DELETE FROM personnel.EmployeeAudits WHERE EmployeeId IN (SELECT Id FROM personnel.Employees WHERE CompanyId=@id); DELETE FROM personnel.Employees WHERE CompanyId=@id; DELETE FROM access.Users WHERE CompanyId=@id; DELETE FROM organization.Departments WHERE CompanyId=@id; DELETE FROM organization.Companies WHERE Id=@id;"
     $cleanupOutput = sqlcmd -S . -E -C -b -d $Database -Q $cleanup 2>&1
     $cleanupExit = $LASTEXITCODE
     Remove-Item Env:ConnectionStrings__HrmsNext,Env:HRMS_BOOTSTRAP_USER,Env:HRMS_BOOTSTRAP_PASSWORD,Env:HRMS_BOOTSTRAP_COMPANY,Env:ASPNETCORE_ENVIRONMENT -ErrorAction SilentlyContinue

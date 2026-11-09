@@ -1,0 +1,68 @@
+@page "/Employees/{employeeId:int}/Documents"
+@using HRMS.Next.Pages.Employees
+@model HRMS.Next.Pages.Documents.IndexModel
+@{
+    ViewData["Title"] = "اسناد کارمند";
+}
+<h1>اسناد @Model.Employee?.FirstName @Model.Employee?.LastName</h1>
+<p><a asp-page="/Employees/Details" asp-route-id="@Model.Employee?.Id">بازگشت به پرونده</a></p>
+<div asp-validation-summary="All" class="error" role="alert"></div>
+<section class="card">
+    <h2>اسناد ثبت‌شده</h2>
+    @if (Model.Result.Rows.Count == 0)
+    {
+        <p role="status">هنوز سندی برای این کارمند ثبت نشده است.</p>
+    }
+    else
+    {
+        <table>
+            <thead><tr><th>عنوان</th><th>دسته</th><th>فایل</th><th>حجم</th><th>بارگذاری</th><th>انقضا</th><th>اقدام</th></tr></thead>
+            <tbody>
+            @foreach (var item in Model.Result.Rows)
+            {
+                <tr data-document-id="@item.Id">
+                    <td>@item.Title</td><td>@(item.Category ?? "—")</td>
+                    <td dir="ltr">@item.FileName</td><td>@item.FileSize بایت</td>
+                    <td>@JalaliDate.Format(DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(item.UploadedAtUtc, TimeZoneInfo.FindSystemTimeZoneById("Iran Standard Time")).DateTime))</td>
+                    <td>@(item.ExpiryDate is { } expiry ? JalaliDate.Format(expiry) : "—")</td>
+                    <td>
+                        <a asp-page-handler="Download" asp-route-employeeId="@Model.Employee?.Id" asp-route-id="@item.Id">دانلود</a>
+                        @if (Model.CanWrite)
+                        {
+                            <form method="post" asp-page-handler="Delete" asp-route-employeeId="@Model.Employee?.Id">
+                                <input type="hidden" name="DocumentId" value="@item.Id" />
+                                <button type="submit">حذف</button>
+                            </form>
+                        }
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+    <nav aria-label="صفحه‌بندی اسناد">
+        @if (Model.Result.Page > 1)
+        {
+            <a asp-page="/Documents/Index" asp-route-employeeId="@Model.Employee?.Id" asp-route-page="@(Model.Result.Page - 1)">قبلی</a>
+        }
+        <span>صفحه @Model.Result.Page از @Math.Max(1, (int)Math.Ceiling((double)Model.Result.Total / Model.Result.PageSize))</span>
+        @if (Model.Result.Page * Model.Result.PageSize < Model.Result.Total)
+        {
+            <a asp-page="/Documents/Index" asp-route-employeeId="@Model.Employee?.Id" asp-route-page="@(Model.Result.Page + 1)">بعدی</a>
+        }
+    </nav>
+</section>
+@if (Model.CanWrite)
+{
+    <section class="card">
+        <h2>افزودن سند</h2>
+        <form method="post" enctype="multipart/form-data" asp-page-handler="Upload" asp-route-employeeId="@Model.Employee?.Id">
+            <label for="title">عنوان</label><input id="title" name="Title" value="@Model.Title" required maxlength="200" />
+            <label for="category">دسته</label><input id="category" name="Category" value="@Model.Category" maxlength="50" />
+            <label for="expiry">تاریخ انقضا (شمسی، اختیاری)</label><input id="expiry" name="ExpiryDateJalali" value="@Model.ExpiryDateJalali" placeholder="۱۴۰۵/۰۱/۰۱" dir="ltr" />
+            <label for="uploadFile">فایل</label><input id="uploadFile" name="UploadFile" type="file" required />
+            <p>حداکثر ۱۰ مگابایت؛ PDF، تصویر، Word، Excel، متن یا ZIP.</p>
+            <button type="submit">بارگذاری</button>
+        </form>
+    </section>
+}

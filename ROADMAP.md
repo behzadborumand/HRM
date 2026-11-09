@@ -2,29 +2,35 @@
 
 ## Stage 0: discovery and isolation
 
-- [x] Preserve existing dirty files and create `rewrite/modular-monolith`.
-- [x] Inventory current source, schema, UI, auth, and tests; see `docs/REWRITE_CAPABILITIES.md`.
-- [x] Run legacy baseline tests: 132 passed on 2026-11-07.
-- [ ] Inspect an actual nonproduction database and validate source documentation against it.
+- [x] Preserve the dirty legacy checkout; work in `D:\SourceCodes\GitProjects\HRM` on `rewrite/modular-monolith`.
+- [x] Inventory legacy capabilities, schema, UI, authentication and tests in `docs/REWRITE_CAPABILITIES.md`.
+- [x] Run legacy baseline tests (132 passed on 2026-11-07) and inspect the nonproduction legacy SQL database read only.
 
-## Stage 1: first working slice
+## Stage 1: working foundation
 
-- [x] .NET 10 host source and independent EF contexts/migrations for Access, Organization, Personnel; native .NET 10 build passed.
-- [x] Explicit bootstrap and login; use case permission and company scope checks in the initial personnel flow.
-- [x] Company and department bootstrap; employee search, profile, create, edit, audit and row version checks in source.
-- [ ] Complete Persian Razor Pages and UI patterns; basic forms, Jalali input/display, pagination and focus styles exist.
-- [ ] Complete tests and SQL Server integration; 26 native .NET 10 tests, including Personnel, Leave and Training SQL integration, plus an HTTPS employee, Leave and Training smoke flow pass.
+- [x] One .NET 10 Razor Pages host with independent Access, Organization and Personnel EF Core contexts/migrations.
+- [x] Bootstrap/login and a company-scoped employee create/edit/search/profile flow with audit, concurrency and Jalali dates.
+- [x] Native .NET 10 build and SQL/HTTPS integration on the disposable trial database.
+- [ ] Complete shared Persian RTL UI patterns, accessibility, selection and large-list behaviors.
+- [ ] Complete access grants, roles, company/department/employee scope and external Web API contracts.
 
-## Stage 2: transfer
+## Stage 2: repeatable trial transfer
 
-- [x] First repeatable core-data transfer: company, department and employee mapping in `database/import-core.sql`; remaining tables are pending.
-- [x] Core import count, relationship, invalid-data and changed-field reports; extend for each later module.
-- [x] Core trial migration and rerun in `HRMS_Next_Trial_20261108`; EF Core 10 scripts regenerated and rerun.
+- [x] Core company, department and employee maps with count, relationship and changed-value reconciliation.
+- [x] Leave policy/balance/request transfer with actor provenance.
+- [x] Training course/assignment transfer with actor provenance.
+- [x] Verify legacy Documents source count; it is currently zero.
+- [ ] Transfer remaining legacy tables and private files when present, with file checksums and repeatable maps.
+- [ ] Plan any operational cutover only after full validation; no production transfer has occurred.
 
-## Stage 3: remaining modules
+## Stage 3: modules and workflows
 
-Leave progress: independent domain rules, DbContext/migration, and administrator request/decision service are implemented and SQL-tested on the disposable trial database. Administrator Razor Page and HTTPS smoke flow now pass; full grants, manager workflow, employee picker pagination remain pending; all 8 legacy requests were imported and reconciled in the disposable trial database with employee actor provenance. A guarded trial importer now maps 4 policies and 36 balances with a successful rerun. organization and access, personnel, leave and training, documents, job classification and position requirements, orders and contractor personnel, appraisal, insurance and retirement, welfare and medical, external Tavanir exchange, reporting. Training now has an independent schema, company-scoped admin course/assignment/completion use cases, a Razor Page, SQL integration, HTTPS smoke and a database unique index for open assignments. Course edit and reversible activation now pass SQL and HTTPS flows; staff self-service remains pending; legacy Training transfer reconciled 6 courses and 5 assignments in the trial database. A stage is complete only when its real workflows and tests pass.
+- [x] Leave administrator policy/request/decision/cancellation flow, SQL tests and HTTPS smoke.
+- [x] Training administrator course/assignment/completion flow, SQL tests and HTTPS smoke.
+- [x] Documents private list/upload/download/delete flow, SQL tests and HTTPS smoke.
+- [ ] Finish manager permissions, employee self-service and document retention rules.
+- [ ] Implement personnel history, job classification and position requirements, orders and contractors, appraisal, insurance and retirement, welfare and medical.
+- [ ] Implement Tavanir exchange only after validating its ۱۴۰۳ contract and credential requirements.
+- [ ] Implement reports, dynamic fields, full UI behavior and external API.
 
-## Constraints
-
-Official SDK 10.0.403 is installed at C:\Users\Behzad\.dotnet for the current user; tools/dotnet10.ps1 selects it. The local destination is `D:\SourceCodes\GitProjects\HRM` with `origin` set to `https://github.com/behzadborumand/HRM.git`. The rewrite branch tracks GitHub; see Git log for the latest published commit. Native .NET 10 restore, build, tests, EF model checks, and HTTPS smoke test passed.
+A module is complete only when its required workflows, authorization, transfer and tests pass. The current rewrite is partial and has not been published or deployed.
