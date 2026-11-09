@@ -41,13 +41,13 @@ public sealed class SqlLeaveFlowTests
             var end = new DateOnly(2026, 11, 8);
             var id = await service.CreateRequestAsync(actor, employee.Id, policyId, start, end, "Test", CancellationToken.None);
             Assert.Equal("Pending", (await leave.Requests.FindAsync(id))!.Status);
-            Assert.Equal(224m, (await leave.Balances.SingleAsync()).AccruedHours - (await leave.Balances.SingleAsync()).UsedHours - (await leave.Requests.SingleAsync()).Hours);
+            Assert.Equal(224m, (await leave.Balances.SingleAsync(x => x.CompanyId == company.Id)).AccruedHours - (await leave.Balances.SingleAsync(x => x.CompanyId == company.Id)).UsedHours - (await leave.Requests.SingleAsync(x => x.Id == id)).Hours);
             await Assert.ThrowsAsync<ArgumentException>(() => service.CreateRequestAsync(actor, employee.Id, policyId, start, end, null, CancellationToken.None));
             await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.DecideAsync(actor with { CompanyId = company.Id + 1 }, id, true, null, CancellationToken.None));
             await service.DecideAsync(actor, id, true, "Approved", CancellationToken.None);
             leave.ChangeTracker.Clear();
             Assert.Equal("Approved", (await leave.Requests.FindAsync(id))!.Status);
-            Assert.Equal(16m, (await leave.Balances.SingleAsync()).UsedHours);
+            Assert.Equal(16m, (await leave.Balances.SingleAsync(x => x.CompanyId == company.Id)).UsedHours);
             await Assert.ThrowsAsync<ArgumentException>(() => service.DecideAsync(actor, id, true, null, CancellationToken.None));
         }
         finally

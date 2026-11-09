@@ -23,8 +23,8 @@
 
 ## Stage 3: remaining modules
 
-Leave progress: independent domain rules, DbContext/migration, and administrator request/decision service are implemented and SQL-tested on the disposable trial database. Administrator Razor Page and HTTPS smoke flow now pass; full grants, manager workflow, employee picker pagination, and import remain pending. organization and access, personnel, leave and training, documents, job classification and position requirements, orders and contractor personnel, appraisal, insurance and retirement, welfare and medical, external Tavanir exchange, reporting. A stage is complete only when its real workflows and tests pass.
+Leave progress: independent domain rules, DbContext/migration, and administrator request/decision service are implemented and SQL-tested on the disposable trial database. Administrator Razor Page and HTTPS smoke flow now pass; full grants, manager workflow, employee picker pagination, and request import remain pending. A guarded trial importer now maps 4 policies and 36 balances with a successful rerun. organization and access, personnel, leave and training, documents, job classification and position requirements, orders and contractor personnel, appraisal, insurance and retirement, welfare and medical, external Tavanir exchange, reporting. A stage is complete only when its real workflows and tests pass.
 
 ## Constraints
 
-Official SDK 10.0.403 is installed at C:\Users\Behzad\.dotnet for the current user; tools/dotnet10.ps1 selects it. The local destination is `D:\SourceCodes\GitProjects\HRM` with `origin` set to `https://github.com/behzadborumand/HRM.git`. The repository has not been pushed. Native .NET 10 restore, build, tests, EF model checks, and HTTPS smoke test passed.
+Official SDK 10.0.403 is installed at C:\Users\Behzad\.dotnet for the current user; tools/dotnet10.ps1 selects it. The local destination is `D:\SourceCodes\GitProjects\HRM` with `origin` set to `https://github.com/behzadborumand/HRM.git`. The rewrite branch tracks GitHub; see Git log for the latest published commit. Native .NET 10 restore, build, tests, EF model checks, and HTTPS smoke test passed.
