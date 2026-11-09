@@ -47,7 +47,7 @@
     }
     else
     {
-        <table><thead><tr><th>کارمند</th><th>سیاست</th><th>از</th><th>تا</th><th>ساعت</th><th>وضعیت</th><th>اقدام</th></tr></thead><tbody>
+        <table><thead><tr><th>کارمند</th><th>سیاست</th><th>از</th><th>تا</th><th>ساعت</th><th>وضعیت</th><th>ثبت‌کننده</th><th>تصمیم‌گیرنده</th><th>اقدام</th></tr></thead><tbody>
         @foreach (var request in Model.Requests)
         {
             <tr data-request-id="@request.Id">
@@ -55,6 +55,8 @@
                 <td>@(Model.Policies.FirstOrDefault(x => x.Id == request.PolicyId)?.Name ?? request.PolicyId.ToString())</td>
                 <td>@JalaliDate.Format(request.StartDate)</td><td>@JalaliDate.Format(request.EndDate)</td>
                 <td>@request.Hours</td><td>@request.Status</td>
+                <td>@Model.ActorLabel(request.RequestedByUserId, request.RequestedByEmployeeId)</td>
+                <td>@Model.ActorLabel(request.DecidedByUserId, request.DecidedByEmployeeId)</td>
                 <td>
                     @if (request.Status == "Pending")
                     {

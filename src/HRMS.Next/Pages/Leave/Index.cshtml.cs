@@ -78,6 +78,13 @@ public sealed class IndexModel(AccessService access, LeaveService service, Leave
         return RedirectToPage();
     }
 
+    public string ActorLabel(int? userId, int? employeeId)
+    {
+        if (employeeId is { } id)
+            return EmployeeChoices?.Rows.FirstOrDefault(x => x.Id == id)?.FullName ?? $"کارمند #{id}";
+        return userId is { } actorId ? $"کاربر #{actorId}" : "—";
+    }
+
     private async Task<ActorScope?> AdminAsync(CancellationToken ct)
     {
         var actor = await access.GetActiveAsync(User, ct);

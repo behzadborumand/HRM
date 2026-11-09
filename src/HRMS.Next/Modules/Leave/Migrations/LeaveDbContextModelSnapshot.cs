@@ -17,7 +17,7 @@ namespace HRMS.Next.Modules.Leave.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.18")
+                .HasAnnotation("ProductVersion", "10.0.12")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -123,6 +123,9 @@ namespace HRMS.Next.Modules.Leave.Migrations
                     b.Property<DateTimeOffset?>("DecidedAtUtc")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<int?>("DecidedByEmployeeId")
+                        .HasColumnType("int");
+
                     b.Property<int?>("DecidedByUserId")
                         .HasColumnType("int");
 
@@ -145,7 +148,10 @@ namespace HRMS.Next.Modules.Leave.Migrations
                     b.Property<DateTimeOffset>("RequestedAtUtc")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<int>("RequestedByUserId")
+                    b.Property<int?>("RequestedByEmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("RequestedByUserId")
                         .HasColumnType("int");
 
                     b.Property<byte[]>("RowVersion")

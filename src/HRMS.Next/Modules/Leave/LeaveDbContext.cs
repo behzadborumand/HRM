@@ -85,9 +85,11 @@ public sealed class LeaveRequest
     public decimal Hours { get; set; }
     public string? Reason { get; set; }
     public string Status { get; set; } = "Pending";
-    public int RequestedByUserId { get; set; }
+    public int? RequestedByUserId { get; set; }
+    public int? RequestedByEmployeeId { get; set; }
     public DateTimeOffset RequestedAtUtc { get; set; }
     public int? DecidedByUserId { get; set; }
+    public int? DecidedByEmployeeId { get; set; }
     public DateTimeOffset? DecidedAtUtc { get; set; }
     public string? Comments { get; set; }
     public byte[] RowVersion { get; set; } = [];

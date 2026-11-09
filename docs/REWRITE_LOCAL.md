@@ -13,3 +13,5 @@ The existing migrations were authored earlier and verified by EF Core 10 with no
 For the same disposable trial database, run `database/import-core.sql` and then `database/import-leave-foundation.sql` with `sqlcmd -S . -E -C -b -d HRMS_Next_Trial_20261108 -i <script>`. The Leave importer rejects other destination names and requires mapped core records. Never run either importer on the legacy database.
 
 The Training schema script is `database/training-initial.sql`. It was generated with EF Core 10 and rerun on the disposable trial database. Apply it before using `/Training`.
+
+To trial-transfer Leave requests after the core and Leave foundation imports, run `sqlcmd -S . -E -C -b -d HRMS_Next_Trial_20261108 -i database/import-leave-requests.sql`. The script checks the destination name and reconciles source actor employee IDs. It does not import users or credentials.
