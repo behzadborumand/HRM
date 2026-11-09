@@ -40,6 +40,9 @@ public sealed class SqlTrainingFlowTests
             var actor = new ActorScope(601, "training-admin", company.Id, true, true, true, true);
             var service = new TrainingService(training, new PersonnelDirectory(personnel), TimeProvider.System);
             var courseId = await service.CreateCourseAsync(actor, "Safety", null, null, null, 365, true, CancellationToken.None);
+            await service.UpdateCourseAsync(actor, courseId, "Safety Updated", "Safety", "Internal", null, 180, true, CancellationToken.None);
+            Assert.Equal("Safety Updated", Assert.Single(await service.CoursesAsync(actor, CancellationToken.None)).Title);
+            await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.SetCourseActiveAsync(actor with { CompanyId = company.Id + 1 }, courseId, false, CancellationToken.None));
             await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
                 service.CreateCourseAsync(actor with { IsAdmin = false }, "Forbidden", null, null, null, null, false, CancellationToken.None));
             var today = DateOnly.FromDateTime(DateTime.UtcNow);
@@ -57,6 +60,9 @@ public sealed class SqlTrainingFlowTests
             var row = Assert.Single(await service.AssignmentsAsync(actor, CancellationToken.None));
             Assert.Equal("Completed", row.Status);
             Assert.Equal("CERT-1", row.Assignment.CertificateNumber);
+            await service.SetCourseActiveAsync(actor, courseId, false, CancellationToken.None);
+            await Assert.ThrowsAsync<ArgumentException>(() => service.AssignAsync(actor, employee.Id, courseId, today, null, CancellationToken.None));
+            await service.SetCourseActiveAsync(actor, courseId, true, CancellationToken.None);
             await Assert.ThrowsAsync<ArgumentException>(() =>
                 service.CompleteAsync(actor, assignmentId, today, null, CancellationToken.None));
         }

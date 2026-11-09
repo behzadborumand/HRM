@@ -13,6 +13,12 @@ public sealed class IndexModel(AccessService access, TrainingService service, Em
 {
     [BindProperty] public string Title { get; set; } = "";
     [BindProperty] public int? RenewalDays { get; set; }
+    [BindProperty] public int EditCourseId { get; set; }
+    [BindProperty] public string? Category { get; set; }
+    [BindProperty] public string? Provider { get; set; }
+    [BindProperty] public string? Description { get; set; }
+    [BindProperty] public bool MandatoryForAll { get; set; }
+    [BindProperty] public bool Active { get; set; }
     [BindProperty] public int EmployeeId { get; set; }
     [BindProperty] public int CourseId { get; set; }
     [BindProperty] public string AssignedDateJalali { get; set; } = "";
@@ -25,11 +31,19 @@ public sealed class IndexModel(AccessService access, TrainingService service, Em
     public IReadOnlyList<TrainingAssignmentRow> Assignments { get; private set; } = [];
     public EmployeePage? EmployeeChoices { get; private set; }
 
-    public async Task<IActionResult> OnGetAsync(CancellationToken ct)
+    public async Task<IActionResult> OnGetAsync(int? edit, CancellationToken ct)
     {
         var actor = await AdminAsync(ct);
         if (actor is null) return Forbid();
         await LoadAsync(actor, ct);
+        if (edit is { } id)
+        {
+            var course = Courses.FirstOrDefault(x => x.Id == id);
+            if (course is null) return NotFound();
+            EditCourseId = course.Id; Title = course.Title; Category = course.Category;
+            Provider = course.Provider; Description = course.Description;
+            RenewalDays = course.RenewalDays; MandatoryForAll = course.MandatoryForAll;
+        }
         return Page();
     }
 
@@ -37,8 +51,24 @@ public sealed class IndexModel(AccessService access, TrainingService service, Em
     {
         var actor = await AdminAsync(ct);
         if (actor is null) return Forbid();
-        try { await service.CreateCourseAsync(actor, Title, null, null, null, RenewalDays, false, ct); }
+        try
+        {
+            if (EditCourseId > 0)
+                await service.UpdateCourseAsync(actor, EditCourseId, Title, Category, Provider, Description, RenewalDays, MandatoryForAll, ct);
+            else
+                await service.CreateCourseAsync(actor, Title, Category, Provider, Description, RenewalDays, MandatoryForAll, ct);
+        }
         catch (ArgumentException error) { return await ErrorAsync(actor, error.Message, ct); }
+        catch (UnauthorizedAccessException) { return Forbid(); }
+        return RedirectToPage();
+    }
+
+    public async Task<IActionResult> OnPostToggleCourseAsync(CancellationToken ct)
+    {
+        var actor = await AdminAsync(ct);
+        if (actor is null) return Forbid();
+        try { await service.SetCourseActiveAsync(actor, CourseId, Active, ct); }
+        catch (UnauthorizedAccessException) { return Forbid(); }
         return RedirectToPage();
     }
 

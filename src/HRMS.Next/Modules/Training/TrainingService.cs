@@ -28,6 +28,35 @@ public sealed class TrainingService(TrainingDbContext db, IEmployeeDirectory emp
         return course.Id;
     }
 
+    public async Task UpdateCourseAsync(ActorScope actor, int courseId, string title, string? category,
+        string? provider, string? description, int? renewalDays, bool mandatoryForAll, CancellationToken ct)
+    {
+        RequireAdmin(actor);
+        title = TrainingRules.ValidateCourse(title, renewalDays);
+        if (category?.Length > 50 || provider?.Length > 200 || description?.Length > 1000)
+            throw new ArgumentException("Course details exceed their size limits.");
+        var course = await db.Courses.SingleOrDefaultAsync(x => x.Id == courseId && x.CompanyId == actor.CompanyId, ct)
+            ?? throw new UnauthorizedAccessException("Course is outside the active company.");
+        if (await db.Courses.AnyAsync(x => x.CompanyId == actor.CompanyId && x.Id != courseId && x.Title == title, ct))
+            throw new ArgumentException("Course title already exists in this company.");
+        course.Title = title;
+        course.Category = category?.Trim();
+        course.Provider = provider?.Trim();
+        course.Description = description?.Trim();
+        course.RenewalDays = renewalDays;
+        course.MandatoryForAll = mandatoryForAll;
+        await db.SaveChangesAsync(ct);
+    }
+
+    public async Task SetCourseActiveAsync(ActorScope actor, int courseId, bool active, CancellationToken ct)
+    {
+        RequireAdmin(actor);
+        var course = await db.Courses.SingleOrDefaultAsync(x => x.Id == courseId && x.CompanyId == actor.CompanyId, ct)
+            ?? throw new UnauthorizedAccessException("Course is outside the active company.");
+        course.Active = active;
+        await db.SaveChangesAsync(ct);
+    }
+
     public async Task<int> AssignAsync(ActorScope actor, int employeeId, int courseId, DateOnly assignedDate,
         DateOnly? dueDate, CancellationToken ct)
     {

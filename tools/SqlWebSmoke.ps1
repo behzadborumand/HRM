@@ -119,6 +119,16 @@ try {
     $training = Invoke-WebRequest "$baseUrl/Training" -WebSession $webSession -UseBasicParsing
     $courseId = [regex]::Match($training.Content, '<option value="([1-9][0-9]*)">Safety smoke</option>').Groups[1].Value
     if (!$courseId) { throw 'New Training course was not listed.' }
+    $editPage = Invoke-WebRequest "$baseUrl/Training?edit=$courseId" -WebSession $webSession -UseBasicParsing
+    $editToken = Get-FormToken $editPage.Content
+    if ($editPage.Content -notmatch 'name="EditCourseId"') { throw 'Training edit form was not rendered.' }
+    $editedCourse = Invoke-WebRequest "$baseUrl/Training?handler=Course" -Method Post -WebSession $webSession -UseBasicParsing -Body @{
+        EditCourseId = $courseId; Title = 'Safety smoke edited'; Category = 'Safety'; RenewalDays = '180'; MandatoryForAll = 'true'; __RequestVerificationToken = $editToken
+    }
+    $training = Invoke-WebRequest "$baseUrl/Training" -WebSession $webSession -UseBasicParsing
+    if ($training.Content -notmatch ('<option value="' + $courseId + '">Safety smoke edited</option>')) {
+        throw 'Edited Training course was not listed.'
+    }
     $trainingToken = Get-FormToken $training.Content
     $assigned = Invoke-WebRequest "$baseUrl/Training?handler=Assign" -Method Post -WebSession $webSession -UseBasicParsing -Body @{
         EmployeeId = $employeeId; CourseId = $courseId; AssignedDateJalali = '1403/02/01'; DueDateJalali = '1403/02/05'; __RequestVerificationToken = $trainingToken
@@ -133,6 +143,22 @@ try {
     $training = Invoke-WebRequest "$baseUrl/Training" -WebSession $webSession -UseBasicParsing
     if ($training.Content -notmatch 'Completed' -or $training.Content -notmatch 'SMOKE-CERT') {
         throw 'Training completion was not listed.'
+    }
+    $trainingToken = Get-FormToken $training.Content
+    $deactivated = Invoke-WebRequest "$baseUrl/Training?handler=ToggleCourse" -Method Post -WebSession $webSession -UseBasicParsing -Body @{
+        CourseId = $courseId; Active = 'false'; __RequestVerificationToken = $trainingToken
+    }
+    $training = Invoke-WebRequest "$baseUrl/Training" -WebSession $webSession -UseBasicParsing
+    if ($training.Content -match ('<option value="' + $courseId + '">Safety smoke edited</option>')) {
+        throw 'Inactive Training course remains available for assignment.'
+    }
+    $trainingToken = Get-FormToken $training.Content
+    $reactivated = Invoke-WebRequest "$baseUrl/Training?handler=ToggleCourse" -Method Post -WebSession $webSession -UseBasicParsing -Body @{
+        CourseId = $courseId; Active = 'true'; __RequestVerificationToken = $trainingToken
+    }
+    $training = Invoke-WebRequest "$baseUrl/Training" -WebSession $webSession -UseBasicParsing
+    if ($training.Content -notmatch ('<option value="' + $courseId + '">Safety smoke edited</option>')) {
+        throw 'Reactivated Training course was not available.'
     }
     Write-Output 'HTTPS login, employee, Leave, Training: PASS'
 }
