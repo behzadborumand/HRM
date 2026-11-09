@@ -1,0 +1,75 @@
+@page "/Training"
+@using HRMS.Next.Pages.Employees
+@model HRMS.Next.Pages.Training.IndexModel
+@{
+    ViewData["Title"] = "آموزش";
+}
+<h1>مدیریت آموزش</h1>
+<div asp-validation-summary="All" class="error" role="alert"></div>
+<section class="card">
+    <h2>دورهٔ جدید</h2>
+    <form method="post" asp-page-handler="Course">
+        <label for="title">عنوان دوره</label><input id="title" name="Title" required maxlength="200" />
+        <label for="renewalDays">دورهٔ تکرار (روز، اختیاری)</label><input id="renewalDays" name="RenewalDays" type="number" min="1" max="3650" />
+        <p><button type="submit">ثبت دوره</button></p>
+    </form>
+</section>
+<section class="card">
+    <h2>واگذاری دوره</h2>
+    <form method="post" asp-page-handler="Assign">
+        <label for="employeeId">کارمند</label>
+        <select id="employeeId" name="EmployeeId" required>
+            <option value="">انتخاب کنید</option>
+            @foreach (var employee in Model.EmployeeChoices?.Rows ?? [])
+            {
+                <option value="@employee.Id">@employee.FullName (@employee.EmployeeNumber)</option>
+            }
+        </select>
+        <label for="courseId">دوره</label>
+        <select id="courseId" name="CourseId" required>
+            <option value="">انتخاب کنید</option>
+            @foreach (var course in Model.Courses.Where(x => x.Active))
+            {
+                <option value="@course.Id">@course.Title</option>
+            }
+        </select>
+        <label for="assignedDate">تاریخ واگذاری (شمسی)</label><input id="assignedDate" name="AssignedDateJalali" placeholder="۱۴۰۳/۰۱/۰۱" required />
+        <label for="dueDate">سررسید (شمسی، اختیاری)</label><input id="dueDate" name="DueDateJalali" placeholder="۱۴۰۳/۰۲/۰۱" />
+        <p><button type="submit">ثبت واگذاری</button></p>
+    </form>
+</section>
+<section class="card">
+    <h2>واگذاری‌ها</h2>
+    @if (Model.Assignments.Count == 0)
+    {
+        <p>واگذاری ثبت نشده است.</p>
+    }
+    else
+    {
+        <table><thead><tr><th>کارمند</th><th>دوره</th><th>واگذاری</th><th>سررسید</th><th>وضعیت</th><th>گواهی</th><th>اقدام</th></tr></thead><tbody>
+        @foreach (var row in Model.Assignments)
+        {
+            var assignment = row.Assignment;
+            <tr data-assignment-id="@assignment.Id">
+                <td>@(Model.EmployeeChoices?.Rows.FirstOrDefault(x => x.Id == assignment.EmployeeId)?.FullName ?? assignment.EmployeeId.ToString())</td>
+                <td>@(Model.Courses.FirstOrDefault(x => x.Id == assignment.CourseId)?.Title ?? assignment.CourseId.ToString())</td>
+                <td>@JalaliDate.Format(assignment.AssignedDate)</td>
+                <td>@(assignment.DueDate is { } due ? JalaliDate.Format(due) : "—")</td>
+                <td>@row.Status</td>
+                <td>@assignment.CertificateNumber</td>
+                <td>
+                    @if (assignment.CompletedDate is null)
+                    {
+                        <form method="post" asp-page-handler="Complete">
+                            <input type="hidden" name="AssignmentId" value="@assignment.Id" />
+                            <label>تاریخ انجام (شمسی)<input name="CompletedDateJalali" required placeholder="۱۴۰۳/۰۲/۰۱" /></label>
+                            <label>شماره گواهی<input name="CertificateNumber" maxlength="100" /></label>
+                            <button type="submit">ثبت انجام</button>
+                        </form>
+                    }
+                </td>
+            </tr>
+        }
+        </tbody></table>
+    }
+</section>

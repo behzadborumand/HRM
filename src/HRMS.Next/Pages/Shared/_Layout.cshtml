@@ -11,6 +11,7 @@
         @if (User.Identity?.IsAuthenticated == true)
         {
             <a asp-page="/Leave/Index">مرخصی</a>
+            <a asp-page="/Training/Index">آموزش</a>
             <span>@User.Identity.Name</span>
             <form method="post" asp-page="/Logout"><button type="submit">خروج</button></form>
         }

@@ -111,11 +111,36 @@ try {
     }
     $leave = Invoke-WebRequest "$baseUrl/Leave" -WebSession $webSession -UseBasicParsing
     if ($leave.Content -notmatch 'Approved') { throw 'Leave request was not approved.' }
-    Write-Output 'HTTPS login, employee create/edit, Leave policy/request/approval: PASS'
+    $training = Invoke-WebRequest "$baseUrl/Training" -WebSession $webSession -UseBasicParsing
+    $trainingToken = Get-FormToken $training.Content
+    $courseCreated = Invoke-WebRequest "$baseUrl/Training?handler=Course" -Method Post -WebSession $webSession -UseBasicParsing -Body @{
+        Title = 'Safety smoke'; RenewalDays = '365'; __RequestVerificationToken = $trainingToken
+    }
+    $training = Invoke-WebRequest "$baseUrl/Training" -WebSession $webSession -UseBasicParsing
+    $courseId = [regex]::Match($training.Content, '<option value="([1-9][0-9]*)">Safety smoke</option>').Groups[1].Value
+    if (!$courseId) { throw 'New Training course was not listed.' }
+    $trainingToken = Get-FormToken $training.Content
+    $assigned = Invoke-WebRequest "$baseUrl/Training?handler=Assign" -Method Post -WebSession $webSession -UseBasicParsing -Body @{
+        EmployeeId = $employeeId; CourseId = $courseId; AssignedDateJalali = '1403/02/01'; DueDateJalali = '1403/02/05'; __RequestVerificationToken = $trainingToken
+    }
+    $training = Invoke-WebRequest "$baseUrl/Training" -WebSession $webSession -UseBasicParsing
+    $assignmentId = [regex]::Match($training.Content, 'data-assignment-id="([1-9][0-9]*)"').Groups[1].Value
+    if (!$assignmentId) { throw 'New Training assignment was not listed.' }
+    $trainingToken = Get-FormToken $training.Content
+    $completed = Invoke-WebRequest "$baseUrl/Training?handler=Complete" -Method Post -WebSession $webSession -UseBasicParsing -Body @{
+        AssignmentId = $assignmentId; CompletedDateJalali = '1403/02/02'; CertificateNumber = 'SMOKE-CERT'; __RequestVerificationToken = $trainingToken
+    }
+    $training = Invoke-WebRequest "$baseUrl/Training" -WebSession $webSession -UseBasicParsing
+    if ($training.Content -notmatch 'Completed' -or $training.Content -notmatch 'SMOKE-CERT') {
+        throw 'Training completion was not listed.'
+    }
+    Write-Output 'HTTPS login, employee, Leave, Training: PASS'
 }
 finally {
     if ($process) { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue }
-    $cleanup = "DECLARE @id int=(SELECT Id FROM organization.Companies WHERE Name='$companyName'); DELETE FROM leave.Requests WHERE CompanyId=@id; DELETE FROM leave.Balances WHERE CompanyId=@id; DELETE FROM leave.Policies WHERE CompanyId=@id; DELETE FROM personnel.EmployeeAudits WHERE EmployeeId IN (SELECT Id FROM personnel.Employees WHERE CompanyId=@id); DELETE FROM personnel.Employees WHERE CompanyId=@id; DELETE FROM access.Users WHERE CompanyId=@id; DELETE FROM organization.Departments WHERE CompanyId=@id; DELETE FROM organization.Companies WHERE Id=@id;"
-    sqlcmd -S . -E -C -b -d $Database -Q $cleanup | Out-Null
+    $cleanup = "SET ANSI_NULLS ON; SET ANSI_PADDING ON; SET ANSI_WARNINGS ON; SET ARITHABORT ON; SET CONCAT_NULL_YIELDS_NULL ON; SET NUMERIC_ROUNDABORT OFF; SET QUOTED_IDENTIFIER ON; DECLARE @id int=(SELECT Id FROM organization.Companies WHERE Name='$companyName'); DELETE FROM training.Assignments WHERE CompanyId=@id; DELETE FROM training.Courses WHERE CompanyId=@id; DELETE FROM leave.Requests WHERE CompanyId=@id; DELETE FROM leave.Balances WHERE CompanyId=@id; DELETE FROM leave.Policies WHERE CompanyId=@id; DELETE FROM personnel.EmployeeAudits WHERE EmployeeId IN (SELECT Id FROM personnel.Employees WHERE CompanyId=@id); DELETE FROM personnel.Employees WHERE CompanyId=@id; DELETE FROM access.Users WHERE CompanyId=@id; DELETE FROM organization.Departments WHERE CompanyId=@id; DELETE FROM organization.Companies WHERE Id=@id;"
+    $cleanupOutput = sqlcmd -S . -E -C -b -d $Database -Q $cleanup 2>&1
+    $cleanupExit = $LASTEXITCODE
     Remove-Item Env:ConnectionStrings__HrmsNext,Env:HRMS_BOOTSTRAP_USER,Env:HRMS_BOOTSTRAP_PASSWORD,Env:HRMS_BOOTSTRAP_COMPANY,Env:ASPNETCORE_ENVIRONMENT -ErrorAction SilentlyContinue
+    if ($cleanupExit -ne 0) { throw "Smoke cleanup failed: $cleanupOutput" }
 }

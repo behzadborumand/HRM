@@ -13,7 +13,7 @@
 - [x] Explicit bootstrap and login; use case permission and company scope checks in the initial personnel flow.
 - [x] Company and department bootstrap; employee search, profile, create, edit, audit and row version checks in source.
 - [ ] Complete Persian Razor Pages and UI patterns; basic forms, Jalali input/display, pagination and focus styles exist.
-- [ ] Complete tests and SQL Server integration; 21 native .NET 10 tests, including Personnel and Leave SQL integration, plus an HTTPS employee and Leave smoke flow pass.
+- [ ] Complete tests and SQL Server integration; 26 native .NET 10 tests, including Personnel, Leave and Training SQL integration, plus an HTTPS employee, Leave and Training smoke flow pass.
 
 ## Stage 2: transfer
 
@@ -23,7 +23,7 @@
 
 ## Stage 3: remaining modules
 
-Leave progress: independent domain rules, DbContext/migration, and administrator request/decision service are implemented and SQL-tested on the disposable trial database. Administrator Razor Page and HTTPS smoke flow now pass; full grants, manager workflow, employee picker pagination, and request import remain pending. A guarded trial importer now maps 4 policies and 36 balances with a successful rerun. organization and access, personnel, leave and training, documents, job classification and position requirements, orders and contractor personnel, appraisal, insurance and retirement, welfare and medical, external Tavanir exchange, reporting. A stage is complete only when its real workflows and tests pass.
+Leave progress: independent domain rules, DbContext/migration, and administrator request/decision service are implemented and SQL-tested on the disposable trial database. Administrator Razor Page and HTTPS smoke flow now pass; full grants, manager workflow, employee picker pagination, and request import remain pending. A guarded trial importer now maps 4 policies and 36 balances with a successful rerun. organization and access, personnel, leave and training, documents, job classification and position requirements, orders and contractor personnel, appraisal, insurance and retirement, welfare and medical, external Tavanir exchange, reporting. Training now has an independent schema, company-scoped admin course/assignment/completion use cases, a Razor Page, SQL integration, HTTPS smoke and a database unique index for open assignments. Course edit/deactivation, staff self-service and legacy transfer remain pending. A stage is complete only when its real workflows and tests pass.
 
 ## Constraints
 
