@@ -6,6 +6,8 @@ public interface IOrganizationDirectory
 {
     Task<bool> CompanyExistsAsync(int companyId, CancellationToken ct);
     Task<bool> DepartmentBelongsAsync(int departmentId, int companyId, CancellationToken ct);
+    Task<bool> DepartmentExistsAsync(int departmentId, int companyId, CancellationToken ct);
+    Task<IReadOnlyList<DepartmentOption>> ActiveDepartmentsAsync(int companyId, CancellationToken ct);
     Task<IReadOnlyList<DepartmentOption>> DepartmentsAsync(int companyId, CancellationToken ct);
     Task<bool> ActiveJobTitleExistsAsync(int companyId, string name, CancellationToken ct);
 }

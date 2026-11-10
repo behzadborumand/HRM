@@ -38,6 +38,7 @@ public sealed class SqlEmployeeFlowTests
             var page = await service.SearchAsync(actor, input.EmployeeNumber, department.Id, 1, 20, CancellationToken.None);
             Assert.Single(page.Rows);
             Assert.Equal(id, page.Rows[0].Id);
+            Assert.Equal(1, (await service.DepartmentHeadcountsAsync(actor, CancellationToken.None))[department.Id]);
             Assert.Single((await service.SearchAsync(actor, "integration@example.test", null, 1, 20, CancellationToken.None)).Rows);
             Assert.Single((await service.SearchAsync(actor, null, null, 1, 20, CancellationToken.None, "Active")).Rows);
             Assert.Empty((await service.SearchAsync(actor, null, null, 1, 20, CancellationToken.None, "Terminated")).Rows);
@@ -48,6 +49,13 @@ public sealed class SqlEmployeeFlowTests
             await service.UpdateAsync(actor, id, input with { LastName = "ویرایش" }, before.RowVersion, CancellationToken.None);
             Assert.Equal("ویرایش", (await service.GetAsync(actor, id, CancellationToken.None))!.LastName);
             Assert.Equal(2, await personnel.Audits.CountAsync(x => x.EmployeeId == id));
+            var departmentVersion = (await organization.Departments.AsNoTracking().SingleAsync(x => x.Id == department.Id)).RowVersion;
+            await new DepartmentService(organization).SetActiveAsync(actor, department.Id, false, departmentVersion, CancellationToken.None);
+            await Assert.ThrowsAsync<ArgumentException>(() => service.CreateAsync(actor,
+                input with { EmployeeNumber = "NEW-" + Guid.NewGuid().ToString("N")[..12] }, CancellationToken.None));
+            var current = (await service.GetAsync(actor, id, CancellationToken.None))!;
+            await service.UpdateAsync(actor, id, input with { LastName = "پس از بایگانی" }, current.RowVersion, CancellationToken.None);
+            Assert.Equal("پس از بایگانی", (await service.GetAsync(actor, id, CancellationToken.None))!.LastName);
         }
         finally
         {

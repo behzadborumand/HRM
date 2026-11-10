@@ -37,6 +37,7 @@ public sealed class JobTitleService(OrganizationDbContext db)
         (name, description) = Normalize(name, description);
         var title = await db.JobTitles.SingleOrDefaultAsync(x => x.Id == id && x.CompanyId == actor.CompanyId, ct)
             ?? throw new UnauthorizedAccessException();
+        if (!title.RowVersion.SequenceEqual(expectedVersion)) throw new DbUpdateConcurrencyException("عنوان شغلی تغییر کرده است.");
         db.Entry(title).Property(x => x.RowVersion).OriginalValue = expectedVersion;
         if (await db.JobTitles.AnyAsync(x => x.CompanyId == actor.CompanyId && x.Id != id && x.Name == name, ct))
             throw new ArgumentException("عنوان شغلی با این نام وجود دارد.");
@@ -50,6 +51,7 @@ public sealed class JobTitleService(OrganizationDbContext db)
         RequireAdmin(actor);
         var title = await db.JobTitles.SingleOrDefaultAsync(x => x.Id == id && x.CompanyId == actor.CompanyId, ct)
             ?? throw new UnauthorizedAccessException();
+        if (!title.RowVersion.SequenceEqual(expectedVersion)) throw new DbUpdateConcurrencyException("عنوان شغلی تغییر کرده است.");
         db.Entry(title).Property(x => x.RowVersion).OriginalValue = expectedVersion;
         title.IsActive = active;
         await db.SaveChangesAsync(ct);

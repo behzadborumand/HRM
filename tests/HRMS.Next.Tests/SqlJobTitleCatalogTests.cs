@@ -33,7 +33,7 @@ public sealed class SqlJobTitleCatalogTests
             await service.UpdateAsync(actor, id, "Senior Analyst", "Updated", version, CancellationToken.None);
             version = (await db.JobTitles.AsNoTracking().SingleAsync(x => x.Id == id)).RowVersion;
             await service.SetActiveAsync(actor, id, false, version, CancellationToken.None);
-            await Assert.ThrowsAsync<DbUpdateConcurrencyException>(() => service.UpdateAsync(actor, id, "Stale edit", null, version, CancellationToken.None));
+            await Assert.ThrowsAsync<DbUpdateConcurrencyException>(() => service.UpdateAsync(actor, id, "Senior Analyst", "Updated", version, CancellationToken.None));
             Assert.Empty(await service.ActiveOptionsAsync(actor, CancellationToken.None));
             Assert.Empty(await service.ListAsync(foreignActor, CancellationToken.None));
         }

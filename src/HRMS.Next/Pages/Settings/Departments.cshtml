@@ -1,0 +1,72 @@
+@page "/Settings/Departments"
+@model HRMS.Next.Pages.Settings.DepartmentsModel
+@{
+    ViewData["Title"] = "واحدهای سازمانی";
+}
+@section Hero {
+    <div class="d-flex justify-content-between align-items-end gap-3 flex-wrap">
+        <h1>واحدهای سازمانی</h1>
+        <a asp-page="Index" class="btn btn-hero"><i class="bi bi-arrow-right"></i> تنظیمات</a>
+    </div>
+}
+<div asp-validation-summary="All" class="text-danger" role="alert"></div>
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-header bg-white fw-semibold">لیست واحدها</div>
+            <div class="card-body table-responsive">
+                <table class="table table-striped align-middle text-center mb-0">
+                    <thead><tr><th>نام واحد</th><th>واحد بالادستی</th><th>کارمند</th><th>وضعیت</th><th>عملیات</th></tr></thead>
+                    <tbody>
+                        @if (Model.Rows.Count == 0)
+                        {
+                            <tr><td colspan="5" class="text-muted">واحدی ثبت نشده است.</td></tr>
+                        }
+                        @foreach (var row in Model.Rows)
+                        {
+                            <tr data-department-id="@row.Id">
+                                <td class="fw-semibold">@row.Name</td>
+                                <td>@Model.ParentName(row.ParentId)</td>
+                                <td>@(Model.Headcounts.TryGetValue(row.Id, out var count) ? count : 0)</td>
+                                <td><span class="badge text-bg-@(row.IsActive ? "success" : "secondary")">@(row.IsActive ? "فعال" : "غیرفعال")</span></td>
+                                <td>
+                                    <a asp-page="Departments" asp-route-edit="@row.Id" class="btn btn-sm btn-outline-secondary" aria-label="ویرایش @row.Name"><i class="bi bi-pencil"></i></a>
+                                    <form method="post" asp-page-handler="Status" class="d-inline">
+                                        <input type="hidden" name="id" value="@row.Id" />
+                                        <input type="hidden" name="version" value="@Convert.ToBase64String(row.RowVersion)" />
+                                        <input type="hidden" name="active" value="@(!row.IsActive ? "true" : "false")" />
+                                        <button type="submit" class="btn btn-sm btn-outline-@(row.IsActive ? "danger" : "success")">@(row.IsActive ? "غیرفعال‌سازی" : "فعال‌سازی")</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card">
+            <div class="card-header bg-primary text-white">@(Model.EditId > 0 ? "ویرایش واحد" : "افزودن واحد سازمانی")</div>
+            <div class="card-body">
+                <form method="post" asp-page-handler="Save">
+                    <input type="hidden" asp-for="EditId" />
+                    <input type="hidden" asp-for="Version" />
+                    <div class="mb-3"><label asp-for="Name" class="form-label">نام واحد</label><input asp-for="Name" class="form-control" maxlength="200" required /><span asp-validation-for="Name" class="text-danger small"></span></div>
+                    <div class="mb-3">
+                        <label asp-for="ParentId" class="form-label">واحد بالادستی</label>
+                        <select asp-for="ParentId" class="form-select">
+                            <option value="">بدون بالادست</option>
+                            @foreach (var option in Model.Rows.Where(x => x.IsActive && x.Id != Model.EditId))
+                            {
+                                <option value="@option.Id">@option.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-success"><i class="bi bi-check-circle"></i> ذخیره</button>
+                    <a asp-page="Departments" class="btn btn-light">انصراف</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

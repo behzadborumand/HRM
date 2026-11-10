@@ -7,7 +7,7 @@ The new application lives under `src/HRMS.Next`, with tests in `tests/HRMS.Next.
 | Module | Owns | Public contract |
 | --- | --- | --- |
 | Access | Users, roles, credentials, grants | Current actor and permission checks |
-| Organization | Companies, departments, organization structure | Company and department lookup by ID |
+| Organization | Companies, departments, job titles, organization structure | Company, department and active title lookup; scoped catalog commands |
 | Personnel | Employees, employment history, profile, custom fields | Employee lookup and scoped operations |
 | Documents | Private files and metadata | Authorized document retrieval |
 | Training | Courses and assignments | Employee ID based commands and queries |

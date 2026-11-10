@@ -53,6 +53,14 @@ try {
     }
     if ($employeeListResponse.BaseResponse.ResponseUri.AbsolutePath -ne '/Employees') { throw 'Login did not reach employee list.' }
 
+    $settings = Invoke-WebRequest "$baseUrl/Settings" -WebSession $webSession -UseBasicParsing
+    if ($settings.Content -notmatch 'واحدهای سازمانی') { throw 'Settings hub did not render departments.' }
+    $departments = Invoke-WebRequest "$baseUrl/Settings/Departments" -WebSession $webSession -UseBasicParsing
+    $departmentToken = Get-FormToken $departments.Content
+    $departmentCreated = Invoke-WebRequest "$baseUrl/Settings/Departments?handler=Save" -Method Post -WebSession $webSession -UseBasicParsing -Body @{
+        Name = 'Smoke unit'; ParentId = ''; EditId = '0'; Version = ''; __RequestVerificationToken = $departmentToken
+    }
+    if ($departmentCreated.Content -notmatch 'Smoke unit') { throw 'Department administration did not save the test unit.' }
     $create = Invoke-WebRequest "$baseUrl/Employees/Create" -WebSession $webSession -UseBasicParsing
     $createToken = Get-FormToken $create.Content
     $departmentId = [regex]::Match($create.Content, '<option value="([1-9][0-9]*)">').Groups[1].Value
@@ -74,7 +82,7 @@ try {
     $edit = Invoke-WebRequest "$baseUrl$profilePath/Edit" -WebSession $webSession -UseBasicParsing
     $editToken = Get-FormToken $edit.Content
     $versionTag = [regex]::Match($edit.Content, '<input[^>]*name="Form.Version"[^>]*>')
-    $version = [regex]::Match($versionTag.Value, 'value="([^"]+)"').Groups[1].Value
+    $version = [System.Net.WebUtility]::HtmlDecode([regex]::Match($versionTag.Value, 'value="([^"]+)"').Groups[1].Value)
     if (!$version) { throw 'Concurrency token was not rendered.' }
     $updated = Invoke-WebRequest "$baseUrl$profilePath/Edit" -Method Post -WebSession $webSession -UseBasicParsing -Body @{
         'Form.EmployeeNumber' = $employeeNumber
@@ -97,7 +105,7 @@ try {
     if ($titleCreated.Content -notmatch 'Smoke engineer') { throw 'Title catalog did not save the test title.' }
     $jobEdit = Invoke-WebRequest "$baseUrl$profilePath/Edit" -WebSession $webSession -UseBasicParsing
     $jobVersionTag = [regex]::Match($jobEdit.Content, '<input[^>]*name="JobForm.Version"[^>]*>')
-    $jobVersion = [regex]::Match($jobVersionTag.Value, 'value="([^"]+)"').Groups[1].Value
+    $jobVersion = [System.Net.WebUtility]::HtmlDecode([regex]::Match($jobVersionTag.Value, 'value="([^"]+)"').Groups[1].Value)
     if (!$jobVersion) { throw 'Job change form did not render.' }
     $jobToken = Get-FormToken $jobEdit.Content
     $invalidManager = Invoke-WebRequest "$baseUrl$profilePath/Edit?handler=Job" -Method Post -WebSession $webSession -UseBasicParsing -Body @{
@@ -249,7 +257,7 @@ try {
     }
     $documentsPage = Invoke-WebRequest "$baseUrl/Employees/$employeeId/Documents" -WebSession $webSession -UseBasicParsing
     if ($documentsPage.Content -match 'data-document-id=') { throw 'Deleted document remains visible.' }
-    Write-Output 'HTTPS login, employee, job change, Leave, Training, Documents: PASS'
+    Write-Output 'HTTPS login, Settings, employee, job change, Leave, Training, Documents: PASS'
 }
 finally {
     if ($process) { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue }

@@ -32,6 +32,7 @@
 - [x] Documents private list/upload/download/delete flow, SQL tests and HTTPS smoke.
 - [x] Personnel job change closes dated history, updates current department and audit atomically; trial SQL and HTTPS flows pass.
 - [x] Company-scoped job title catalog, archive/restore, selection in job change, trial transfer and SQL/HTTPS verification.
+- [x] Department administration with scoped hierarchy, cycle rejection, archive/restore, headcounts, preserved employee history and SQL/HTTPS verification.
 - [ ] Finish manager permissions, employee self-service and document retention rules.
 - [ ] Implement personnel history, job classification and position requirements, orders and contractors, appraisal, insurance and retirement, welfare and medical.
 - [ ] Implement Tavanir exchange only after validating its ۱۴۰۳ contract and credential requirements.

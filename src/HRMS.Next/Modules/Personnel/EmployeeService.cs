@@ -34,6 +34,13 @@ public sealed class EmployeeService(PersonnelDbContext db, IOrganizationDirector
         return new EmployeePage(rows, total, page, pageSize);
     }
 
+    public Task<Dictionary<int, int>> DepartmentHeadcountsAsync(ActorScope actor, CancellationToken ct)
+    {
+        if (!AccessRules.CanRead(actor, actor.CompanyId)) throw new UnauthorizedAccessException();
+        return db.Employees.AsNoTracking().Where(x => x.CompanyId == actor.CompanyId && x.TerminationDate == null)
+            .GroupBy(x => x.DepartmentId).Select(x => new { DepartmentId = x.Key, Count = x.Count() })
+            .ToDictionaryAsync(x => x.DepartmentId, x => x.Count, ct);
+    }
     public async Task<Employee?> GetAsync(ActorScope actor, int id, CancellationToken ct)
     {
         if (!AccessRules.CanRead(actor, actor.CompanyId)) throw new UnauthorizedAccessException();
@@ -68,9 +75,9 @@ public sealed class EmployeeService(PersonnelDbContext db, IOrganizationDirector
     public async Task UpdateAsync(ActorScope actor, int id, EmployeeInput input, byte[] expectedVersion, CancellationToken ct)
     {
         if (!AccessRules.CanWrite(actor, actor.CompanyId)) throw new UnauthorizedAccessException();
-        await ValidateAsync(actor.CompanyId, input, ct);
         var employee = await db.Employees.SingleOrDefaultAsync(x => x.Id == id && x.CompanyId == actor.CompanyId, ct)
             ?? throw new KeyNotFoundException("کارمند یافت نشد.");
+        await ValidateAsync(actor.CompanyId, input, ct, input.DepartmentId == employee.DepartmentId);
         if (!employee.RowVersion.SequenceEqual(expectedVersion)) throw new DbUpdateConcurrencyException("پرونده توسط کاربر دیگری تغییر کرده است.");
         if (input.DepartmentId != employee.DepartmentId)
             throw new ArgumentException("تغییر واحد سازمانی باید در بخش ثبت تغییر شغل انجام شود.");
@@ -94,7 +101,7 @@ public sealed class EmployeeService(PersonnelDbContext db, IOrganizationDirector
         await db.SaveChangesAsync(ct);
     }
 
-    private async Task ValidateAsync(int companyId, EmployeeInput input, CancellationToken ct)
+    private async Task ValidateAsync(int companyId, EmployeeInput input, CancellationToken ct, bool allowExistingInactiveDepartment = false)
     {
         if (string.IsNullOrWhiteSpace(input.EmployeeNumber) || string.IsNullOrWhiteSpace(input.FirstName) || string.IsNullOrWhiteSpace(input.LastName))
             throw new ArgumentException("شماره پرسنلی، نام و نام خانوادگی الزامی است.");
@@ -102,7 +109,10 @@ public sealed class EmployeeService(PersonnelDbContext db, IOrganizationDirector
             throw new ArgumentException("طول شماره پرسنلی یا نام معتبر نیست.");
         if (input.Email is { Length: > 0 } email && (email.Length > 256 || email.IndexOfAny([';', ',', ' ', '\t', '\r', '\n']) >= 0 || !new EmailAddressAttribute().IsValid(email)))
             throw new ArgumentException("ایمیل معتبر نیست.");
-        if (!await organization.DepartmentBelongsAsync(input.DepartmentId, companyId, ct))
+        var departmentExists = allowExistingInactiveDepartment
+            ? await organization.DepartmentExistsAsync(input.DepartmentId, companyId, ct)
+            : await organization.DepartmentBelongsAsync(input.DepartmentId, companyId, ct);
+        if (!departmentExists)
             throw new ArgumentException("واحد سازمانی معتبر نیست.");
     }
 }

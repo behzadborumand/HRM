@@ -8,7 +8,14 @@ public sealed class OrganizationDirectory(OrganizationDbContext db) : IOrganizat
         db.Companies.AnyAsync(x => x.Id == companyId, ct);
 
     public Task<bool> DepartmentBelongsAsync(int departmentId, int companyId, CancellationToken ct) =>
-        db.Departments.AnyAsync(x => x.Id == departmentId && x.CompanyId == companyId, ct);
+        db.Departments.AnyAsync(x => x.Id == departmentId && x.CompanyId == companyId && x.IsActive, ct);
+
+    public Task<bool> DepartmentExistsAsync(int departmentId, int companyId, CancellationToken ct) =>
+        db.Departments.AsNoTracking().AnyAsync(x => x.Id == departmentId && x.CompanyId == companyId, ct);
+
+    public async Task<IReadOnlyList<DepartmentOption>> ActiveDepartmentsAsync(int companyId, CancellationToken ct) =>
+        await db.Departments.AsNoTracking().Where(x => x.CompanyId == companyId && x.IsActive)
+            .OrderBy(x => x.Name).Select(x => new DepartmentOption(x.Id, x.Name)).ToListAsync(ct);
 
     public Task<bool> ActiveJobTitleExistsAsync(int companyId, string name, CancellationToken ct) =>
         db.JobTitles.AsNoTracking().AnyAsync(x => x.CompanyId == companyId && x.IsActive && x.Name == name, ct);

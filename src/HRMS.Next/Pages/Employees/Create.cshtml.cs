@@ -16,7 +16,7 @@ public sealed class CreateModel(AccessService access, EmployeeService employees,
     {
         var actor = await access.GetActiveAsync(User, ct);
         if (actor is null || !AccessRules.CanWrite(actor, actor.CompanyId)) return Forbid();
-        ViewData["Departments"] = await organization.DepartmentsAsync(actor.CompanyId, ct);
+        ViewData["Departments"] = await organization.ActiveDepartmentsAsync(actor.CompanyId, ct);
         return Page();
     }
 
@@ -24,7 +24,7 @@ public sealed class CreateModel(AccessService access, EmployeeService employees,
     {
         var actor = await access.GetActiveAsync(User, ct);
         if (actor is null || !AccessRules.CanWrite(actor, actor.CompanyId)) return Forbid();
-        ViewData["Departments"] = await organization.DepartmentsAsync(actor.CompanyId, ct);
+        ViewData["Departments"] = await organization.ActiveDepartmentsAsync(actor.CompanyId, ct);
         if (!ModelState.IsValid) return Page();
         try
         {

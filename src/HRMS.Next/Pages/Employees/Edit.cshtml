@@ -37,7 +37,7 @@
                     <label asp-for="JobForm.DepartmentId" class="form-label">واحد سازمانی</label>
                     <select asp-for="JobForm.DepartmentId" class="form-select" required>
                         <option value="0">انتخاب کنید</option>
-                        @foreach (var department in (IReadOnlyList<HRMS.Next.Modules.Organization.DepartmentOption>)(ViewData["Departments"] ?? Array.Empty<HRMS.Next.Modules.Organization.DepartmentOption>()))
+                        @foreach (var department in (IReadOnlyList<HRMS.Next.Modules.Organization.DepartmentOption>)(ViewData["ActiveDepartments"] ?? Array.Empty<HRMS.Next.Modules.Organization.DepartmentOption>()))
                         {
                             <option value="@department.Id">@department.Name</option>
                         }

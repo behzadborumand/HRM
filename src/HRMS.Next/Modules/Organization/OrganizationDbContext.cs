@@ -31,6 +31,8 @@ public sealed class OrganizationDbContext(DbContextOptions<OrganizationDbContext
             entity.ToTable("Departments", "organization");
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Name).HasMaxLength(200).IsRequired();
+            entity.Property(x => x.IsActive).HasDefaultValue(true);
+            entity.Property(x => x.RowVersion).IsRowVersion();
             entity.HasIndex(x => new { x.CompanyId, x.Name }).IsUnique();
             entity.HasOne<Company>().WithMany().HasForeignKey(x => x.CompanyId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<Department>().WithMany().HasForeignKey(x => x.ParentId).OnDelete(DeleteBehavior.Restrict);
@@ -50,6 +52,8 @@ public sealed class Department
     public int CompanyId { get; set; }
     public string Name { get; set; } = "";
     public int? ParentId { get; set; }
+    public bool IsActive { get; set; } = true;
+    public byte[] RowVersion { get; set; } = [];
 }
 
 public sealed class JobTitle

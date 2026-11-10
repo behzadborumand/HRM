@@ -24,6 +24,7 @@ builder.Services.AddScoped<IPasswordHasher<AppUser>, PasswordHasher<AppUser>>();
 builder.Services.AddScoped<AccessService>();
 builder.Services.AddScoped<IOrganizationDirectory, OrganizationDirectory>();
 builder.Services.AddScoped<JobTitleService>();
+builder.Services.AddScoped<DepartmentService>();
 builder.Services.AddScoped<EmployeeService>();
 builder.Services.AddScoped<EmployeeJobService>();
 builder.Services.AddScoped<IEmployeeDirectory, PersonnelDirectory>();

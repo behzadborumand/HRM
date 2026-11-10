@@ -85,6 +85,7 @@ public sealed class EditModel(AccessService access, EmployeeService employees, E
     private async Task LoadOptionsAsync(ActorScope actor, int id, CancellationToken ct)
     {
         ViewData["Departments"] = await organization.DepartmentsAsync(actor.CompanyId, ct);
+        ViewData["ActiveDepartments"] = await organization.ActiveDepartmentsAsync(actor.CompanyId, ct);
         ViewData["LockDepartment"] = true;
         Managers = await jobs.ManagerOptionsAsync(actor, id, ct);
         JobTitles = await titleService.ActiveOptionsAsync(actor, ct);
