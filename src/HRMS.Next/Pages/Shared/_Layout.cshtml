@@ -1,44 +1,92 @@
+@using HRMS.Next.Modules.Access
+@inject AccessService Access
 @{
     var path = Context.Request.Path.Value ?? "";
-    var employeesActive = path.StartsWith("/Employees", StringComparison.OrdinalIgnoreCase);
-    var leaveActive = path.StartsWith("/Leave", StringComparison.OrdinalIgnoreCase);
-    var trainingActive = path.StartsWith("/Training", StringComparison.OrdinalIgnoreCase);
-    var authenticated = User.Identity?.IsAuthenticated == true;
+    var isAuthed = User.Identity?.IsAuthenticated == true;
+    var actor = isAuthed ? await Access.GetActiveAsync(User, Context.RequestAborted) : null;
+    var canReadEmployees = actor is not null && AccessRules.CanRead(actor, actor.CompanyId);
+    var canAdmin = actor is { IsActive: true, IsAdmin: true };
+    var isProfile = path.StartsWith("/Employees/", StringComparison.OrdinalIgnoreCase)
+        && int.TryParse(path["/Employees/".Length..], out _);
+    var isEmployees = path.StartsWith("/Employees", StringComparison.OrdinalIgnoreCase);
+    var isLeave = path.StartsWith("/Leave", StringComparison.OrdinalIgnoreCase);
+    var isTraining = path.StartsWith("/Training", StringComparison.OrdinalIgnoreCase);
 }
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#f8faf8" />
-    <title>@ViewData["Title"] - سامانه منابع انسانی</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - سامانه منابع انسانی HRMS_BHR</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.rtl.min.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap-icons/font/bootstrap-icons.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/next-compat.css" asp-append-version="true" />
 </head>
-<body class="@(authenticated ? "app-body" : "auth-body")">
+<body class="@(isProfile ? "page-profile" : "page-standard")">
     <a class="skip-link" href="#main">رفتن به محتوای اصلی</a>
-    <header class="site-header">
-        <div class="topbar">
-            <a class="brand" asp-page="/Employees/Index" aria-label="سامانه منابع انسانی، صفحه کارکنان">
-                <span class="brand-mark" aria-hidden="true">هـ</span>
-                <span class="brand-copy"><strong>سامانه منابع انسانی</strong><small>مدیریت یکپارچه کارکنان</small></span>
+    <nav class="topbar" aria-label="ناوبری اصلی">
+        <div class="topbar-inner">
+            <a class="brand" asp-page="/Employees/Index" aria-label="سامانه منابع انسانی، کارکنان">
+                <svg class="brand-mark" width="25" height="28" viewBox="0 0 25 28" aria-hidden="true"><path d="M12 26V10M12 17C3 18 1 12 1 8c7 0 11 2 11 9Zm0-6C12 4 18 1 24 1c0 8-4 11-12 10Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg><span>hrms<span class="brand-suffix">BHR</span></span>
             </a>
-            @if (authenticated)
+            @if (isAuthed)
             {
-                <nav class="primary-nav" aria-label="ناوبری اصلی">
-                    <a asp-page="/Employees/Index" class="@(employeesActive ? "is-active" : null)" aria-current="@(employeesActive ? "page" : null)">کارکنان</a>
-                    <a asp-page="/Leave/Index" class="@(leaveActive ? "is-active" : null)" aria-current="@(leaveActive ? "page" : null)">مرخصی</a>
-                    <a asp-page="/Training/Index" class="@(trainingActive ? "is-active" : null)" aria-current="@(trainingActive ? "page" : null)">آموزش</a>
-                </nav>
-                <div class="account-controls">
-                    <span class="account-name" title="@User.Identity?.Name"><span class="account-avatar" aria-hidden="true">ک</span>@User.Identity?.Name</span>
-                    <form method="post" asp-page="/Logout"><button class="button-quiet" type="submit">خروج</button></form>
+                <ul class="topnav">
+                    @if (canReadEmployees)
+                    {
+                        <li><a class="nav-link @(isEmployees ? "active" : null)" aria-current="@(isEmployees ? "page" : null)" asp-page="/Employees/Index"><i class="bi bi-person-lines-fill"></i> کارکنان</a></li>
+                    }
+                    @if (canAdmin)
+                    {
+                        <li><a class="nav-link @(isLeave ? "active" : null)" aria-current="@(isLeave ? "page" : null)" asp-page="/Leave/Index"><i class="bi bi-calendar-check"></i> مرخصی</a></li>
+                        <li><a class="nav-link @(isTraining ? "active" : null)" aria-current="@(isTraining ? "page" : null)" asp-page="/Training/Index"><i class="bi bi-mortarboard"></i> آموزش‌ها</a></li>
+                    }
+                </ul>
+                @if (canReadEmployees)
+                {
+                <form class="searchbox" asp-page="/Employees/Index" method="get" role="search">
+                    <i class="bi bi-search"></i>
+                    <input type="search" name="query" value="@Context.Request.Query["query"]" placeholder="جستجوی کارمند..." aria-label="جستجوی کارمند" dir="rtl" />
+                </form>
+                }
+                <div class="user-chip dropdown">
+                    <button class="user-menu-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="حساب کاربری @User.Identity?.Name"><i class="bi bi-person-circle"></i></button>
+                    <div class="dropdown-menu dropdown-menu-end account-menu">
+                        <div class="px-3 py-2"><strong>@User.Identity?.Name</strong></div>
+                        <div class="dropdown-divider"></div>
+                        <form method="post" asp-page="/Logout">
+                            <button type="submit" class="dropdown-item"><i class="bi bi-box-arrow-left"></i> خروج</button>
+                        </form>
+                    </div>
                 </div>
             }
         </div>
-    </header>
-    <main id="main" class="page-shell">
-        @RenderBody()
-    </main>
-    <footer class="site-footer"><span>سامانه منابع انسانی</span><span>مدیریت کارکنان، مرخصی و آموزش</span></footer>
+    </nav>
+    @if (isAuthed)
+    {
+        <div class="hero-band">
+            <div class="page-width">
+                @if (IsSectionDefined("Hero"))
+                {
+                    @await RenderSectionAsync("Hero", required: false)
+                }
+                else
+                {
+                    <h1>@(ViewData["Title"] ?? "سامانه منابع انسانی")</h1>
+                }
+            </div>
+        </div>
+    }
+    <div class="page-width content-wrap">
+        <main id="main" role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+    <footer class="border-top footer text-muted">
+        <div class="container text-center">&copy; @(new System.Globalization.PersianCalendar().GetYear(DateTime.Today)) - سامانه منابع انسانی HRMS_BHR</div>
+    </footer>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

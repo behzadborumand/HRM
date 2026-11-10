@@ -6,12 +6,12 @@ using System.ComponentModel.DataAnnotations;
 namespace HRMS.Next.Modules.Personnel;
 
 public sealed record EmployeeInput(int DepartmentId, string EmployeeNumber, string FirstName, string LastName, string? Email, DateOnly HireDate);
-public sealed record EmployeeRow(int Id, string EmployeeNumber, string FullName, int DepartmentId, DateOnly HireDate, bool Terminated);
+public sealed record EmployeeRow(int Id, string EmployeeNumber, string FullName, int DepartmentId, DateOnly HireDate, bool Terminated, string? Email);
 public sealed record EmployeePage(IReadOnlyList<EmployeeRow> Rows, int Total, int Page, int PageSize);
 
 public sealed class EmployeeService(PersonnelDbContext db, IOrganizationDirectory organization, TimeProvider clock)
 {
-    public async Task<EmployeePage> SearchAsync(ActorScope actor, string? query, int? departmentId, int page, int pageSize, CancellationToken ct)
+    public async Task<EmployeePage> SearchAsync(ActorScope actor, string? query, int? departmentId, int page, int pageSize, CancellationToken ct, string? status = null)
     {
         if (!AccessRules.CanRead(actor, actor.CompanyId)) throw new UnauthorizedAccessException();
         page = Math.Max(1, page);
@@ -20,14 +20,16 @@ public sealed class EmployeeService(PersonnelDbContext db, IOrganizationDirector
         if (!string.IsNullOrWhiteSpace(query))
         {
             var term = query.Trim();
-            employees = employees.Where(x => x.EmployeeNumber.Contains(term) || x.FirstName.Contains(term) || x.LastName.Contains(term));
+            employees = employees.Where(x => x.EmployeeNumber.Contains(term) || x.FirstName.Contains(term) || x.LastName.Contains(term) || (x.Email != null && x.Email.Contains(term)));
         }
         if (departmentId is > 0) employees = employees.Where(x => x.DepartmentId == departmentId);
+        if (status == "Active") employees = employees.Where(x => x.TerminationDate == null);
+        if (status == "Terminated") employees = employees.Where(x => x.TerminationDate != null);
         var total = await employees.CountAsync(ct);
         page = Math.Min(page, Math.Max(1, (int)Math.Ceiling((double)total / pageSize)));
         var rows = await employees.OrderBy(x => x.LastName).ThenBy(x => x.FirstName).ThenBy(x => x.Id)
             .Skip((page - 1) * pageSize).Take(pageSize)
-            .Select(x => new EmployeeRow(x.Id, x.EmployeeNumber, x.FirstName + " " + x.LastName, x.DepartmentId, x.HireDate, x.TerminationDate != null))
+            .Select(x => new EmployeeRow(x.Id, x.EmployeeNumber, x.FirstName + " " + x.LastName, x.DepartmentId, x.HireDate, x.TerminationDate != null, x.Email))
             .ToListAsync(ct);
         return new EmployeePage(rows, total, page, pageSize);
     }

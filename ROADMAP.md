@@ -11,7 +11,7 @@
 - [x] One .NET 10 Razor Pages host with independent Access, Organization and Personnel EF Core contexts/migrations.
 - [x] Bootstrap/login and a company-scoped employee create/edit/search/profile flow with audit, concurrency and Jalali dates.
 - [x] Native .NET 10 build and SQL/HTTPS integration on the disposable trial database.
-- [x] Add responsive RTL shell, local font, employee list/profile/forms and login styling.
+- [x] Port the legacy HRMS_BHR RTL theme, shell and implemented employee/Leave/Training/Documents pages without redesigning the visual system.
 - [ ] Complete module-specific Persian RTL UI patterns, accessibility, selection and large-list behaviors.
 - [ ] Complete access grants, roles, company/department/employee scope and external Web API contracts.
 

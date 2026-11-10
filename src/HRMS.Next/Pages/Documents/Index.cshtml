@@ -4,65 +4,105 @@
 @{
     ViewData["Title"] = "اسناد کارمند";
 }
-<h1>اسناد @Model.Employee?.FirstName @Model.Employee?.LastName</h1>
-<p><a asp-page="/Employees/Details" asp-route-id="@Model.Employee?.Id">بازگشت به پرونده</a></p>
-<div asp-validation-summary="All" class="error" role="alert"></div>
-<section class="card">
-    <h2>اسناد ثبت‌شده</h2>
-    @if (Model.Result.Rows.Count == 0)
-    {
-        <p role="status">هنوز سندی برای این کارمند ثبت نشده است.</p>
-    }
-    else
-    {
-        <table>
-            <thead><tr><th>عنوان</th><th>دسته</th><th>فایل</th><th>حجم</th><th>بارگذاری</th><th>انقضا</th><th>اقدام</th></tr></thead>
-            <tbody>
-            @foreach (var item in Model.Result.Rows)
-            {
-                <tr data-document-id="@item.Id">
-                    <td>@item.Title</td><td>@(item.Category ?? "—")</td>
-                    <td dir="ltr">@item.FileName</td><td>@item.FileSize بایت</td>
-                    <td>@JalaliDate.Format(DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(item.UploadedAtUtc, TimeZoneInfo.FindSystemTimeZoneById("Iran Standard Time")).DateTime))</td>
-                    <td>@(item.ExpiryDate is { } expiry ? JalaliDate.Format(expiry) : "—")</td>
-                    <td>
-                        <a asp-page-handler="Download" asp-route-employeeId="@Model.Employee?.Id" asp-route-id="@item.Id">دانلود</a>
-                        @if (Model.CanWrite)
-                        {
-                            <form method="post" asp-page-handler="Delete" asp-route-employeeId="@Model.Employee?.Id">
-                                <input type="hidden" name="DocumentId" value="@item.Id" />
-                                <button class="button-danger" type="submit">حذف</button>
-                            </form>
-                        }
-                    </td>
-                </tr>
-            }
-            </tbody>
-        </table>
-    }
-    <nav aria-label="صفحه‌بندی اسناد">
-        @if (Model.Result.Page > 1)
-        {
-            <a asp-page="/Documents/Index" asp-route-employeeId="@Model.Employee?.Id" asp-route-page="@(Model.Result.Page - 1)">قبلی</a>
-        }
-        <span>صفحه @Model.Result.Page از @Math.Max(1, (int)Math.Ceiling((double)Model.Result.Total / Model.Result.PageSize))</span>
-        @if (Model.Result.Page * Model.Result.PageSize < Model.Result.Total)
-        {
-            <a asp-page="/Documents/Index" asp-route-employeeId="@Model.Employee?.Id" asp-route-page="@(Model.Result.Page + 1)">بعدی</a>
-        }
-    </nav>
-</section>
-@if (Model.CanWrite)
-{
-    <section class="card">
-        <h2>افزودن سند</h2>
-        <form method="post" enctype="multipart/form-data" asp-page-handler="Upload" asp-route-employeeId="@Model.Employee?.Id">
-            <label for="title">عنوان</label><input id="title" name="Title" value="@Model.Title" required maxlength="200" />
-            <label for="category">دسته</label><input id="category" name="Category" value="@Model.Category" maxlength="50" />
-            <label for="expiry">تاریخ انقضا (شمسی، اختیاری)</label><input id="expiry" name="ExpiryDateJalali" value="@Model.ExpiryDateJalali" placeholder="۱۴۰۵/۰۱/۰۱" dir="ltr" />
-            <label for="uploadFile">فایل</label><input id="uploadFile" name="UploadFile" type="file" required />
-            <p>حداکثر ۱۰ مگابایت؛ PDF، تصویر، Word، Excel، متن یا ZIP.</p>
-            <button type="submit">بارگذاری</button>
-        </form>
-    </section>
+@section Hero {
+    <div class="d-flex justify-content-between align-items-end gap-3 flex-wrap">
+        <div>
+            <h1>مدارک @Model.Employee?.FirstName @Model.Employee?.LastName</h1>
+            <p class="hero-sub">کد پرسنلی @Model.Employee?.EmployeeNumber</p>
+        </div>
+        <a asp-page="/Employees/Details" asp-route-id="@Model.Employee?.Id" class="btn btn-hero">
+            <i class="bi bi-arrow-right"></i> بازگشت به پرونده
+        </a>
+    </div>
 }
+<div asp-validation-summary="All" class="text-danger" role="alert"></div>
+<div class="row g-3">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header bg-white fw-semibold"><i class="bi bi-file-earmark-text"></i> اسناد ثبت‌شده</div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped align-middle text-center mb-0">
+                        <thead><tr><th>عنوان</th><th>دسته</th><th>فایل</th><th>حجم</th><th>تاریخ بارگذاری</th><th>انقضا</th><th></th></tr></thead>
+                        <tbody>
+                            @if (Model.Result.Rows.Count == 0)
+                            {
+                                <tr><td colspan="7" class="text-muted">هنوز سندی برای این کارمند ثبت نشده است.</td></tr>
+                            }
+                            @foreach (var document in Model.Result.Rows)
+                            {
+                                <tr data-document-id="@document.Id">
+                                    <td class="text-start">@document.Title</td>
+                                    <td>@(document.Category ?? "-")</td>
+                                    <td class="text-muted small" dir="ltr">@document.FileName</td>
+                                    <td>@(document.FileSize / 1024.0).ToString("0.#") کیلوبایت</td>
+                                    <td>@JalaliDate.Format(DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(document.UploadedAtUtc, TimeZoneInfo.FindSystemTimeZoneById("Iran Standard Time")).DateTime))</td>
+                                    <td>@(document.ExpiryDate is { } expiry ? JalaliDate.Format(expiry) : "-")</td>
+                                    <td>
+                                        <a asp-page-handler="Download" asp-route-employeeId="@Model.Employee?.Id" asp-route-id="@document.Id" class="btn btn-outline-primary btn-sm"><i class="bi bi-download"></i> دانلود</a>
+                                        @if (Model.CanWrite)
+                                        {
+                                            <form method="post" asp-page-handler="Delete" asp-route-employeeId="@Model.Employee?.Id" class="d-inline">
+                                                <input type="hidden" name="DocumentId" value="@document.Id" />
+                                                <button type="submit" class="btn btn-outline-danger btn-sm" aria-label="حذف @document.Title" onclick="return confirm('حذف این سند و فایل آن قطعی است؛ ادامه می‌دهید؟');"><i class="bi bi-trash"></i></button>
+                                            </form>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                @if (Model.Result.Total > Model.Result.PageSize)
+                {
+                    <nav class="d-flex justify-content-center gap-1 mt-3" aria-label="صفحه‌بندی اسناد">
+                        @if (Model.Result.Page > 1)
+                        {
+                            <a class="btn btn-sm btn-outline-primary" asp-page="/Documents/Index" asp-route-employeeId="@Model.Employee?.Id" asp-route-page="@(Model.Result.Page - 1)">صفحه قبل</a>
+                        }
+                        <span class="btn btn-sm btn-light">صفحه @Model.Result.Page از @Math.Max(1, (int)Math.Ceiling((double)Model.Result.Total / Model.Result.PageSize))</span>
+                        @if (Model.Result.Page * Model.Result.PageSize < Model.Result.Total)
+                        {
+                            <a class="btn btn-sm btn-outline-primary" asp-page="/Documents/Index" asp-route-employeeId="@Model.Employee?.Id" asp-route-page="@(Model.Result.Page + 1)">صفحه بعد</a>
+                        }
+                    </nav>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        @if (Model.CanWrite)
+        {
+            <div class="card">
+                <div class="card-header bg-primary text-white"><i class="bi bi-upload"></i> افزودن سند</div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" asp-page-handler="Upload" asp-route-employeeId="@Model.Employee?.Id">
+                        <div class="mb-3">
+                            <label class="form-label" for="title">عنوان</label>
+                            <input class="form-control" id="title" name="Title" value="@Model.Title" required maxlength="200" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="category">دسته</label>
+                            <input class="form-control" id="category" name="Category" value="@Model.Category" maxlength="50" list="documentCategories" />
+                            <datalist id="documentCategories">
+                                <option value="قرارداد"></option><option value="شناسنامه و کارت"></option>
+                                <option value="تحصیلی"></option><option value="سوابق شغلی"></option>
+                                <option value="بیمه و مالیاتی"></option><option value="سایر"></option>
+                            </datalist>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="expiry">تاریخ انقضا</label>
+                            <input class="form-control" id="expiry" name="ExpiryDateJalali" value="@Model.ExpiryDateJalali" placeholder="۱۴۰۵/۰۱/۰۱" dir="ltr" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="uploadFile">فایل</label>
+                            <input class="form-control" id="uploadFile" name="UploadFile" type="file" required />
+                            <div class="form-text">حداکثر ۱۰ مگابایت؛ PDF، تصویر، Word، Excel، متن یا ZIP.</div>
+                        </div>
+                        <button type="submit" class="btn btn-success"><i class="bi bi-check-circle"></i> بارگذاری</button>
+                    </form>
+                </div>
+            </div>
+        }
+    </div>
+</div>

@@ -1,0 +1,12 @@
+/* Razor Pages adaptation only. The visual theme is copied unchanged from HRMS_BHR/site.css. */
+.skip-link {
+  position: absolute;
+  z-index: 1100;
+  top: -5rem;
+  right: 1rem;
+  padding: .5rem .75rem;
+  border: 1px solid var(--hrms-green);
+  border-radius: .25rem;
+  background: #fff;
+}
+.skip-link:focus { top: .5rem; }

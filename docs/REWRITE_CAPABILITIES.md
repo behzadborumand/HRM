@@ -11,7 +11,7 @@ Legacy source is the separate `D:\SourceCodes\GitProjects\HRMS_BHR` repository: 
 | Courses and assignments | Training | Partial: independent schema, administrator course create/edit/activation, assignment/completion flow, Razor Page and SQL/HTTPS tests; 6 legacy courses and 5 assignments imported in trial; staff self-service pending |
 | Private employee documents | Documents | Partial: independent schema, private paginated list/upload/download/delete, SHA256 and audit, SQL/HTTPS tests; legacy source has 0 rows; employee self-service and nonempty file transfer pending |
 | Dashboard and HR reports | Reporting | Planned |
-| Persian RTL shell and Jalali binder | Host presentation | Planned |
+| Persian RTL shell and Jalali binder | Host presentation | Partial: legacy UI theme and implemented Razor Pages ported; remaining screens await their backend modules |
 | Tavanir, contractors, orders, position requirements, appraisal, insurance, retirement, welfare, medical, dynamic fields | Corresponding future modules or Personnel metadata | No source implementation found |
 
 Legacy uses one `HrmsDbContext` and SQL scripts in `dbo`, including a script that drops tables. Startup seeds sample organization, employees and users. The new host must not reuse either behavior. Legacy employee deletion checks some related data then physically deletes; the rewrite must preserve employment history and prefer termination/archival. Existing generic repositories and MVC service dependencies are reference material only.

@@ -1,41 +1,47 @@
 @model HRMS.Next.Pages.Employees.EmployeeForm
-<div asp-validation-summary="All" class="error" role="alert"></div>
-<div class="form-grid">
-    <div class="form-field">
-        <label asp-for="EmployeeNumber">شماره پرسنلی</label>
-        <input asp-for="EmployeeNumber" required />
-        <span asp-validation-for="EmployeeNumber" class="error"></span>
+<div asp-validation-summary="All" class="text-danger" role="alert"></div>
+<div class="row g-3">
+    <div class="col-12">
+        <h6 class="text-primary border-bottom pb-2"><i class="bi bi-person-vcard"></i> اطلاعات شخصی</h6>
     </div>
-    <div class="form-field">
-        <label asp-for="DepartmentId">واحد سازمانی</label>
-        <select asp-for="DepartmentId" required>
+    <div class="col-md-3">
+        <label asp-for="EmployeeNumber" class="form-label">کد پرسنلی</label>
+        <input asp-for="EmployeeNumber" class="form-control" required />
+        <span asp-validation-for="EmployeeNumber" class="text-danger small"></span>
+    </div>
+    <div class="col-md-3">
+        <label asp-for="FirstName" class="form-label">نام</label>
+        <input asp-for="FirstName" class="form-control" required autocomplete="given-name" />
+        <span asp-validation-for="FirstName" class="text-danger small"></span>
+    </div>
+    <div class="col-md-3">
+        <label asp-for="LastName" class="form-label">نام خانوادگی</label>
+        <input asp-for="LastName" class="form-control" required autocomplete="family-name" />
+        <span asp-validation-for="LastName" class="text-danger small"></span>
+    </div>
+    <div class="col-md-3">
+        <label asp-for="Email" class="form-label">ایمیل</label>
+        <input asp-for="Email" class="form-control" type="email" dir="ltr" autocomplete="email" />
+        <span asp-validation-for="Email" class="text-danger small"></span>
+    </div>
+    <div class="col-12 mt-3">
+        <h6 class="text-primary border-bottom pb-2"><i class="bi bi-briefcase"></i> اطلاعات شغلی</h6>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="DepartmentId" class="form-label">واحد سازمانی</label>
+        <select asp-for="DepartmentId" class="form-select" required>
             <option value="0">انتخاب کنید</option>
             @foreach (var department in (IReadOnlyList<HRMS.Next.Modules.Organization.DepartmentOption>)(ViewData["Departments"] ?? Array.Empty<HRMS.Next.Modules.Organization.DepartmentOption>()))
             {
                 <option value="@department.Id">@department.Name</option>
             }
         </select>
-        <span asp-validation-for="DepartmentId" class="error"></span>
+        <span asp-validation-for="DepartmentId" class="text-danger small"></span>
     </div>
-    <div class="form-field">
-        <label asp-for="FirstName">نام</label>
-        <input asp-for="FirstName" required autocomplete="given-name" />
-        <span asp-validation-for="FirstName" class="error"></span>
-    </div>
-    <div class="form-field">
-        <label asp-for="LastName">نام خانوادگی</label>
-        <input asp-for="LastName" required autocomplete="family-name" />
-        <span asp-validation-for="LastName" class="error"></span>
-    </div>
-    <div class="form-field">
-        <label asp-for="HireDateJalali">تاریخ استخدام شمسی</label>
-        <input asp-for="HireDateJalali" placeholder="۱۴۰۳/۰۱/۰۱" required />
-        <span asp-validation-for="HireDateJalali" class="error"></span>
-    </div>
-    <div class="form-field">
-        <label asp-for="Email">ایمیل</label>
-        <input asp-for="Email" type="email" autocomplete="email" />
-        <span asp-validation-for="Email" class="error"></span>
+    <div class="col-md-6">
+        <label asp-for="HireDateJalali" class="form-label">تاریخ استخدام شمسی</label>
+        <input asp-for="HireDateJalali" class="form-control" dir="ltr" placeholder="۱۴۰۳/۰۱/۰۱" required />
+        <span asp-validation-for="HireDateJalali" class="text-danger small"></span>
     </div>
 </div>
 <input asp-for="Version" type="hidden" />

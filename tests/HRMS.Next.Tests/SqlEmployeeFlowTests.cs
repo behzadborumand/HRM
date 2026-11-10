@@ -32,11 +32,14 @@ public sealed class SqlEmployeeFlowTests
         {
             var actor = new ActorScope(77, "integration", company.Id, true, true, true, true);
             var service = new EmployeeService(personnel, new OrganizationDirectory(organization), TimeProvider.System);
-            var input = new EmployeeInput(department.Id, "IT-" + Guid.NewGuid().ToString("N")[..12], "نام", "خانوادگی", null, new DateOnly(2024, 3, 20));
+            var input = new EmployeeInput(department.Id, "IT-" + Guid.NewGuid().ToString("N")[..12], "نام", "خانوادگی", "integration@example.test", new DateOnly(2024, 3, 20));
             var id = await service.CreateAsync(actor, input, CancellationToken.None);
             var page = await service.SearchAsync(actor, input.EmployeeNumber, department.Id, 1, 20, CancellationToken.None);
             Assert.Single(page.Rows);
             Assert.Equal(id, page.Rows[0].Id);
+            Assert.Single((await service.SearchAsync(actor, "integration@example.test", null, 1, 20, CancellationToken.None)).Rows);
+            Assert.Single((await service.SearchAsync(actor, null, null, 1, 20, CancellationToken.None, "Active")).Rows);
+            Assert.Empty((await service.SearchAsync(actor, null, null, 1, 20, CancellationToken.None, "Terminated")).Rows);
             Assert.Null(await service.GetAsync(actor with { CompanyId = company.Id + 1 }, id, CancellationToken.None));
             var before = (await service.GetAsync(actor, id, CancellationToken.None))!;
             await Assert.ThrowsAsync<DbUpdateConcurrencyException>(() => service.UpdateAsync(actor, id, input with { LastName = "ویرایش" }, [1, 2], CancellationToken.None));

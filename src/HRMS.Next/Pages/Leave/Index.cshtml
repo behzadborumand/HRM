@@ -4,69 +4,111 @@
 @{
     ViewData["Title"] = "مرخصی";
 }
-<h1>مدیریت مرخصی</h1>
-<div asp-validation-summary="All" class="error" role="alert"></div>
+@section Hero {
+    <div class="d-flex justify-content-between align-items-end gap-3 flex-wrap">
+        <div>
+            <h1>مرخصی</h1>
+            <p class="hero-sub">سیاست‌ها و درخواست‌های مرخصی</p>
+        </div>
+    </div>
+}
+<div asp-validation-summary="All" class="text-danger" role="alert"></div>
+<div class="row g-3 mb-3">
+    <div class="col-lg-4">
+        <section class="card h-100">
+            <div class="card-header bg-white fw-semibold"><i class="bi bi-calendar-plus"></i> سیاست جدید</div>
+            <div class="card-body">
+                <form method="post" asp-page-handler="Policy">
+                    <div class="mb-3">
+                        <label class="form-label" for="name">نام سیاست</label>
+                        <input class="form-control" id="name" name="Name" required maxlength="200" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="annualHours">ساعت سالانه (۰ برای بدون سقف)</label>
+                        <input class="form-control" id="annualHours" name="AnnualHours" type="number" min="0" max="99999999" step="0.01" required />
+                    </div>
+                    <button type="submit" class="btn btn-primary">ثبت سیاست</button>
+                </form>
+            </div>
+        </section>
+    </div>
+    <div class="col-lg-8">
+        <section class="card h-100">
+            <div class="card-header bg-white fw-semibold"><i class="bi bi-calendar-check"></i> درخواست جدید</div>
+            <div class="card-body">
+                <form method="post" asp-page-handler="Request" class="row g-2">
+                    <div class="col-md-6">
+                        <label class="form-label" for="employeeId">کارمند</label>
+                        <select class="form-select" id="employeeId" name="EmployeeId" required>
+                            <option value="">انتخاب کنید</option>
+                            @foreach (var employee in Model.EmployeeChoices?.Rows ?? [])
+                            {
+                                <option value="@employee.Id">@employee.FullName (@employee.EmployeeNumber)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" for="policyId">سیاست</label>
+                        <select class="form-select" id="policyId" name="PolicyId" required>
+                            <option value="">انتخاب کنید</option>
+                            @foreach (var policy in Model.Policies)
+                            {
+                                <option value="@policy.Id">@policy.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" for="startDate">شروع (شمسی)</label>
+                        <input class="form-control" id="startDate" name="StartDateJalali" placeholder="۱۴۰۳/۰۱/۰۱" required />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" for="endDate">پایان (شمسی)</label>
+                        <input class="form-control" id="endDate" name="EndDateJalali" placeholder="۱۴۰۳/۰۱/۰۲" required />
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label" for="reason">دلیل</label>
+                        <input class="form-control" id="reason" name="Reason" maxlength="1000" />
+                    </div>
+                    <div class="col-12"><button type="submit" class="btn btn-primary">ثبت درخواست</button></div>
+                </form>
+            </div>
+        </section>
+    </div>
+</div>
 <section class="card">
-    <h2>سیاست جدید</h2>
-    <form method="post" asp-page-handler="Policy">
-        <label for="name">نام سیاست</label><input id="name" name="Name" required maxlength="200" />
-        <label for="annualHours">ساعت سالانه (۰ برای بدون سقف)</label><input id="annualHours" name="AnnualHours" type="number" min="0" max="99999999" step="0.01" required />
-        <p><button type="submit">ثبت سیاست</button></p>
-    </form>
-</section>
-<section class="card">
-    <h2>درخواست جدید</h2>
-    <form method="post" asp-page-handler="Request">
-        <label for="employeeId">کارمند</label>
-        <select id="employeeId" name="EmployeeId" required>
-            <option value="">انتخاب کنید</option>
-            @foreach (var employee in Model.EmployeeChoices?.Rows ?? [])
-            {
-                <option value="@employee.Id">@employee.FullName (@employee.EmployeeNumber)</option>
-            }
-        </select>
-        <label for="policyId">سیاست</label>
-        <select id="policyId" name="PolicyId" required>
-            <option value="">انتخاب کنید</option>
-            @foreach (var policy in Model.Policies)
-            {
-                <option value="@policy.Id">@policy.Name</option>
-            }
-        </select>
-        <label for="startDate">شروع (شمسی)</label><input id="startDate" name="StartDateJalali" placeholder="۱۴۰۳/۰۱/۰۱" required />
-        <label for="endDate">پایان (شمسی)</label><input id="endDate" name="EndDateJalali" placeholder="۱۴۰۳/۰۱/۰۲" required />
-        <label for="reason">دلیل</label><input id="reason" name="Reason" maxlength="1000" />
-        <p><button type="submit">ثبت درخواست</button></p>
-    </form>
-</section>
-<section class="card">
-    <h2>درخواست‌ها</h2>
-    @if (Model.Requests.Count == 0)
-    {
-        <p>درخواستی ثبت نشده است.</p>
-    }
-    else
-    {
-        <table><thead><tr><th>کارمند</th><th>سیاست</th><th>از</th><th>تا</th><th>ساعت</th><th>وضعیت</th><th>ثبت‌کننده</th><th>تصمیم‌گیرنده</th><th>اقدام</th></tr></thead><tbody>
-        @foreach (var request in Model.Requests)
-        {
-            <tr data-request-id="@request.Id">
-                <td>@(Model.EmployeeChoices?.Rows.FirstOrDefault(x => x.Id == request.EmployeeId)?.FullName ?? request.EmployeeId.ToString())</td>
-                <td>@(Model.Policies.FirstOrDefault(x => x.Id == request.PolicyId)?.Name ?? request.PolicyId.ToString())</td>
-                <td>@JalaliDate.Format(request.StartDate)</td><td>@JalaliDate.Format(request.EndDate)</td>
-                <td>@request.Hours</td><td>@request.Status</td>
-                <td>@Model.ActorLabel(request.RequestedByUserId, request.RequestedByEmployeeId)</td>
-                <td>@Model.ActorLabel(request.DecidedByUserId, request.DecidedByEmployeeId)</td>
-                <td>
-                    @if (request.Status == "Pending")
+    <div class="card-header bg-white fw-semibold"><i class="bi bi-list-task"></i> درخواست‌های مرخصی</div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped text-center align-middle">
+                <thead><tr><th>کارمند</th><th>سیاست</th><th>از</th><th>تا</th><th>ساعت</th><th>وضعیت</th><th>ثبت‌کننده</th><th>تصمیم‌گیرنده</th><th>عملیات</th></tr></thead>
+                <tbody>
+                    @if (Model.Requests.Count == 0)
                     {
-                        <form method="post" asp-page-handler="Approve"><input type="hidden" name="RequestId" value="@request.Id" /><button type="submit">تأیید</button></form>
-                        <form method="post" asp-page-handler="Reject"><input type="hidden" name="RequestId" value="@request.Id" /><button class="button-danger" type="submit">رد</button></form>
-                        <form method="post" asp-page-handler="Cancel"><input type="hidden" name="RequestId" value="@request.Id" /><button class="button-quiet" type="submit">لغو</button></form>
+                        <tr><td colspan="9" class="text-muted py-4">درخواستی ثبت نشده است.</td></tr>
                     }
-                </td>
-            </tr>
-        }
-        </tbody></table>
-    }
+                    @foreach (var request in Model.Requests)
+                    {
+                        <tr data-request-id="@request.Id">
+                            <td>@(Model.EmployeeChoices?.Rows.FirstOrDefault(x => x.Id == request.EmployeeId)?.FullName ?? request.EmployeeId.ToString())</td>
+                            <td>@(Model.Policies.FirstOrDefault(x => x.Id == request.PolicyId)?.Name ?? request.PolicyId.ToString())</td>
+                            <td>@JalaliDate.Format(request.StartDate)</td>
+                            <td>@JalaliDate.Format(request.EndDate)</td>
+                            <td>@request.Hours</td>
+                            <td><span class="badge text-bg-@(request.Status == "Approved" ? "success" : request.Status == "Pending" ? "warning" : "secondary")">@(request.Status == "Approved" ? "تأیید شده" : request.Status == "Pending" ? "در انتظار تأیید" : request.Status == "Rejected" ? "رد شده" : "لغو شده")</span></td>
+                            <td>@Model.ActorLabel(request.RequestedByUserId, request.RequestedByEmployeeId)</td>
+                            <td>@Model.ActorLabel(request.DecidedByUserId, request.DecidedByEmployeeId)</td>
+                            <td>
+                                @if (request.Status == "Pending")
+                                {
+                                    <form method="post" asp-page-handler="Approve" class="d-inline"><input type="hidden" name="RequestId" value="@request.Id" /><button type="submit" class="btn btn-sm btn-outline-primary">تأیید</button></form>
+                                    <form method="post" asp-page-handler="Reject" class="d-inline"><input type="hidden" name="RequestId" value="@request.Id" /><button type="submit" class="btn btn-sm btn-outline-danger">رد</button></form>
+                                    <form method="post" asp-page-handler="Cancel" class="d-inline"><input type="hidden" name="RequestId" value="@request.Id" /><button type="submit" class="btn btn-sm btn-outline-secondary">لغو</button></form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
 </section>

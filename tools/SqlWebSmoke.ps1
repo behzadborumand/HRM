@@ -1,4 +1,4 @@
-param(
+﻿param(
     [Parameter(Mandatory = $true)][string]$AppExe,
     [string]$DotnetRoot,
     [string]$Database = 'HRMS_Next_Trial_20261108',
@@ -104,13 +104,13 @@ try {
     }
     $leave = Invoke-WebRequest "$baseUrl/Leave" -WebSession $webSession -UseBasicParsing
     $requestId = [regex]::Match($leave.Content, 'data-request-id="([1-9][0-9]*)"').Groups[1].Value
-    if (!$requestId -or $leave.Content -notmatch 'Pending') { throw 'Leave request was not listed as Pending.' }
+    if (!$requestId -or [System.Net.WebUtility]::HtmlDecode($leave.Content) -notmatch 'در انتظار تأیید') { throw 'Leave request was not listed as Pending.' }
     $leaveToken = Get-FormToken $leave.Content
     $approved = Invoke-WebRequest "$baseUrl/Leave?handler=Approve" -Method Post -WebSession $webSession -UseBasicParsing -Body @{
         RequestId = $requestId; Comments = 'Smoke approved'; __RequestVerificationToken = $leaveToken
     }
     $leave = Invoke-WebRequest "$baseUrl/Leave" -WebSession $webSession -UseBasicParsing
-    if ($leave.Content -notmatch 'Approved') { throw 'Leave request was not approved.' }
+    if ([System.Net.WebUtility]::HtmlDecode($leave.Content) -notmatch 'تأیید شده') { throw 'Leave request was not approved.' }
     $training = Invoke-WebRequest "$baseUrl/Training" -WebSession $webSession -UseBasicParsing
     $trainingToken = Get-FormToken $training.Content
     $courseCreated = Invoke-WebRequest "$baseUrl/Training?handler=Course" -Method Post -WebSession $webSession -UseBasicParsing -Body @{
@@ -141,7 +141,7 @@ try {
         AssignmentId = $assignmentId; CompletedDateJalali = '1403/02/02'; CertificateNumber = 'SMOKE-CERT'; __RequestVerificationToken = $trainingToken
     }
     $training = Invoke-WebRequest "$baseUrl/Training" -WebSession $webSession -UseBasicParsing
-    if ($training.Content -notmatch 'Completed' -or $training.Content -notmatch 'SMOKE-CERT') {
+    if ([System.Net.WebUtility]::HtmlDecode($training.Content) -notmatch 'انجام شده' -or $training.Content -notmatch 'SMOKE-CERT') {
         throw 'Training completion was not listed.'
     }
     $trainingToken = Get-FormToken $training.Content
@@ -193,6 +193,8 @@ try {
     $documentsPage = Invoke-WebRequest "$baseUrl/Employees/$employeeId/Documents" -WebSession $webSession -UseBasicParsing
     $documentId = [regex]::Match($documentsPage.Content, 'data-document-id="([1-9][0-9]*)"').Groups[1].Value
     if (!$documentId -or $documentsPage.Content -notmatch 'Smoke contract') { throw 'Uploaded document was not listed.' }
+    $profileWithDocument = Invoke-WebRequest "$baseUrl/Employees/$employeeId" -WebSession $webSession -UseBasicParsing
+    if ($profileWithDocument.Content -notmatch ('data-document-id="' + $documentId + '"')) { throw 'Uploaded document was not shown in the employee profile tab.' }
     $downloadFile = Join-Path $env:TEMP ('hrm-smoke-document-' + $suffix + '.pdf')
     try {
         Invoke-WebRequest "$baseUrl/Employees/$employeeId/Documents?handler=Download&id=$documentId" -WebSession $webSession -UseBasicParsing -OutFile $downloadFile | Out-Null

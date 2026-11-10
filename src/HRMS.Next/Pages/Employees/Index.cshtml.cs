@@ -12,19 +12,21 @@ public sealed class IndexModel(AccessService access, EmployeeService employees, 
 {
     public string? Query { get; private set; }
     public int? DepartmentId { get; private set; }
+    public string? Status { get; private set; }
     public EmployeePage? Result { get; private set; }
     public IReadOnlyList<DepartmentOption> Departments { get; private set; } = [];
     public bool CanWrite { get; private set; }
 
-    public async Task<IActionResult> OnGetAsync(string? query, int? departmentId, int page = 1, CancellationToken ct = default)
+    public async Task<IActionResult> OnGetAsync(string? query, int? departmentId, string? status, int page = 1, CancellationToken ct = default)
     {
         var actor = await access.GetActiveAsync(User, ct);
         if (actor is null || !AccessRules.CanRead(actor, actor.CompanyId)) return Forbid();
         Query = query;
         DepartmentId = departmentId;
+        Status = status is "Active" or "Terminated" ? status : null;
         CanWrite = AccessRules.CanWrite(actor, actor.CompanyId);
         Departments = await organization.DepartmentsAsync(actor.CompanyId, ct);
-        Result = await employees.SearchAsync(actor, query, departmentId, page, 20, ct);
+        Result = await employees.SearchAsync(actor, query, departmentId, page, 20, ct, Status);
         return Page();
     }
 }

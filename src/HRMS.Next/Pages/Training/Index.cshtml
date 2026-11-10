@@ -2,105 +2,158 @@
 @using HRMS.Next.Pages.Employees
 @model HRMS.Next.Pages.Training.IndexModel
 @{
-    ViewData["Title"] = "آموزش";
+    ViewData["Title"] = "آموزش‌ها";
 }
-<h1>مدیریت آموزش</h1>
-<div asp-validation-summary="All" class="error" role="alert"></div>
-<section class="card">
-    <h2>@(Model.EditCourseId > 0 ? "ویرایش دوره" : "دورهٔ جدید")</h2>
-    <form method="post" asp-page-handler="Course">
-        <input type="hidden" name="EditCourseId" value="@Model.EditCourseId" />
-        <label for="title">عنوان دوره</label><input id="title" name="Title" value="@Model.Title" required maxlength="200" />
-        <label for="category">دسته</label><input id="category" name="Category" value="@Model.Category" maxlength="50" />
-        <label for="provider">برگزارکننده</label><input id="provider" name="Provider" value="@Model.Provider" maxlength="200" />
-        <label for="description">توضیح</label><input id="description" name="Description" value="@Model.Description" maxlength="1000" />
-        <label for="renewalDays">دورهٔ تکرار (روز، اختیاری)</label><input id="renewalDays" name="RenewalDays" value="@Model.RenewalDays" type="number" min="1" max="3650" />
-        <label><input name="MandatoryForAll" type="checkbox" value="true" checked="@Model.MandatoryForAll" /> الزامی برای همه</label>
-        <p><button type="submit">@(Model.EditCourseId > 0 ? "ذخیرهٔ تغییرات" : "ثبت دوره")</button></p>
-    </form>
+@section Hero {
+    <div class="d-flex justify-content-between align-items-end gap-3 flex-wrap">
+        <div>
+            <h1>آموزش‌ها</h1>
+            <p class="hero-sub">واگذاری دوره‌ها، سررسید و ثبت انجام آموزش</p>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="#catalog" class="btn btn-hero"><i class="bi bi-journal-text"></i> کاتالوگ دوره‌ها</a>
+            <a href="#assignments" class="btn btn-hero"><i class="bi bi-list-task"></i> واگذاری‌ها</a>
+        </div>
+    </div>
+}
+<div asp-validation-summary="All" class="text-danger" role="alert"></div>
+<section class="card mb-3">
+    <div class="card-header bg-white fw-semibold"><i class="bi bi-journal-plus"></i> @(Model.EditCourseId > 0 ? "ویرایش دوره" : "دورهٔ جدید")</div>
+    <div class="card-body">
+        <form method="post" asp-page-handler="Course" class="row g-2">
+            <input type="hidden" name="EditCourseId" value="@Model.EditCourseId" />
+            <div class="col-md-4">
+                <label class="form-label" for="title">عنوان دوره</label>
+                <input class="form-control" id="title" name="Title" value="@Model.Title" required maxlength="200" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label" for="category">دسته</label>
+                <input class="form-control" id="category" name="Category" value="@Model.Category" maxlength="50" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label" for="provider">برگزارکننده</label>
+                <input class="form-control" id="provider" name="Provider" value="@Model.Provider" maxlength="200" />
+            </div>
+            <div class="col-md-8">
+                <label class="form-label" for="description">توضیح</label>
+                <input class="form-control" id="description" name="Description" value="@Model.Description" maxlength="1000" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label" for="renewalDays">دورهٔ تکرار (روز، اختیاری)</label>
+                <input class="form-control" id="renewalDays" name="RenewalDays" value="@Model.RenewalDays" type="number" min="1" max="3650" />
+            </div>
+            <div class="col-12">
+                <label class="form-check-label"><input class="form-check-input ms-1" name="MandatoryForAll" type="checkbox" value="true" checked="@Model.MandatoryForAll" /> الزامی برای همه</label>
+            </div>
+            <div class="col-12"><button type="submit" class="btn btn-primary">@(Model.EditCourseId > 0 ? "ذخیرهٔ تغییرات" : "ثبت دوره")</button></div>
+        </form>
+    </div>
 </section>
-<section class="card">
-    <h2>کاتالوگ دوره‌ها</h2>
-    @if (Model.Courses.Count == 0)
-    {
-        <p>دوره‌ای ثبت نشده است.</p>
-    }
-    else
-    {
-        <table><thead><tr><th>عنوان</th><th>دسته</th><th>تکرار</th><th>وضعیت</th><th>اقدام</th></tr></thead><tbody>
-        @foreach (var course in Model.Courses)
-        {
-            <tr data-course-id="@course.Id">
-                <td>@course.Title</td><td>@course.Category</td><td>@course.RenewalDays</td>
-                <td>@(course.Active ? "فعال" : "غیرفعال")</td>
-                <td>
-                    <a asp-page="/Training/Index" asp-route-edit="@course.Id">ویرایش</a>
-                    <form method="post" asp-page-handler="ToggleCourse">
-                        <input type="hidden" name="CourseId" value="@course.Id" />
-                        <input type="hidden" name="Active" value="@(!course.Active)" />
-                        <button type="submit">@(course.Active ? "غیرفعال‌کردن" : "فعال‌کردن")</button>
-                    </form>
-                </td>
-            </tr>
-        }
-        </tbody></table>
-    }
-</section>
-<section class="card">
-    <h2>واگذاری دوره</h2>
-    <form method="post" asp-page-handler="Assign">
-        <label for="employeeId">کارمند</label>
-        <select id="employeeId" name="EmployeeId" required>
-            <option value="">انتخاب کنید</option>
-            @foreach (var employee in Model.EmployeeChoices?.Rows ?? [])
-            {
-                <option value="@employee.Id">@employee.FullName (@employee.EmployeeNumber)</option>
-            }
-        </select>
-        <label for="courseId">دوره</label>
-        <select id="courseId" name="CourseId" required>
-            <option value="">انتخاب کنید</option>
-            @foreach (var course in Model.Courses.Where(x => x.Active))
-            {
-                <option value="@course.Id">@course.Title</option>
-            }
-        </select>
-        <label for="assignedDate">تاریخ واگذاری (شمسی)</label><input id="assignedDate" name="AssignedDateJalali" placeholder="۱۴۰۳/۰۱/۰۱" required />
-        <label for="dueDate">سررسید (شمسی، اختیاری)</label><input id="dueDate" name="DueDateJalali" placeholder="۱۴۰۳/۰۲/۰۱" />
-        <p><button type="submit">ثبت واگذاری</button></p>
-    </form>
-</section>
-<section class="card">
-    <h2>واگذاری‌ها</h2>
-    @if (Model.Assignments.Count == 0)
-    {
-        <p>واگذاری ثبت نشده است.</p>
-    }
-    else
-    {
-        <table><thead><tr><th>کارمند</th><th>دوره</th><th>واگذاری</th><th>سررسید</th><th>وضعیت</th><th>گواهی</th><th>اقدام</th></tr></thead><tbody>
-        @foreach (var row in Model.Assignments)
-        {
-            var assignment = row.Assignment;
-            <tr data-assignment-id="@assignment.Id">
-                <td>@(Model.EmployeeChoices?.Rows.FirstOrDefault(x => x.Id == assignment.EmployeeId)?.FullName ?? assignment.EmployeeId.ToString())</td>
-                <td>@(Model.Courses.FirstOrDefault(x => x.Id == assignment.CourseId)?.Title ?? assignment.CourseId.ToString())</td>
-                <td>@JalaliDate.Format(assignment.AssignedDate)</td>
-                <td>@(assignment.DueDate is { } due ? JalaliDate.Format(due) : "—")</td>
-                <td>@row.Status</td><td>@assignment.CertificateNumber</td>
-                <td>
-                    @if (assignment.CompletedDate is null)
+<section class="card mb-3" id="catalog">
+    <div class="card-header bg-white fw-semibold"><i class="bi bi-journal-text"></i> کاتالوگ دوره‌ها</div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped text-center align-middle">
+                <thead><tr><th>عنوان</th><th>دسته</th><th>تکرار</th><th>وضعیت</th><th>عملیات</th></tr></thead>
+                <tbody>
+                    @if (Model.Courses.Count == 0)
                     {
-                        <form method="post" asp-page-handler="Complete">
-                            <input type="hidden" name="AssignmentId" value="@assignment.Id" />
-                            <label>تاریخ انجام (شمسی)<input name="CompletedDateJalali" required placeholder="۱۴۰۳/۰۲/۰۱" /></label>
-                            <label>شماره گواهی<input name="CertificateNumber" maxlength="100" /></label>
-                            <button type="submit">ثبت انجام</button>
-                        </form>
+                        <tr><td colspan="5" class="text-muted py-4">دوره‌ای ثبت نشده است.</td></tr>
                     }
-                </td>
-            </tr>
-        }
-        </tbody></table>
-    }
+                    @foreach (var course in Model.Courses)
+                    {
+                        <tr data-course-id="@course.Id">
+                            <td>@course.Title</td>
+                            <td>@course.Category</td>
+                            <td>@course.RenewalDays</td>
+                            <td><span class="badge text-bg-@(course.Active ? "success" : "secondary")">@(course.Active ? "فعال" : "غیرفعال")</span></td>
+                            <td>
+                                <a asp-page="/Training/Index" asp-route-edit="@course.Id" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i> ویرایش</a>
+                                <form method="post" asp-page-handler="ToggleCourse" class="d-inline">
+                                    <input type="hidden" name="CourseId" value="@course.Id" />
+                                    <input type="hidden" name="Active" value="@(!course.Active)" />
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary">@(course.Active ? "غیرفعال‌کردن" : "فعال‌کردن")</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+<section class="card mb-3">
+    <div class="card-header bg-white fw-semibold"><i class="bi bi-person-plus"></i> واگذاری دوره</div>
+    <div class="card-body">
+        <form method="post" asp-page-handler="Assign" class="row g-2">
+            <div class="col-md-6">
+                <label class="form-label" for="employeeId">کارمند</label>
+                <select class="form-select" id="employeeId" name="EmployeeId" required>
+                    <option value="">انتخاب کنید</option>
+                    @foreach (var employee in Model.EmployeeChoices?.Rows ?? [])
+                    {
+                        <option value="@employee.Id">@employee.FullName (@employee.EmployeeNumber)</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" for="courseId">دوره</label>
+                <select class="form-select" id="courseId" name="CourseId" required>
+                    <option value="">انتخاب کنید</option>
+                    @foreach (var course in Model.Courses.Where(x => x.Active))
+                    {
+                        <option value="@course.Id">@course.Title</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" for="assignedDate">تاریخ واگذاری (شمسی)</label>
+                <input class="form-control" id="assignedDate" name="AssignedDateJalali" placeholder="۱۴۰۳/۰۱/۰۱" required />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" for="dueDate">سررسید (شمسی، اختیاری)</label>
+                <input class="form-control" id="dueDate" name="DueDateJalali" placeholder="۱۴۰۳/۰۲/۰۱" />
+            </div>
+            <div class="col-12"><button type="submit" class="btn btn-primary">ثبت واگذاری</button></div>
+        </form>
+    </div>
+</section>
+<section class="card" id="assignments">
+    <div class="card-header bg-white fw-semibold"><i class="bi bi-list-task"></i> واگذاری‌ها</div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped text-center align-middle">
+                <thead><tr><th>کارمند</th><th>دوره</th><th>واگذاری</th><th>سررسید</th><th>وضعیت</th><th>گواهی</th><th>عملیات</th></tr></thead>
+                <tbody>
+                    @if (Model.Assignments.Count == 0)
+                    {
+                        <tr><td colspan="7" class="text-muted py-4">واگذاری ثبت نشده است.</td></tr>
+                    }
+                    @foreach (var row in Model.Assignments)
+                    {
+                        var assignment = row.Assignment;
+                        <tr data-assignment-id="@assignment.Id">
+                            <td>@(Model.EmployeeChoices?.Rows.FirstOrDefault(x => x.Id == assignment.EmployeeId)?.FullName ?? assignment.EmployeeId.ToString())</td>
+                            <td>@(Model.Courses.FirstOrDefault(x => x.Id == assignment.CourseId)?.Title ?? assignment.CourseId.ToString())</td>
+                            <td>@JalaliDate.Format(assignment.AssignedDate)</td>
+                            <td>@(assignment.DueDate is { } due ? JalaliDate.Format(due) : "—")</td>
+                            <td><span class="badge text-bg-@(row.Status == "Completed" ? "success" : row.Status == "Overdue" ? "danger" : "warning")">@(row.Status == "Completed" ? "انجام شده" : row.Status == "Overdue" ? "از موعد گذشته" : "در انتظار انجام")</span></td>
+                            <td>@assignment.CertificateNumber</td>
+                            <td>
+                                @if (assignment.CompletedDate is null)
+                                {
+                                    <form method="post" asp-page-handler="Complete" class="d-flex gap-1 align-items-end">
+                                        <input type="hidden" name="AssignmentId" value="@assignment.Id" />
+                                        <label class="form-label mb-0">تاریخ انجام (شمسی)<input class="form-control form-control-sm" name="CompletedDateJalali" required placeholder="۱۴۰۳/۰۲/۰۱" /></label>
+                                        <label class="form-label mb-0">شماره گواهی<input class="form-control form-control-sm" name="CertificateNumber" maxlength="100" /></label>
+                                        <button type="submit" class="btn btn-sm btn-outline-primary">ثبت انجام</button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
 </section>

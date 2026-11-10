@@ -3,39 +3,118 @@
 @{
     ViewData["Title"] = "پرونده کارمند";
 }
-@if (Model.Employee is not null)
-{
-    <p><a asp-page="Index">← بازگشت به فهرست کارکنان</a></p>
-    <section class="hero" aria-labelledby="profile-title">
+@section Hero {
+    <div class="profile-hero">
+        <div class="profile-hero-avatar">
+            <span class="avatar avatar-lg avatar-fallback" aria-hidden="true">@(Model.Employee!.FirstName.Length > 0 ? Model.Employee.FirstName[..1] : "؟")</span>
+        </div>
         <div class="profile-heading">
-            <span class="profile-avatar" aria-hidden="true">@(string.IsNullOrWhiteSpace(Model.Employee.FirstName) ? "ک" : Model.Employee.FirstName[..1])</span>
-            <div>
-                <span class="eyebrow">پرونده پرسنلی · @Model.Employee.EmployeeNumber</span>
-                <h1 id="profile-title">@Model.Employee.FirstName @Model.Employee.LastName</h1>
-                <p class="muted">@(Model.DepartmentName ?? "واحد سازمانی ثبت نشده")</p>
+            <h1>@Model.Employee!.FirstName @Model.Employee.LastName</h1>
+            <p class="hero-sub">@(Model.DepartmentName ?? "بدون واحد سازمانی") | کد پرسنلی @Model.Employee.EmployeeNumber</p>
+            <span class="badge text-bg-@(Model.Employee.TerminationDate is null ? "success" : "secondary") mt-1">@(Model.Employee.TerminationDate is null ? "فعال" : "خروج قطعی")</span>
+        </div>
+        <div class="profile-hero-actions">
+            <div class="d-flex gap-2 justify-content-end">
+                @if (Model.CanWrite)
+                {
+                    <a asp-page="Edit" asp-route-id="@Model.Employee.Id" class="btn btn-hero btn-sm"><i class="bi bi-pencil"></i> ویرایش پرونده</a>
+                }
+                <a asp-page="Index" class="btn btn-hero btn-sm" aria-label="بازگشت به لیست کارکنان"><i class="bi bi-grid"></i></a>
             </div>
         </div>
-        @if (Model.CanWrite)
-        {
-            <div class="hero-actions"><a class="button" asp-page="Edit" asp-route-id="@Model.Employee.Id">ویرایش اطلاعات</a></div>
-        }
-    </section>
-    <nav class="profile-nav" aria-label="بخش‌های پرونده">
-        <a class="is-active" aria-current="page" asp-page="Details" asp-route-id="@Model.Employee.Id">اطلاعات اصلی</a>
-        <a asp-page="/Documents/Index" asp-route-employeeId="@Model.Employee.Id">اسناد</a>
+    </div>
+    <nav class="profile-tabs" aria-label="بخش‌های پرونده کارمند">
+        <ul class="nav nav-tabs" role="tablist">
+            <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-personal" type="button" role="tab">اطلاعات شخصی</button></li>
+            <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-job" type="button" role="tab">شغل</button></li>
+            <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-documents" type="button" role="tab">مدارک</button></li>
+        </ul>
     </nav>
-    <section class="card" aria-labelledby="details-title">
-        <div class="card-header">
-            <div>
-                <h2 id="details-title">اطلاعات اصلی</h2>
-                <p class="muted">اطلاعات ثبت‌شده برای این کارمند</p>
+}
+<div class="employee-workspace">
+    <aside class="employee-sidebar">
+        <div class="card profile-aside">
+            <div class="card-body">
+                <p class="aside-label">تلفن و ایمیل</p>
+                <p class="aside-value" dir="ltr">@(Model.Employee?.Email ?? "-")</p>
+                <p class="aside-label">تاریخ استخدام</p>
+                <p class="aside-value">@JalaliDate.Format(Model.Employee!.HireDate)</p>
+                <p class="aside-label">کد پرسنلی</p>
+                <p class="aside-value">@Model.Employee.EmployeeNumber</p>
+                <p class="aside-label">وضعیت اشتغال</p>
+                <p class="aside-value">@(Model.Employee.TerminationDate is null ? "فعال" : "خروج قطعی")</p>
+                <p class="aside-label">واحد سازمانی</p>
+                <p class="aside-value">@(Model.DepartmentName ?? "-")</p>
             </div>
         </div>
-        <dl class="facts-grid">
-            <div><dt>شماره پرسنلی</dt><dd>@Model.Employee.EmployeeNumber</dd></div>
-            <div><dt>واحد سازمانی</dt><dd>@(Model.DepartmentName ?? "—")</dd></div>
-            <div><dt>تاریخ استخدام</dt><dd>@JalaliDate.Format(Model.Employee.HireDate)</dd></div>
-            <div><dt>ایمیل</dt><dd>@(string.IsNullOrWhiteSpace(Model.Employee.Email) ? "—" : Model.Employee.Email)</dd></div>
-        </dl>
-    </section>
-}
+    </aside>
+    <div class="employee-content">
+        <div class="tab-content">
+            <div class="tab-pane fade" id="tab-personal" role="tabpanel">
+                <h2 class="profile-page-title"><i class="bi bi-person-lines-fill"></i> اطلاعات شخصی</h2>
+                <div class="card">
+                    <div class="card-header fw-semibold"><i class="bi bi-person-vcard"></i> اطلاعات پایه و راه ارتباطی</div>
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-4">نام</dt><dd class="col-sm-8">@Model.Employee.FirstName</dd>
+                            <dt class="col-sm-4">نام خانوادگی</dt><dd class="col-sm-8">@Model.Employee.LastName</dd>
+                            <dt class="col-sm-4">ایمیل</dt><dd class="col-sm-8" dir="ltr">@(Model.Employee.Email ?? "-")</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-pane fade show active" id="tab-job" role="tabpanel">
+                <h2 class="profile-page-title"><i class="bi bi-briefcase"></i> اطلاعات شغلی</h2>
+                <section class="card">
+                    <div class="card-header fw-semibold"><i class="bi bi-clock-history"></i> وضعیت ثبت‌شده</div>
+                    <div class="card-body table-responsive">
+                        <table class="table table-sm align-middle mb-0">
+                            <thead><tr><th>تاریخ استخدام</th><th>واحد سازمانی</th><th>وضعیت</th></tr></thead>
+                            <tbody>
+                                <tr class="profile-current-row">
+                                    <td>@JalaliDate.Format(Model.Employee.HireDate)</td>
+                                    <td>@(Model.DepartmentName ?? "-")</td>
+                                    <td>@(Model.Employee.TerminationDate is null ? "فعال" : "خروج قطعی")</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+            <div class="tab-pane fade" id="tab-documents" role="tabpanel">
+                <h2 class="profile-page-title"><i class="bi bi-folder2-open"></i> مدارک</h2>
+                <div class="card">
+                    <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-folder2-open"></i> مدارک (@(Model.Documents?.Total ?? 0))</span>
+                        <a asp-page="/Documents/Index" asp-route-employeeId="@Model.Employee.Id" class="btn btn-sm btn-outline-primary">مدیریت مدارک</a>
+                    </div>
+                    <div class="card-body table-responsive">
+                        <table class="table table-sm table-striped align-middle text-center mb-0">
+                            <thead><tr><th>عنوان</th><th>دسته</th><th>حجم</th><th>بارگذاری</th><th>انقضا</th><th>دریافت</th></tr></thead>
+                            <tbody>
+                                @if (Model.Documents?.Rows.Count is null or 0)
+                                {
+                                    <tr><td colspan="6" class="text-muted">سندی برای این کارمند ثبت نشده است.</td></tr>
+                                }
+                                else
+                                {
+                                    @foreach (var document in Model.Documents.Rows)
+                                    {
+                                        <tr data-document-id="@document.Id">
+                                            <td>@document.Title</td>
+                                            <td>@(document.Category ?? "-")</td>
+                                            <td>@(document.FileSize / 1024.0).ToString("0.#") کیلوبایت</td>
+                                            <td>@JalaliDate.Format(DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(document.UploadedAtUtc, TimeZoneInfo.FindSystemTimeZoneById("Iran Standard Time")).DateTime))</td>
+                                            <td>@(document.ExpiryDate is { } expiry ? JalaliDate.Format(expiry) : "-")</td>
+                                            <td><a asp-page="/Documents/Index" asp-page-handler="Download" asp-route-employeeId="@Model.Employee.Id" asp-route-id="@document.Id" class="btn btn-sm btn-outline-secondary"><i class="bi bi-download"></i> دانلود</a></td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
