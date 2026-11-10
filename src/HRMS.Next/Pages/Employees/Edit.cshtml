@@ -3,8 +3,19 @@
 @{
     ViewData["Title"] = "ویرایش کارمند";
 }
-<h1>ویرایش کارمند</h1>
+<p><a asp-page="Details" asp-route-id="@RouteData.Values["id"]">← بازگشت به پرونده</a></p>
+<div class="page-intro">
+    <div>
+        <span class="eyebrow">پرونده پرسنلی</span>
+        <h1>ویرایش اطلاعات کارمند</h1>
+        <p class="muted">پس از اصلاح اطلاعات، تغییرات را ذخیره کنید.</p>
+    </div>
+</div>
 <form method="post" class="card">
+    <h2>اطلاعات اصلی</h2>
     <partial name="_Form" for="Form" />
-    <p><button type="submit">ذخیره</button></p>
+    <div class="form-actions">
+        <button type="submit">ذخیره تغییرات</button>
+        <a class="button button-secondary" asp-page="Details" asp-route-id="@RouteData.Values["id"]">انصراف</a>
+    </div>
 </form>

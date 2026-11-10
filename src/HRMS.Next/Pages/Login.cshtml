@@ -3,11 +3,17 @@
 @{
     ViewData["Title"] = "ورود";
 }
-<h1>ورود</h1>
-<form method="post" class="card">
+<form method="post" class="card auth-panel">
+    <span class="eyebrow">سامانه منابع انسانی</span>
+    <h1>ورود به حساب کاربری</h1>
+    <p class="muted">برای دسترسی به پرونده‌های کارکنان وارد شوید.</p>
     <div asp-validation-summary="All" class="error" role="alert"></div>
-    <label asp-for="Username">نام کاربری</label><input asp-for="Username" autocomplete="username" required />
-    <label asp-for="Password">رمز عبور</label><input asp-for="Password" type="password" autocomplete="current-password" required />
+    <label asp-for="Username">نام کاربری</label>
+    <input asp-for="Username" autocomplete="username" required autofocus />
+    <span asp-validation-for="Username" class="error"></span>
+    <label asp-for="Password">رمز عبور</label>
+    <input asp-for="Password" type="password" autocomplete="current-password" required />
+    <span asp-validation-for="Password" class="error"></span>
     <input asp-for="ReturnUrl" type="hidden" />
-    <p><button type="submit">ورود</button></p>
+    <button type="submit">ورود به سامانه</button>
 </form>

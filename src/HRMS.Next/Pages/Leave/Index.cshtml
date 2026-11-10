@@ -61,8 +61,8 @@
                     @if (request.Status == "Pending")
                     {
                         <form method="post" asp-page-handler="Approve"><input type="hidden" name="RequestId" value="@request.Id" /><button type="submit">تأیید</button></form>
-                        <form method="post" asp-page-handler="Reject"><input type="hidden" name="RequestId" value="@request.Id" /><button type="submit">رد</button></form>
-                        <form method="post" asp-page-handler="Cancel"><input type="hidden" name="RequestId" value="@request.Id" /><button type="submit">لغو</button></form>
+                        <form method="post" asp-page-handler="Reject"><input type="hidden" name="RequestId" value="@request.Id" /><button class="button-danger" type="submit">رد</button></form>
+                        <form method="post" asp-page-handler="Cancel"><input type="hidden" name="RequestId" value="@request.Id" /><button class="button-quiet" type="submit">لغو</button></form>
                     }
                 </td>
             </tr>

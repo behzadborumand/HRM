@@ -31,7 +31,7 @@
                         {
                             <form method="post" asp-page-handler="Delete" asp-route-employeeId="@Model.Employee?.Id">
                                 <input type="hidden" name="DocumentId" value="@item.Id" />
-                                <button type="submit">حذف</button>
+                                <button class="button-danger" type="submit">حذف</button>
                             </form>
                         }
                     </td>

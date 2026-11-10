@@ -3,13 +3,39 @@
 @{
     ViewData["Title"] = "پرونده کارمند";
 }
-<h1>پرونده کارمند</h1>
 @if (Model.Employee is not null)
 {
-    <div class="card">
-        <h2>@Model.Employee.FirstName @Model.Employee.LastName</h2>
-        <dl><dt>شماره پرسنلی</dt><dd>@Model.Employee.EmployeeNumber</dd><dt>واحد</dt><dd>@Model.DepartmentName</dd><dt>تاریخ استخدام</dt><dd>@JalaliDate.Format(Model.Employee.HireDate)</dd><dt>ایمیل</dt><dd>@Model.Employee.Email</dd></dl>
-        <a class="button" asp-page="/Documents/Index" asp-route-employeeId="@Model.Employee.Id">اسناد</a>
-        @if (Model.CanWrite) { <a class="button" asp-page="Edit" asp-route-id="@Model.Employee.Id">ویرایش</a> }
-    </div>
+    <p><a asp-page="Index">← بازگشت به فهرست کارکنان</a></p>
+    <section class="hero" aria-labelledby="profile-title">
+        <div class="profile-heading">
+            <span class="profile-avatar" aria-hidden="true">@(string.IsNullOrWhiteSpace(Model.Employee.FirstName) ? "ک" : Model.Employee.FirstName[..1])</span>
+            <div>
+                <span class="eyebrow">پرونده پرسنلی · @Model.Employee.EmployeeNumber</span>
+                <h1 id="profile-title">@Model.Employee.FirstName @Model.Employee.LastName</h1>
+                <p class="muted">@(Model.DepartmentName ?? "واحد سازمانی ثبت نشده")</p>
+            </div>
+        </div>
+        @if (Model.CanWrite)
+        {
+            <div class="hero-actions"><a class="button" asp-page="Edit" asp-route-id="@Model.Employee.Id">ویرایش اطلاعات</a></div>
+        }
+    </section>
+    <nav class="profile-nav" aria-label="بخش‌های پرونده">
+        <a class="is-active" aria-current="page" asp-page="Details" asp-route-id="@Model.Employee.Id">اطلاعات اصلی</a>
+        <a asp-page="/Documents/Index" asp-route-employeeId="@Model.Employee.Id">اسناد</a>
+    </nav>
+    <section class="card" aria-labelledby="details-title">
+        <div class="card-header">
+            <div>
+                <h2 id="details-title">اطلاعات اصلی</h2>
+                <p class="muted">اطلاعات ثبت‌شده برای این کارمند</p>
+            </div>
+        </div>
+        <dl class="facts-grid">
+            <div><dt>شماره پرسنلی</dt><dd>@Model.Employee.EmployeeNumber</dd></div>
+            <div><dt>واحد سازمانی</dt><dd>@(Model.DepartmentName ?? "—")</dd></div>
+            <div><dt>تاریخ استخدام</dt><dd>@JalaliDate.Format(Model.Employee.HireDate)</dd></div>
+            <div><dt>ایمیل</dt><dd>@(string.IsNullOrWhiteSpace(Model.Employee.Email) ? "—" : Model.Employee.Email)</dd></div>
+        </dl>
+    </section>
 }

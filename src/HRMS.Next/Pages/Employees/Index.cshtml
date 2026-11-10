@@ -3,35 +3,88 @@
 @{
     ViewData["Title"] = "کارکنان";
 }
-<h1>کارکنان</h1>
-<form method="get" class="card">
-    <label for="query">جستجو</label><input id="query" name="query" value="@Model.Query" />
-    <label for="departmentId">واحد سازمانی</label>
-    <select id="departmentId" name="departmentId"><option value="">همه واحدها</option>
-        @foreach (var department in Model.Departments)
-        {
-            <option value="@department.Id" selected="@(Model.DepartmentId == department.Id)">@department.Name</option>
-        }
-    </select>
-    <button type="submit">اعمال فیلتر</button>
-</form>
-@if (Model.CanWrite) { <p><a class="button" asp-page="Create">ثبت کارمند</a></p> }
-@if (Model.Result is { Total: 0 })
-{
-    <p role="status">کارمندی با این شرایط یافت نشد.</p>
-}
-else if (Model.Result is not null)
-{
-    <p role="status">@Model.Result.Total نتیجه</p>
-    <table><thead><tr><th>شماره</th><th>نام</th><th>واحد</th><th>تاریخ استخدام</th><th>وضعیت</th></tr></thead><tbody>
-    @foreach (var employee in Model.Result.Rows)
+<section class="hero" aria-labelledby="employees-title">
+    <div>
+        <span class="eyebrow">مدیریت منابع انسانی</span>
+        <h1 id="employees-title">کارکنان</h1>
+        <p class="muted">جستجو، مشاهده و مدیریت پرونده‌های پرسنلی</p>
+    </div>
+    @if (Model.CanWrite)
     {
-        <tr><td>@employee.EmployeeNumber</td><td><a asp-page="Details" asp-route-id="@employee.Id">@employee.FullName</a></td><td>@Model.Departments.FirstOrDefault(x => x.Id == employee.DepartmentId)?.Name</td><td>@JalaliDate.Format(employee.HireDate)</td><td>@(employee.Terminated ? "خاتمه یافته" : "فعال")</td></tr>
+        <div class="hero-actions"><a class="button" asp-page="Create">افزودن کارمند</a></div>
     }
-    </tbody></table>
-    <nav aria-label="صفحه‌بندی">
-        @if (Model.Result.Page > 1) { <a asp-page="Index" asp-route-query="@Model.Query" asp-route-departmentId="@Model.DepartmentId" asp-route-page="@(Model.Result.Page - 1)">قبلی</a> }
-        <span>صفحه @Model.Result.Page</span>
-        @if (Model.Result.Page * Model.Result.PageSize < Model.Result.Total) { <a asp-page="Index" asp-route-query="@Model.Query" asp-route-departmentId="@Model.DepartmentId" asp-route-page="@(Model.Result.Page + 1)">بعدی</a> }
-    </nav>
-}
+</section>
+<form method="get" class="card" role="search" aria-label="جستجوی کارکنان">
+    <div class="section-heading">
+        <h2>جستجو و فیلتر</h2>
+        <span class="muted">بر اساس نام، شماره پرسنلی یا واحد</span>
+    </div>
+    <div class="filter-grid">
+        <div class="form-field">
+            <label for="query">نام یا شماره پرسنلی</label>
+            <input id="query" name="query" value="@Model.Query" placeholder="نام یا شماره پرسنلی را وارد کنید" />
+        </div>
+        <div class="form-field">
+            <label for="departmentId">واحد سازمانی</label>
+            <select id="departmentId" name="departmentId">
+                <option value="">همه واحدها</option>
+                @foreach (var department in Model.Departments)
+                {
+                    <option value="@department.Id" selected="@(Model.DepartmentId == department.Id)">@department.Name</option>
+                }
+            </select>
+        </div>
+    </div>
+    <div class="form-actions">
+        <button type="submit">نمایش نتایج</button>
+        @if (!string.IsNullOrWhiteSpace(Model.Query) || Model.DepartmentId.HasValue)
+        {
+            <a class="button button-secondary" asp-page="Index">پاک کردن فیلتر</a>
+        }
+    </div>
+</form>
+<section class="card" aria-labelledby="results-title">
+    <div class="section-heading">
+        <h2 id="results-title">فهرست کارکنان</h2>
+        <span class="muted" role="status">@(Model.Result?.Total ?? 0) کارمند</span>
+    </div>
+    @if (Model.Result is { Total: 0 })
+    {
+        <div class="empty-state" role="status">
+            <strong>کارمندی با این شرایط پیدا نشد</strong>
+            <p>عبارت جستجو یا واحد انتخابی را تغییر دهید.</p>
+            <a class="button button-secondary" asp-page="Index">نمایش همه کارکنان</a>
+        </div>
+    }
+    else if (Model.Result is not null)
+    {
+        <div class="table-wrap">
+            <table class="employee-table">
+                <thead><tr><th scope="col">شماره پرسنلی</th><th scope="col">نام و نام خانوادگی</th><th scope="col">واحد</th><th scope="col">تاریخ استخدام</th><th scope="col">وضعیت</th></tr></thead>
+                <tbody>
+                @foreach (var employee in Model.Result.Rows)
+                {
+                    <tr>
+                        <td>@employee.EmployeeNumber</td>
+                        <td><a class="employee-name" asp-page="Details" asp-route-id="@employee.Id">@employee.FullName</a></td>
+                        <td>@(Model.Departments.FirstOrDefault(x => x.Id == employee.DepartmentId)?.Name ?? "—")</td>
+                        <td>@JalaliDate.Format(employee.HireDate)</td>
+                        <td><span class="status @(employee.Terminated ? "status--muted" : null)">@(employee.Terminated ? "خاتمه یافته" : "فعال")</span></td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+        <nav class="pagination" aria-label="صفحه‌بندی کارکنان">
+            @if (Model.Result.Page > 1)
+            {
+                <a asp-page="Index" asp-route-query="@Model.Query" asp-route-departmentId="@Model.DepartmentId" asp-route-page="@(Model.Result.Page - 1)">صفحه قبل</a>
+            }
+            <span>صفحه @Model.Result.Page از @Math.Max(1, (int)Math.Ceiling((double)Model.Result.Total / Model.Result.PageSize))</span>
+            @if (Model.Result.Page * Model.Result.PageSize < Model.Result.Total)
+            {
+                <a asp-page="Index" asp-route-query="@Model.Query" asp-route-departmentId="@Model.DepartmentId" asp-route-page="@(Model.Result.Page + 1)">صفحه بعد</a>
+            }
+        </nav>
+    }
+</section>

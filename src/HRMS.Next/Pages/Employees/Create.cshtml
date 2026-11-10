@@ -3,8 +3,19 @@
 @{
     ViewData["Title"] = "ثبت کارمند";
 }
-<h1>ثبت کارمند</h1>
+<p><a asp-page="Index">← بازگشت به فهرست کارکنان</a></p>
+<div class="page-intro">
+    <div>
+        <span class="eyebrow">پرونده پرسنلی</span>
+        <h1>ثبت کارمند جدید</h1>
+        <p class="muted">اطلاعات اصلی کارمند را وارد کنید.</p>
+    </div>
+</div>
 <form method="post" class="card">
+    <h2>اطلاعات اصلی</h2>
     <partial name="_Form" for="Form" />
-    <p><button type="submit">ثبت</button></p>
+    <div class="form-actions">
+        <button type="submit">ثبت کارمند</button>
+        <a class="button button-secondary" asp-page="Index">انصراف</a>
+    </div>
 </form>
