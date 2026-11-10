@@ -17,7 +17,7 @@ namespace HRMS.Next.Modules.Personnel.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.18")
+                .HasAnnotation("ProductVersion", "10.0.12")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -108,6 +108,83 @@ namespace HRMS.Next.Modules.Personnel.Migrations
                     b.HasIndex("EmployeeId", "AtUtc");
 
                     b.ToTable("EmployeeAudits", "personnel");
+                });
+
+            modelBuilder.Entity("HRMS.Next.Modules.Personnel.EmployeeJob", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("DepartmentId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("EmploymentType")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateOnly?>("EndDate")
+                        .HasColumnType("date");
+
+                    b.Property<bool>("IsCurrent")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("JobTitle")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int?>("ManagerEmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("PayRate")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("PayType")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("ManagerEmployeeId");
+
+                    b.HasIndex("CompanyId", "EmployeeId")
+                        .IsUnique()
+                        .HasFilter("[IsCurrent] = 1");
+
+                    b.HasIndex("CompanyId", "EmployeeId", "StartDate");
+
+                    b.ToTable("EmployeeJobs", "personnel", t =>
+                        {
+                            t.HasCheckConstraint("CK_EmployeeJobs_DateRange", "[EndDate] IS NULL OR [EndDate] >= [StartDate]");
+                        });
+                });
+
+            modelBuilder.Entity("HRMS.Next.Modules.Personnel.EmployeeJob", b =>
+                {
+                    b.HasOne("HRMS.Next.Modules.Personnel.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("HRMS.Next.Modules.Personnel.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("ManagerEmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 #pragma warning restore 612, 618
         }

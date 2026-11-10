@@ -6,6 +6,7 @@ public sealed class PersonnelDbContext(DbContextOptions<PersonnelDbContext> opti
 {
     public DbSet<Employee> Employees => Set<Employee>();
     public DbSet<EmployeeAudit> Audits => Set<EmployeeAudit>();
+    public DbSet<EmployeeJob> EmployeeJobs => Set<EmployeeJob>();
 
     protected override void OnModelCreating(ModelBuilder model)
     {
@@ -20,6 +21,20 @@ public sealed class PersonnelDbContext(DbContextOptions<PersonnelDbContext> opti
             entity.Property(x => x.RowVersion).IsRowVersion();
             entity.HasIndex(x => new { x.CompanyId, x.EmployeeNumber }).IsUnique();
             entity.HasIndex(x => new { x.CompanyId, x.DepartmentId, x.LastName });
+        });
+        model.Entity<EmployeeJob>(entity =>
+        {
+            entity.ToTable("EmployeeJobs", "personnel", table =>
+                table.HasCheckConstraint("CK_EmployeeJobs_DateRange", "[EndDate] IS NULL OR [EndDate] >= [StartDate]"));
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.JobTitle).HasMaxLength(200);
+            entity.Property(x => x.EmploymentType).HasMaxLength(50);
+            entity.Property(x => x.PayType).HasMaxLength(50);
+            entity.Property(x => x.PayRate).HasPrecision(18, 2);
+            entity.HasOne<Employee>().WithMany().HasForeignKey(x => x.EmployeeId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<Employee>().WithMany().HasForeignKey(x => x.ManagerEmployeeId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasIndex(x => new { x.CompanyId, x.EmployeeId, x.StartDate });
+            entity.HasIndex(x => new { x.CompanyId, x.EmployeeId }).IsUnique().HasFilter("[IsCurrent] = 1");
         });
         model.Entity<EmployeeAudit>(entity =>
         {

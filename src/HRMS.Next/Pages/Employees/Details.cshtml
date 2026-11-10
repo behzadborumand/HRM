@@ -10,7 +10,7 @@
         </div>
         <div class="profile-heading">
             <h1>@Model.Employee!.FirstName @Model.Employee.LastName</h1>
-            <p class="hero-sub">@(Model.DepartmentName ?? "بدون واحد سازمانی") | کد پرسنلی @Model.Employee.EmployeeNumber</p>
+            <p class="hero-sub">@(Model.CurrentJobTitle ?? Model.DepartmentName ?? "بدون عنوان شغلی") | کد پرسنلی @Model.Employee.EmployeeNumber</p>
             <span class="badge text-bg-@(Model.Employee.TerminationDate is null ? "success" : "secondary") mt-1">@(Model.Employee.TerminationDate is null ? "فعال" : "خروج قطعی")</span>
         </div>
         <div class="profile-hero-actions">
@@ -41,6 +41,8 @@
                 <p class="aside-value">@JalaliDate.Format(Model.Employee!.HireDate)</p>
                 <p class="aside-label">کد پرسنلی</p>
                 <p class="aside-value">@Model.Employee.EmployeeNumber</p>
+                <p class="aside-label">مدیر</p>
+                <p class="aside-value">@(Model.CurrentManagerName ?? "-")</p>
                 <p class="aside-label">وضعیت اشتغال</p>
                 <p class="aside-value">@(Model.Employee.TerminationDate is null ? "فعال" : "خروج قطعی")</p>
                 <p class="aside-label">واحد سازمانی</p>
@@ -78,6 +80,35 @@
                                 </tr>
                             </tbody>
                         </table>
+                    </div>
+                </section>
+                <section class="card mt-3">
+                    <div class="card-header bg-white fw-semibold"><i class="bi bi-briefcase-fill"></i> اطلاعات و سوابق شغلی</div>
+                    <div class="card-body table-responsive">
+                        <table class="table table-sm align-middle text-center mb-0">
+                            <thead><tr><th>از</th><th>تا</th><th>نوع استخدام</th><th>واحد</th><th>عنوان شغلی</th><th>مدیر</th></tr></thead>
+                            <tbody>
+                                @if (Model.JobHistory.Count == 0)
+                                {
+                                    <tr><td colspan="6" class="text-muted">سابقه شغلی ثبت نشده است.</td></tr>
+                                }
+                                @foreach (var job in Model.JobHistory)
+                                {
+                                    <tr data-job-id="@job.Id" class="@(job.IsCurrent ? "fw-semibold profile-current-row" : null)">
+                                        <td>@JalaliDate.Format(job.StartDate)@(job.IsCurrent ? " *" : null)</td>
+                                        <td>@(job.EndDate is { } end ? JalaliDate.Format(end) : "-")</td>
+                                        <td>@HRMS.Next.Pages.Employees.DetailsModel.EmploymentTypeLabel(job.EmploymentType)</td>
+                                        <td>@Model.DepartmentLabel(job.DepartmentId)</td>
+                                        <td>@(job.JobTitle ?? "-")</td>
+                                        <td>@(job.ManagerName ?? "-")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                        @if (Model.JobHistory.Any(x => x.IsCurrent))
+                        {
+                            <div class="form-text">* ردیف جاری</div>
+                        }
                     </div>
                 </section>
             </div>

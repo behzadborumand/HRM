@@ -9,12 +9,21 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 namespace HRMS.Next.Pages.Employees;
 
 [Authorize]
-public sealed class DetailsModel(AccessService access, EmployeeService employees, IOrganizationDirectory organization, DocumentService documents) : PageModel
+public sealed class DetailsModel(AccessService access, EmployeeService employees, IOrganizationDirectory organization, DocumentService documents, EmployeeJobService jobs) : PageModel
 {
     public Employee? Employee { get; private set; }
     public bool CanWrite { get; private set; }
     public string? DepartmentName { get; private set; }
     public DocumentPage? Documents { get; private set; }
+    public IReadOnlyList<JobHistoryRow> JobHistory { get; private set; } = [];
+    public string? CurrentJobTitle => JobHistory.FirstOrDefault(x => x.IsCurrent)?.JobTitle;
+    public string? CurrentManagerName => JobHistory.FirstOrDefault(x => x.IsCurrent)?.ManagerName;
+    public IReadOnlyDictionary<int, string> DepartmentNames { get; private set; } = new Dictionary<int, string>();
+    public string DepartmentLabel(int? id) => id is { } value && DepartmentNames.TryGetValue(value, out var name) ? name : "-";
+    public static string EmploymentTypeLabel(string? type) => type switch
+    {
+        "FullTime" => "تمام وقت", "PartTime" => "پاره وقت", "Contract" => "قراردادی", "Intern" => "کارآموز", _ => "-"
+    };
 
     public async Task<IActionResult> OnGetAsync(int id, CancellationToken ct)
     {
@@ -24,8 +33,10 @@ public sealed class DetailsModel(AccessService access, EmployeeService employees
         CanWrite = AccessRules.CanWrite(actor, actor.CompanyId);
         if (Employee is not null)
         {
-            DepartmentName = (await organization.DepartmentsAsync(actor.CompanyId, ct))
-                .FirstOrDefault(x => x.Id == Employee.DepartmentId)?.Name;
+            DepartmentNames = (await organization.DepartmentsAsync(actor.CompanyId, ct))
+                .ToDictionary(x => x.Id, x => x.Name);
+            DepartmentName = DepartmentLabel(Employee.DepartmentId);
+            JobHistory = await jobs.HistoryAsync(actor, id, ct);
             Documents = await documents.ListAsync(actor, id, 1, 20, ct);
         }
         return Employee is null ? NotFound() : Page();

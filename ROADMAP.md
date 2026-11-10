@@ -21,6 +21,7 @@
 - [x] Leave policy/balance/request transfer with actor provenance.
 - [x] Training course/assignment transfer with actor provenance.
 - [x] Verify legacy Documents source count; it is currently zero.
+- [x] Transfer legacy EmployeeJobs into scoped Personnel history in the trial database, with repeatable maps and full field reconciliation.
 - [ ] Transfer remaining legacy tables and private files when present, with file checksums and repeatable maps.
 - [ ] Plan any operational cutover only after full validation; no production transfer has occurred.
 

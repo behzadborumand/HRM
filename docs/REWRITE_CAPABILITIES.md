@@ -6,7 +6,7 @@ Legacy source is the separate `D:\SourceCodes\GitProjects\HRMS_BHR` repository: 
 | --- | --- | --- |
 | Cookie login, users, roles, permission claims | Access | Partial: login and scoped administrator/user grants; full roles not transferred |
 | Companies, departments, job titles, organization links | Organization; job classification boundary to be refined | Partial: company/department bootstrap and lookup only |
-| Employee list, profile, CRUD, job history, bulk edit, photos | Personnel | Partial: list/profile/create/edit only; core legacy data import only; no other workflows |
+| Employee list, profile, CRUD, job history, bulk edit, photos | Personnel | Partial: list/profile/create/edit and read-only dated job history; 12 legacy jobs transferred in trial; job changes, bulk edit and photos pending |
 | Leave policies, requests, balances, manager approval | Leave | Partial: separate schema, policy/balance/request model and admin service; administrator Razor Page and HTTPS flow; no manager grants; trial transfer covers policies, balances and all 8 requests |
 | Courses and assignments | Training | Partial: independent schema, administrator course create/edit/activation, assignment/completion flow, Razor Page and SQL/HTTPS tests; 6 legacy courses and 5 assignments imported in trial; staff self-service pending |
 | Private employee documents | Documents | Partial: independent schema, private paginated list/upload/download/delete, SHA256 and audit, SQL/HTTPS tests; legacy source has 0 rows; employee self-service and nonempty file transfer pending |
