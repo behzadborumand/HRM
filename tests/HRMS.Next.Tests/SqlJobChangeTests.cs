@@ -29,6 +29,10 @@ public sealed class SqlJobChangeTests
         var foreign = new Department { CompanyId = otherCompany.Id, Name = "غیرمجاز" };
         org.Departments.AddRange(first, second, foreign);
         await org.SaveChangesAsync();
+        var juniorTitle = new JobTitle { CompanyId = company.Id, Name = "Junior" };
+        var seniorTitle = new JobTitle { CompanyId = company.Id, Name = "Senior" };
+        org.JobTitles.AddRange(juniorTitle, seniorTitle);
+        await org.SaveChangesAsync();
         var employee = new Employee { CompanyId = company.Id, DepartmentId = first.Id, EmployeeNumber = "JC-" + Guid.NewGuid().ToString("N")[..12], FirstName = "One", LastName = "Employee", HireDate = new DateOnly(2020, 1, 1) };
         var manager = new Employee { CompanyId = company.Id, DepartmentId = first.Id, EmployeeNumber = "JC-" + Guid.NewGuid().ToString("N")[..12], FirstName = "One", LastName = "Manager", HireDate = new DateOnly(2020, 1, 1) };
         var foreignManager = new Employee { CompanyId = otherCompany.Id, DepartmentId = foreign.Id, EmployeeNumber = "JC-" + Guid.NewGuid().ToString("N")[..12], FirstName = "Other", LastName = "Manager", HireDate = new DateOnly(2020, 1, 1) };
@@ -43,6 +47,7 @@ public sealed class SqlJobChangeTests
             await Assert.ThrowsAsync<ArgumentException>(() => service.ChangeAsync(actor, employee.Id, initial with { DepartmentId = foreign.Id }, employee.RowVersion, CancellationToken.None));
             await Assert.ThrowsAsync<ArgumentException>(() => service.ChangeAsync(actor, employee.Id, initial with { ManagerEmployeeId = foreignManager.Id }, employee.RowVersion, CancellationToken.None));
             await Assert.ThrowsAsync<ArgumentException>(() => service.ChangeAsync(actor, employee.Id, initial with { ManagerEmployeeId = employee.Id }, employee.RowVersion, CancellationToken.None));
+            await Assert.ThrowsAsync<ArgumentException>(() => service.ChangeAsync(actor, employee.Id, initial with { JobTitle = "Unlisted" }, employee.RowVersion, CancellationToken.None));
             Assert.Empty(await people.EmployeeJobs.Where(x => x.EmployeeId == employee.Id).ToListAsync());
 
             await service.ChangeAsync(actor, employee.Id, initial, employee.RowVersion, CancellationToken.None);
@@ -91,6 +96,7 @@ public sealed class SqlJobChangeTests
             people.Audits.RemoveRange(await people.Audits.Where(x => x.EmployeeId == employee.Id).ToListAsync());
             people.Employees.RemoveRange(await people.Employees.Where(x => x.Id == employee.Id || x.Id == manager.Id || x.Id == foreignManager.Id).ToListAsync());
             await people.SaveChangesAsync();
+            org.JobTitles.RemoveRange(juniorTitle, seniorTitle);
             org.Departments.RemoveRange(first, second, foreign);
             org.Companies.RemoveRange(company, otherCompany);
             await org.SaveChangesAsync();

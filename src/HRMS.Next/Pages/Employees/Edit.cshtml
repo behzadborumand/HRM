@@ -46,7 +46,13 @@
                 </div>
                 <div class="col-md-4">
                     <label asp-for="JobForm.JobTitle" class="form-label">عنوان شغلی</label>
-                    <input asp-for="JobForm.JobTitle" class="form-control" required maxlength="200" />
+                    <select asp-for="JobForm.JobTitle" class="form-select" required>
+                        <option value="">انتخاب کنید</option>
+                        @foreach (var title in Model.JobTitles)
+                        {
+                            <option value="@title.Name">@title.Name</option>
+                        }
+                    </select>
                     <span asp-validation-for="JobForm.JobTitle" class="text-danger small"></span>
                 </div>
                 <div class="col-md-4">

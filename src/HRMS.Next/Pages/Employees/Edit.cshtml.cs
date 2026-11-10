@@ -11,11 +11,12 @@ namespace HRMS.Next.Pages.Employees;
 
 [Authorize]
 public sealed class EditModel(AccessService access, EmployeeService employees, EmployeeJobService jobs,
-    IOrganizationDirectory organization) : PageModel
+    IOrganizationDirectory organization, JobTitleService titleService) : PageModel
 {
     [BindProperty, ValidateNever] public EmployeeForm Form { get; set; } = new();
     [BindProperty, ValidateNever] public JobChangeForm JobForm { get; set; } = new();
     public IReadOnlyList<Employee> Managers { get; private set; } = [];
+    public IReadOnlyList<JobTitleOption> JobTitles { get; private set; } = [];
 
     public async Task<IActionResult> OnGetAsync(int id, CancellationToken ct)
     {
@@ -86,5 +87,6 @@ public sealed class EditModel(AccessService access, EmployeeService employees, E
         ViewData["Departments"] = await organization.DepartmentsAsync(actor.CompanyId, ct);
         ViewData["LockDepartment"] = true;
         Managers = await jobs.ManagerOptionsAsync(actor, id, ct);
+        JobTitles = await titleService.ActiveOptionsAsync(actor, ct);
     }
 }

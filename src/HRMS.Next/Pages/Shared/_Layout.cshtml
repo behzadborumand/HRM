@@ -40,6 +40,7 @@
                     @if (canAdmin)
                     {
                         <li><a class="nav-link @(isLeave ? "active" : null)" aria-current="@(isLeave ? "page" : null)" asp-page="/Leave/Index"><i class="bi bi-calendar-check"></i> مرخصی</a></li>
+                        <li><a class="nav-link @(path.StartsWith("/Settings", StringComparison.OrdinalIgnoreCase) ? "active" : null)" asp-page="/Settings/JobTitles"><i class="bi bi-gear"></i> تنظیمات</a></li>
                         <li><a class="nav-link @(isTraining ? "active" : null)" aria-current="@(isTraining ? "page" : null)" asp-page="/Training/Index"><i class="bi bi-mortarboard"></i> آموزش‌ها</a></li>
                     }
                 </ul>

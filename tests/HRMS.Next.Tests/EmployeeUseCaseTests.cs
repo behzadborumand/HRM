@@ -38,5 +38,6 @@ public sealed class EmployeeUseCaseTests
         public Task<bool> CompanyExistsAsync(int companyId, CancellationToken ct) => throw new NotImplementedException();
         public Task<bool> DepartmentBelongsAsync(int departmentId, int companyId, CancellationToken ct) => throw new NotImplementedException();
         public Task<IReadOnlyList<DepartmentOption>> DepartmentsAsync(int companyId, CancellationToken ct) => throw new NotImplementedException();
+        public Task<bool> ActiveJobTitleExistsAsync(int companyId, string name, CancellationToken ct) => throw new NotImplementedException();
     }
 }

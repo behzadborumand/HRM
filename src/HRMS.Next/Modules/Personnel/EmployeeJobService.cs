@@ -21,6 +21,8 @@ public sealed class EmployeeJobService(PersonnelDbContext db, IOrganizationDirec
         if (employee.TerminationDate is not null) throw new ArgumentException("برای کارمند خارج‌شده نمی‌توان شغل جاری ثبت کرد.");
         if (string.IsNullOrWhiteSpace(input.JobTitle) || input.JobTitle.Trim().Length > 200)
             throw new ArgumentException("عنوان شغلی الزامی است و باید حداکثر ۲۰۰ نویسه باشد.");
+        if (!await organization.ActiveJobTitleExistsAsync(actor.CompanyId, input.JobTitle.Trim(), ct))
+            throw new ArgumentException("عنوان شغلی فعال در شرکت یافت نشد.");
         if (input.EmploymentType is not ("FullTime" or "PartTime" or "Contract" or "Intern"))
             throw new ArgumentException("نوع استخدام معتبر نیست.");
         var iranToday = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(clock.GetUtcNow(),
