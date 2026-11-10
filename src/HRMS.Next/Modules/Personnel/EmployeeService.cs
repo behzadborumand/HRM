@@ -72,6 +72,10 @@ public sealed class EmployeeService(PersonnelDbContext db, IOrganizationDirector
         var employee = await db.Employees.SingleOrDefaultAsync(x => x.Id == id && x.CompanyId == actor.CompanyId, ct)
             ?? throw new KeyNotFoundException("کارمند یافت نشد.");
         if (!employee.RowVersion.SequenceEqual(expectedVersion)) throw new DbUpdateConcurrencyException("پرونده توسط کاربر دیگری تغییر کرده است.");
+        if (input.DepartmentId != employee.DepartmentId)
+            throw new ArgumentException("تغییر واحد سازمانی باید در بخش ثبت تغییر شغل انجام شود.");
+        if (await db.EmployeeJobs.AnyAsync(x => x.EmployeeId == id && x.StartDate < input.HireDate, ct))
+            throw new ArgumentException("تاریخ استخدام نمی‌تواند پس از شروع یکی از سوابق شغلی باشد.");
         var number = input.EmployeeNumber.Trim();
         if (await db.Employees.AnyAsync(x => x.CompanyId == actor.CompanyId && x.Id != id && x.EmployeeNumber == number, ct))
             throw new ArgumentException("شماره پرسنلی تکراری است.");

@@ -24,3 +24,64 @@
         </form>
     </div>
 </div>
+<div class="card mt-4" id="job-change">
+    <div class="card-header bg-primary text-white">ثبت تغییر اطلاعات شغلی</div>
+    <div class="card-body">
+        <form method="post" asp-page-handler="Job">
+            <div asp-validation-summary="All" class="text-danger" role="alert"></div>
+            <div class="row g-3">
+                <div class="col-12">
+                    <h6 class="text-primary border-bottom pb-2"><i class="bi bi-briefcase"></i> شغل جدید و تاریخ مؤثر</h6>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="JobForm.DepartmentId" class="form-label">واحد سازمانی</label>
+                    <select asp-for="JobForm.DepartmentId" class="form-select" required>
+                        <option value="0">انتخاب کنید</option>
+                        @foreach (var department in (IReadOnlyList<HRMS.Next.Modules.Organization.DepartmentOption>)(ViewData["Departments"] ?? Array.Empty<HRMS.Next.Modules.Organization.DepartmentOption>()))
+                        {
+                            <option value="@department.Id">@department.Name</option>
+                        }
+                    </select>
+                    <span asp-validation-for="JobForm.DepartmentId" class="text-danger small"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="JobForm.JobTitle" class="form-label">عنوان شغلی</label>
+                    <input asp-for="JobForm.JobTitle" class="form-control" required maxlength="200" />
+                    <span asp-validation-for="JobForm.JobTitle" class="text-danger small"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="JobForm.ManagerEmployeeId" class="form-label">مدیر</label>
+                    <select asp-for="JobForm.ManagerEmployeeId" class="form-select">
+                        <option value="">بدون مدیر</option>
+                        @foreach (var manager in Model.Managers)
+                        {
+                            <option value="@manager.Id">@manager.FirstName @manager.LastName</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="JobForm.EmploymentType" class="form-label">نوع استخدام</label>
+                    <select asp-for="JobForm.EmploymentType" class="form-select" required>
+                        <option value="">انتخاب کنید</option>
+                        <option value="FullTime">تمام وقت</option>
+                        <option value="PartTime">پاره وقت</option>
+                        <option value="Contract">قراردادی</option>
+                        <option value="Intern">کارآموز</option>
+                    </select>
+                    <span asp-validation-for="JobForm.EmploymentType" class="text-danger small"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="JobForm.EffectiveDateJalali" class="form-label">تاریخ مؤثر شمسی</label>
+                    <input asp-for="JobForm.EffectiveDateJalali" class="form-control" dir="ltr" placeholder="۱۴۰۵/۰۸/۲۰" required />
+                    <span asp-validation-for="JobForm.EffectiveDateJalali" class="text-danger small"></span>
+                </div>
+            </div>
+            <input asp-for="JobForm.Version" type="hidden" />
+            <p class="form-text mt-3">شغل جاری با روز پیش از تاریخ مؤثر بسته می‌شود و در سابقه می‌ماند. اطلاعات حقوق تغییر نمی‌کند.</p>
+            <div class="mt-4">
+                <button type="submit" class="btn btn-success"><i class="bi bi-check-circle"></i> ثبت تغییر شغل</button>
+                <a asp-page="Details" asp-route-id="@RouteData.Values["id"]" class="btn btn-secondary">انصراف</a>
+            </div>
+        </form>
+    </div>
+</div>

@@ -30,6 +30,7 @@
 - [x] Leave administrator policy/request/decision/cancellation flow, SQL tests and HTTPS smoke.
 - [x] Training administrator course/assignment/completion flow, SQL tests and HTTPS smoke.
 - [x] Documents private list/upload/download/delete flow, SQL tests and HTTPS smoke.
+- [x] Personnel job change closes dated history, updates current department and audit atomically; trial SQL and HTTPS flows pass.
 - [ ] Finish manager permissions, employee self-service and document retention rules.
 - [ ] Implement personnel history, job classification and position requirements, orders and contractors, appraisal, insurance and retirement, welfare and medical.
 - [ ] Implement Tavanir exchange only after validating its ۱۴۰۳ contract and credential requirements.

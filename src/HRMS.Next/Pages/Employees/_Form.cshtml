@@ -29,13 +29,24 @@
     </div>
     <div class="col-md-6">
         <label asp-for="DepartmentId" class="form-label">واحد سازمانی</label>
-        <select asp-for="DepartmentId" class="form-select" required>
-            <option value="0">انتخاب کنید</option>
-            @foreach (var department in (IReadOnlyList<HRMS.Next.Modules.Organization.DepartmentOption>)(ViewData["Departments"] ?? Array.Empty<HRMS.Next.Modules.Organization.DepartmentOption>()))
-            {
-                <option value="@department.Id">@department.Name</option>
-            }
-        </select>
+        @if (ViewData["LockDepartment"] is true)
+        {
+            var departments = (IReadOnlyList<HRMS.Next.Modules.Organization.DepartmentOption>)(ViewData["Departments"] ?? Array.Empty<HRMS.Next.Modules.Organization.DepartmentOption>());
+            var departmentName = departments.FirstOrDefault(x => x.Id == Model.DepartmentId)?.Name ?? "-";
+            <input asp-for="DepartmentId" type="hidden" />
+            <input type="text" class="form-control" value="@departmentName" readonly aria-label="واحد سازمانی فعلی" />
+            <div class="form-text"><a href="#job-change">تغییر واحد را در بخش ثبت تغییر شغل انجام دهید.</a></div>
+        }
+        else
+        {
+            <select asp-for="DepartmentId" class="form-select" required>
+                <option value="0">انتخاب کنید</option>
+                @foreach (var department in (IReadOnlyList<HRMS.Next.Modules.Organization.DepartmentOption>)(ViewData["Departments"] ?? Array.Empty<HRMS.Next.Modules.Organization.DepartmentOption>()))
+                {
+                    <option value="@department.Id">@department.Name</option>
+                }
+            </select>
+        }
         <span asp-validation-for="DepartmentId" class="text-danger small"></span>
     </div>
     <div class="col-md-6">

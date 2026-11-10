@@ -25,7 +25,8 @@ public sealed class SqlEmployeeFlowTests
         organization.Companies.Add(company);
         await organization.SaveChangesAsync();
         var department = new Department { CompanyId = company.Id, Name = "آزمایش" };
-        organization.Departments.Add(department);
+        var otherDepartment = new Department { CompanyId = company.Id, Name = "آزمایش دوم" };
+        organization.Departments.AddRange(department, otherDepartment);
         await organization.SaveChangesAsync();
 
         try
@@ -42,6 +43,7 @@ public sealed class SqlEmployeeFlowTests
             Assert.Empty((await service.SearchAsync(actor, null, null, 1, 20, CancellationToken.None, "Terminated")).Rows);
             Assert.Null(await service.GetAsync(actor with { CompanyId = company.Id + 1 }, id, CancellationToken.None));
             var before = (await service.GetAsync(actor, id, CancellationToken.None))!;
+            await Assert.ThrowsAsync<ArgumentException>(() => service.UpdateAsync(actor, id, input with { DepartmentId = otherDepartment.Id }, before.RowVersion, CancellationToken.None));
             await Assert.ThrowsAsync<DbUpdateConcurrencyException>(() => service.UpdateAsync(actor, id, input with { LastName = "ویرایش" }, [1, 2], CancellationToken.None));
             await service.UpdateAsync(actor, id, input with { LastName = "ویرایش" }, before.RowVersion, CancellationToken.None);
             Assert.Equal("ویرایش", (await service.GetAsync(actor, id, CancellationToken.None))!.LastName);
@@ -54,7 +56,7 @@ public sealed class SqlEmployeeFlowTests
             personnel.Audits.RemoveRange(await personnel.Audits.Where(x => ids.Contains(x.EmployeeId)).ToListAsync());
             personnel.Employees.RemoveRange(employees);
             await personnel.SaveChangesAsync();
-            organization.Departments.Remove(department);
+            organization.Departments.RemoveRange(department, otherDepartment);
             organization.Companies.Remove(company);
             await organization.SaveChangesAsync();
         }

@@ -1,4 +1,5 @@
 using HRMS.Next.Modules.Access;
+using HRMS.Next.Modules.Organization;
 using HRMS.Next.Modules.Personnel;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
@@ -18,6 +19,7 @@ public sealed class SqlJobHistoryTests
 
         var options = new DbContextOptionsBuilder<PersonnelDbContext>().UseSqlServer(connection).Options;
         await using var db = new PersonnelDbContext(options);
+        await using var org = new OrganizationDbContext(new DbContextOptionsBuilder<OrganizationDbContext>().UseSqlServer(connection).Options);
         var first = new Employee { CompanyId = 910001, DepartmentId = 1, EmployeeNumber = "JOB-" + Guid.NewGuid().ToString("N")[..12], FirstName = "Test", LastName = "One", HireDate = new DateOnly(2020, 1, 1) };
         var other = new Employee { CompanyId = 910002, DepartmentId = 1, EmployeeNumber = "JOB-" + Guid.NewGuid().ToString("N")[..12], FirstName = "Test", LastName = "Two", HireDate = new DateOnly(2020, 1, 1) };
         db.Employees.AddRange(first, other);
@@ -29,7 +31,7 @@ public sealed class SqlJobHistoryTests
                 new EmployeeJob { CompanyId = first.CompanyId, EmployeeId = first.Id, StartDate = new DateOnly(2023, 1, 1), JobTitle = "New", PayRate = 200, IsCurrent = true },
                 new EmployeeJob { CompanyId = other.CompanyId, EmployeeId = other.Id, StartDate = new DateOnly(2024, 1, 1), JobTitle = "Other", IsCurrent = true });
             await db.SaveChangesAsync();
-            var service = new EmployeeJobService(db);
+            var service = new EmployeeJobService(db, new OrganizationDirectory(org), TimeProvider.System);
             var actor = new ActorScope(1, "tester", first.CompanyId, true, false, true, false);
             var rows = await service.HistoryAsync(actor, first.Id, CancellationToken.None);
             Assert.Equal(new[] { "New", "Old" }, rows.Select(x => x.JobTitle));
