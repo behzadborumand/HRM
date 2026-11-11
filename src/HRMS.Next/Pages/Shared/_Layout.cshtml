@@ -24,6 +24,7 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/next-compat.css" asp-append-version="true" />
     @if (isDashboard) { <link rel="stylesheet" href="~/css/home.css" asp-append-version="true" /> }
+    @if (isProfile) { <link rel="stylesheet" href="~/css/profile.css" asp-append-version="true" /> }
 </head>
 <body class="@(isProfile ? "page-profile" : isDashboard ? "page-dashboard" : "page-standard")">
     <a class="skip-link" href="#main">رفتن به محتوای اصلی</a>

@@ -9,13 +9,21 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 namespace HRMS.Next.Pages.Employees;
 
 [Authorize]
-public sealed class DetailsModel(AccessService access, EmployeeService employees, IOrganizationDirectory organization, DocumentService documents, EmployeeJobService jobs) : PageModel
+public sealed class DetailsModel(AccessService access, EmployeeService employees, IOrganizationDirectory organization, DocumentService documents, EmployeeJobService jobs, EmployeeProfileDirectory directory, EmployeePhotoService photos, EmployeePayService pay, TimeProvider clock) : PageModel
 {
     public Employee? Employee { get; private set; }
     public bool CanWrite { get; private set; }
     public string? DepartmentName { get; private set; }
     public DocumentPage? Documents { get; private set; }
     public IReadOnlyList<JobHistoryRow> JobHistory { get; private set; } = [];
+    public JobHistoryRow? CurrentJob => JobHistory.FirstOrDefault(x => x.IsCurrent);
+    public PhotoSummary? Photo { get; private set; }
+    public ProfileNavigation? Navigation { get; private set; }
+    public DirectReportPage DirectReports { get; private set; } = new([], 0);
+    public int EmploymentDays { get; private set; }
+    public bool CanViewPay { get; private set; }
+    public IReadOnlyList<PayHistoryRow> PayHistory { get; private set; } = [];
+    public static string PayTypeLabel(string? type) => type switch { "Salary" => "حقوق ثابت", "Hourly" => "ساعتی", _ => "—" };
     public string? CurrentJobTitle => JobHistory.FirstOrDefault(x => x.IsCurrent)?.JobTitle;
     public string? CurrentManagerName => JobHistory.FirstOrDefault(x => x.IsCurrent)?.ManagerName;
     public IReadOnlyDictionary<int, string> DepartmentNames { get; private set; } = new Dictionary<int, string>();
@@ -38,6 +46,13 @@ public sealed class DetailsModel(AccessService access, EmployeeService employees
             DepartmentName = DepartmentLabel(Employee.DepartmentId);
             JobHistory = await jobs.HistoryAsync(actor, id, ct);
             Documents = await documents.ListAsync(actor, id, 1, 20, ct);
+            CanViewPay = AccessRules.CanReadPay(actor, actor.CompanyId, id);
+            if (CanViewPay) PayHistory = await pay.HistoryAsync(actor, id, ct);
+            Photo = await photos.SummaryAsync(actor, id, ct);
+            Navigation = await directory.NavigationAsync(actor, id, ct);
+            DirectReports = await directory.DirectReportsAsync(actor, id, ct);
+            var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(clock.GetUtcNow(), TimeZoneInfo.FindSystemTimeZoneById("Iran Standard Time")).DateTime);
+            EmploymentDays = ProfileDisplay.EmploymentDays(Employee.HireDate, Employee.TerminationDate, today);
         }
         return Employee is null ? NotFound() : Page();
     }

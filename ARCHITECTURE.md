@@ -8,7 +8,7 @@ The new application lives under `src/HRMS.Next`, with tests in `tests/HRMS.Next.
 | --- | --- | --- |
 | Access | Users, roles, credentials, grants | Current actor and permission checks |
 | Organization | Companies, departments, job titles, organization links | Company, department and active title lookup; scoped catalog and link commands |
-| Personnel | Employees, employment history, profile, custom fields | Employee lookup and scoped operations |
+| Personnel | Employees, employment history, profile, private portrait bytes, custom fields | Employee lookup and scoped operations; separate admin/owner pay projection and authorized photo use cases |
 | Documents | Private files and metadata | Authorized document retrieval |
 | Training | Courses and assignments | Employee ID based commands and queries |
 | Leave | Policies, balances, requests | Employee ID based commands and queries |

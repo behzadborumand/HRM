@@ -74,6 +74,8 @@ namespace HRMS.Next.Modules.Personnel.Migrations
 
                     b.HasIndex("CompanyId", "DepartmentId", "LastName");
 
+                    b.HasIndex("CompanyId", "LastName", "FirstName", "Id");
+
                     b.ToTable("Employees", "personnel");
                 });
 
@@ -173,6 +175,45 @@ namespace HRMS.Next.Modules.Personnel.Migrations
                         });
                 });
 
+            modelBuilder.Entity("HRMS.Next.Modules.Personnel.EmployeePhoto", b =>
+                {
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("Bytes")
+                        .IsRequired()
+                        .HasMaxLength(2097152)
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<string>("Sha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTimeOffset>("UploadedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("EmployeeId");
+
+                    b.HasIndex("CompanyId");
+
+                    b.ToTable("EmployeePhotos", "personnel");
+                });
+
             modelBuilder.Entity("HRMS.Next.Modules.Personnel.EmployeeJob", b =>
                 {
                     b.HasOne("HRMS.Next.Modules.Personnel.Employee", null)
@@ -185,6 +226,15 @@ namespace HRMS.Next.Modules.Personnel.Migrations
                         .WithMany()
                         .HasForeignKey("ManagerEmployeeId")
                         .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("HRMS.Next.Modules.Personnel.EmployeePhoto", b =>
+                {
+                    b.HasOne("HRMS.Next.Modules.Personnel.Employee", null)
+                        .WithOne()
+                        .HasForeignKey("HRMS.Next.Modules.Personnel.EmployeePhoto", "EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

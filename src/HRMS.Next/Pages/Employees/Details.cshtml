@@ -2,156 +2,216 @@
 @model HRMS.Next.Pages.Employees.DetailsModel
 @{
     ViewData["Title"] = "پرونده کارمند";
+    var employee = Model.Employee!;
+    var fullName = employee.FirstName + " " + employee.LastName;
+    var photoVersion = Model.Photo is null ? "" : Convert.ToBase64String(Model.Photo.RowVersion);
+    string Fa(string value) => string.Concat(value.Select(c => c is >= '0' and <= '9' ? (char)('۰' + c - '0') : c));
+    string Date(DateOnly value) => Fa(JalaliDate.Format(value));
 }
 @section Hero {
     <div class="profile-hero">
         <div class="profile-hero-avatar">
-            <span class="avatar avatar-lg avatar-fallback" aria-hidden="true">@(Model.Employee!.FirstName.Length > 0 ? Model.Employee.FirstName[..1] : "؟")</span>
+            @if (Model.Photo is not null)
+            {
+                <img asp-append-version="false" src="@Url.Page("/Employees/Photo", new { id = employee.Id, v = Model.Photo.Sha256 })" alt="تصویر @fullName" class="avatar avatar-lg" width="142" height="142" />
+            }
+            else
+            {
+                <span class="avatar avatar-lg avatar-fallback" aria-label="تصویر برای @fullName ثبت نشده است">@(employee.FirstName.Length > 0 ? employee.FirstName[..1] : "؟")</span>
+            }
+            @if (Model.CanWrite)
+            {
+                <button class="profile-photo-trigger" type="button" data-bs-toggle="modal" data-bs-target="#photo-modal" aria-label="تغییر تصویر @fullName"><i class="bi bi-camera-fill" aria-hidden="true"></i></button>
+            }
         </div>
         <div class="profile-heading">
-            <h1>@Model.Employee!.FirstName @Model.Employee.LastName</h1>
-            <p class="hero-sub">@(Model.CurrentJobTitle ?? Model.DepartmentName ?? "بدون عنوان شغلی") | کد پرسنلی @Model.Employee.EmployeeNumber</p>
-            <span class="badge text-bg-@(Model.Employee.TerminationDate is null ? "success" : "secondary") mt-1">@(Model.Employee.TerminationDate is null ? "فعال" : "خروج قطعی")</span>
+            <h1>@fullName</h1>
+            <p class="hero-sub">@(Model.CurrentJobTitle ?? "بدون عنوان شغلی")</p>
         </div>
         <div class="profile-hero-actions">
-            <div class="d-flex gap-2 justify-content-end">
-                @if (Model.CanWrite)
-                {
-                    <a asp-page="Edit" asp-route-id="@Model.Employee.Id" class="btn btn-hero btn-sm"><i class="bi bi-pencil"></i> ویرایش پرونده</a>
-                }
-                <a asp-page="Index" class="btn btn-hero btn-sm" aria-label="بازگشت به لیست کارکنان"><i class="bi bi-grid"></i></a>
+            <div class="profile-actions">
+                @if (Model.CanWrite) { <a asp-page="Edit" asp-route-id="@employee.Id" class="btn btn-hero btn-sm"><i class="bi bi-pencil" aria-hidden="true"></i> ویرایش پرونده</a> }
+                <a asp-page="Index" class="btn btn-hero btn-sm" aria-label="فهرست کارکنان"><i class="bi bi-grid" aria-hidden="true"></i></a>
             </div>
+            @if (Model.Navigation is { } navigation)
+            {
+                <nav class="profile-neighbours" aria-label="جابه‌جایی بین پرونده‌های شرکت">
+                    <span>@Fa(navigation.Position.ToString()) از @Fa(navigation.Total.ToString())</span>
+                    @if (navigation.PreviousId is { } previous) { <a asp-page="Details" asp-route-id="@previous"><i class="bi bi-chevron-right" aria-hidden="true"></i> قبلی</a> }
+                    @if (navigation.NextId is { } next) { <a asp-page="Details" asp-route-id="@next">بعدی <i class="bi bi-chevron-left" aria-hidden="true"></i></a> }
+                </nav>
+            }
         </div>
     </div>
     <nav class="profile-tabs" aria-label="بخش‌های پرونده کارمند">
         <ul class="nav nav-tabs" role="tablist">
-            <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-personal" type="button" role="tab">اطلاعات شخصی</button></li>
-            <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-job" type="button" role="tab">شغل</button></li>
-            <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-documents" type="button" role="tab">مدارک</button></li>
+            <li class="nav-item" role="presentation"><button class="nav-link" id="profile-personal-tab" data-bs-toggle="tab" data-bs-target="#tab-personal" type="button" role="tab" aria-controls="tab-personal" aria-selected="false" tabindex="-1">اطلاعات شخصی</button></li>
+            <li class="nav-item" role="presentation"><button class="nav-link active" id="profile-job-tab" data-bs-toggle="tab" data-bs-target="#tab-job" type="button" role="tab" aria-controls="tab-job" aria-selected="true" tabindex="0">شغل</button></li>
+            @if (Model.CanViewPay) { <li class="nav-item" role="presentation"><button class="nav-link" id="profile-pay-tab" data-bs-toggle="tab" data-bs-target="#tab-pay" type="button" role="tab" aria-controls="tab-pay" aria-selected="false" tabindex="-1">اطلاعات حقوق</button></li> }
+            <li class="nav-item" role="presentation"><button class="nav-link" id="profile-documents-tab" data-bs-toggle="tab" data-bs-target="#tab-documents" type="button" role="tab" aria-controls="tab-documents" aria-selected="false" tabindex="-1">مدارک</button></li>
         </ul>
     </nav>
 }
+@if (TempData["PhotoError"] is string photoError) { <div class="alert alert-danger mt-3" role="alert">@photoError</div> }
 <div class="employee-workspace">
-    <aside class="employee-sidebar">
-        <div class="card profile-aside">
-            <div class="card-body">
-                <p class="aside-label">تلفن و ایمیل</p>
-                <p class="aside-value" dir="ltr">@(Model.Employee?.Email ?? "-")</p>
-                <p class="aside-label">تاریخ استخدام</p>
-                <p class="aside-value">@JalaliDate.Format(Model.Employee!.HireDate)</p>
-                <p class="aside-label">کد پرسنلی</p>
-                <p class="aside-value">@Model.Employee.EmployeeNumber</p>
-                <p class="aside-label">مدیر</p>
-                <p class="aside-value">@(Model.CurrentManagerName ?? "-")</p>
-                <p class="aside-label">وضعیت اشتغال</p>
-                <p class="aside-value">@(Model.Employee.TerminationDate is null ? "فعال" : "خروج قطعی")</p>
-                <p class="aside-label">واحد سازمانی</p>
-                <p class="aside-value">@(Model.DepartmentName ?? "-")</p>
-            </div>
+    <aside class="employee-sidebar" aria-label="خلاصهٔ پروندهٔ @fullName">
+        <div class="profile-aside">
+            <section class="profile-aside-group profile-contact">
+                <h2 class="visually-hidden">راه ارتباطی</h2>
+                @if (!string.IsNullOrWhiteSpace(employee.Email))
+                {
+                    <a href="mailto:@employee.Email" class="profile-fact profile-email" title="@employee.Email"><i class="bi bi-envelope-fill" aria-hidden="true"></i><span dir="ltr">@employee.Email</span></a>
+                }
+                else { <p class="profile-aside-empty"><i class="bi bi-envelope" aria-hidden="true"></i> ایمیل ثبت نشده است.</p> }
+            </section>
+            <section class="profile-aside-group">
+                <h2>تاریخ استخدام</h2>
+                <p>@Date(employee.HireDate)</p>
+                <small>@Fa(Model.EmploymentDays.ToString("N0")) روز همکاری</small>
+            </section>
+            <section class="profile-aside-group profile-facts">
+                <h2 class="visually-hidden">اطلاعات سازمانی</h2>
+                <p class="profile-fact"><i class="bi bi-hash" aria-hidden="true"></i><span>@employee.EmployeeNumber</span></p>
+                <p class="profile-fact"><i class="bi bi-briefcase-fill" aria-hidden="true"></i><span>@DetailsModel.EmploymentTypeLabel(Model.CurrentJob?.EmploymentType)</span></p>
+                <p class="profile-fact"><i class="bi bi-people-fill" aria-hidden="true"></i><span>@(Model.DepartmentName ?? "واحد ثبت نشده")</span></p>
+                <p class="profile-fact"><i class="bi bi-circle-fill profile-status-icon" aria-hidden="true"></i><span>@(employee.TerminationDate is null ? "شاغل" : "خارج‌شده")</span></p>
+            </section>
+            <section class="profile-aside-group">
+                <h2>مدیر مستقیم</h2>
+                @if (Model.CurrentJob?.ManagerEmployeeId is { } managerId)
+                {
+                    <a asp-page="Details" asp-route-id="@managerId" class="profile-team-person"><span class="profile-mini-avatar" aria-hidden="true"><i class="bi bi-person-fill"></i></span><span><strong>@Model.CurrentManagerName</strong><small>مشاهدهٔ پرونده</small></span></a>
+                }
+                else { <p class="profile-aside-empty">مدیر مستقیم تعیین نشده است.</p> }
+            </section>
+            <section class="profile-aside-group">
+                <h2>زیردستان مستقیم <span>(@Fa(Model.DirectReports.Total.ToString()))</span></h2>
+                @if (Model.DirectReports.Total == 0) { <p class="profile-aside-empty">زیردست مستقیمی ثبت نشده است.</p> }
+                @foreach (var report in Model.DirectReports.Rows)
+                {
+                    <a asp-page="Details" asp-route-id="@report.Id" class="profile-team-person"><span class="profile-mini-avatar" aria-hidden="true"><i class="bi bi-person-fill"></i></span><span><strong>@report.FullName</strong><small>@report.JobTitle</small></span></a>
+                }
+                @if (Model.DirectReports.Total > Model.DirectReports.Rows.Count) { <small>نمایش @Fa(Model.DirectReports.Rows.Count.ToString()) نفر از @Fa(Model.DirectReports.Total.ToString()) نفر</small> }
+            </section>
         </div>
     </aside>
     <div class="employee-content">
         <div class="tab-content">
-            <div class="tab-pane fade" id="tab-personal" role="tabpanel">
-                <h2 class="profile-page-title"><i class="bi bi-person-lines-fill"></i> اطلاعات شخصی</h2>
-                <div class="card">
-                    <div class="card-header fw-semibold"><i class="bi bi-person-vcard"></i> اطلاعات پایه و راه ارتباطی</div>
-                    <div class="card-body">
-                        <dl class="row mb-0">
-                            <dt class="col-sm-4">نام</dt><dd class="col-sm-8">@Model.Employee.FirstName</dd>
-                            <dt class="col-sm-4">نام خانوادگی</dt><dd class="col-sm-8">@Model.Employee.LastName</dd>
-                            <dt class="col-sm-4">ایمیل</dt><dd class="col-sm-8" dir="ltr">@(Model.Employee.Email ?? "-")</dd>
-                        </dl>
-                    </div>
-                </div>
+            <div class="tab-pane" id="tab-personal" role="tabpanel" aria-labelledby="profile-personal-tab" tabindex="0">
+                <h2 class="profile-page-title"><i class="bi bi-person-lines-fill" aria-hidden="true"></i> اطلاعات شخصی</h2>
+                <section class="card"><div class="card-header"><h3><i class="bi bi-person-vcard" aria-hidden="true"></i> اطلاعات پایه</h3></div><div class="card-body">
+                    <dl class="profile-fields"><dt>نام</dt><dd>@employee.FirstName</dd><dt>نام خانوادگی</dt><dd>@employee.LastName</dd><dt>ایمیل</dt><dd dir="ltr">@(employee.Email ?? "—")</dd><dt>کد پرسنلی</dt><dd>@employee.EmployeeNumber</dd></dl>
+                </div></section>
             </div>
-            <div class="tab-pane fade show active" id="tab-job" role="tabpanel">
-                <h2 class="profile-page-title"><i class="bi bi-briefcase"></i> اطلاعات شغلی</h2>
-                <section class="card">
-                    <div class="card-header fw-semibold"><i class="bi bi-clock-history"></i> وضعیت ثبت‌شده</div>
+            <div class="tab-pane show active" id="tab-job" role="tabpanel" aria-labelledby="profile-job-tab" tabindex="0">
+                <h2 class="profile-page-title"><i class="bi bi-briefcase-fill" aria-hidden="true"></i> شغل</h2>
+                <section class="card" aria-labelledby="employment-title">
+                    <div class="card-header"><h3 id="employment-title"><i class="bi bi-person-badge" aria-hidden="true"></i> وضعیت استخدام</h3></div>
                     <div class="card-body table-responsive">
-                        <table class="table table-sm align-middle mb-0">
-                            <thead><tr><th>تاریخ استخدام</th><th>واحد سازمانی</th><th>وضعیت</th></tr></thead>
+                        <table class="table align-middle mb-0"><caption class="visually-hidden">وضعیت استخدام @fullName</caption>
+                            <thead><tr><th scope="col">تاریخ استخدام</th><th scope="col">وضعیت اشتغال</th><th scope="col">نوع استخدام</th><th scope="col">تاریخ خروج</th></tr></thead>
+                            <tbody><tr class="profile-current-row"><td>@Date(employee.HireDate)</td><td>@(employee.TerminationDate is null ? "فعال" : "خروج قطعی")</td><td>@DetailsModel.EmploymentTypeLabel(Model.CurrentJob?.EmploymentType)</td><td>@(employee.TerminationDate is { } termination ? Date(termination) : "—")</td></tr></tbody>
+                        </table>
+                    </div>
+                </section>
+                <section class="card" aria-labelledby="job-history-title">
+                    <div class="card-header">
+                        <h3 id="job-history-title"><i class="bi bi-briefcase-fill" aria-hidden="true"></i> اطلاعات و سوابق شغلی</h3>
+                        @if (Model.CanWrite) { <a asp-page="Edit" asp-route-id="@employee.Id" asp-fragment="job-change" class="profile-update-link"><i class="bi bi-plus-circle-fill" aria-hidden="true"></i> به‌روزرسانی اطلاعات شغل</a> }
+                    </div>
+                    <div class="card-body table-responsive">
+                        <table class="table align-middle mb-0"><caption class="visually-hidden">سوابق شغلی @fullName؛ ردیف سبز، شغل جاری است.</caption>
+                            <thead><tr><th scope="col">تاریخ مؤثر</th><th scope="col">تا تاریخ</th><th scope="col">نوع استخدام</th><th scope="col">واحد سازمانی</th><th scope="col">عنوان شغلی</th><th scope="col">مدیر مستقیم</th></tr></thead>
                             <tbody>
-                                <tr class="profile-current-row">
-                                    <td>@JalaliDate.Format(Model.Employee.HireDate)</td>
-                                    <td>@(Model.DepartmentName ?? "-")</td>
-                                    <td>@(Model.Employee.TerminationDate is null ? "فعال" : "خروج قطعی")</td>
+                            @if (Model.JobHistory.Count == 0) { <tr><td colspan="6" class="profile-empty">سابقهٔ شغلی ثبت نشده است.</td></tr> }
+                            @foreach (var job in Model.JobHistory)
+                            {
+                                <tr data-job-id="@job.Id" class="@(job.IsCurrent ? "profile-current-row" : "profile-history-row")">
+                                    <td>@Date(job.StartDate)@if (job.IsCurrent) { <span class="visually-hidden">، شغل جاری</span> }</td>
+                                    <td>@(job.EndDate is { } end ? Date(end) : "—")</td>
+                                    <td>@DetailsModel.EmploymentTypeLabel(job.EmploymentType)</td>
+                                    <td>@Model.DepartmentLabel(job.DepartmentId)</td><td>@(job.JobTitle ?? "—")</td>
+                                    <td>@if (job.ManagerEmployeeId is { } jobManager) { <a asp-page="Details" asp-route-id="@jobManager">@job.ManagerName</a> } else { <span>—</span> }</td>
                                 </tr>
+                            }
                             </tbody>
                         </table>
-                    </div>
-                </section>
-                <section class="card mt-3">
-                    <div class="card-header bg-white fw-semibold d-flex justify-content-between align-items-center">
-                        <span><i class="bi bi-briefcase-fill"></i> اطلاعات و سوابق شغلی</span>
-                        @if (Model.CanWrite)
-                        {
-                            <a asp-page="Edit" asp-route-id="@Model.Employee!.Id" asp-fragment="job-change" class="profile-update-link"><i class="bi bi-plus-circle-fill"></i> به‌روزرسانی اطلاعات شغل</a>
-                        }
-                    </div>
-                    <div class="card-body table-responsive">
-                        <table class="table table-sm align-middle text-center mb-0">
-                            <thead><tr><th>از</th><th>تا</th><th>نوع استخدام</th><th>واحد</th><th>عنوان شغلی</th><th>مدیر</th></tr></thead>
-                            <tbody>
-                                @if (Model.JobHistory.Count == 0)
-                                {
-                                    <tr><td colspan="6" class="text-muted">سابقه شغلی ثبت نشده است.</td></tr>
-                                }
-                                @foreach (var job in Model.JobHistory)
-                                {
-                                    <tr data-job-id="@job.Id" class="@(job.IsCurrent ? "fw-semibold profile-current-row" : null)">
-                                        <td>@JalaliDate.Format(job.StartDate)@(job.IsCurrent ? " *" : null)</td>
-                                        <td>@(job.EndDate is { } end ? JalaliDate.Format(end) : "-")</td>
-                                        <td>@HRMS.Next.Pages.Employees.DetailsModel.EmploymentTypeLabel(job.EmploymentType)</td>
-                                        <td>@Model.DepartmentLabel(job.DepartmentId)</td>
-                                        <td>@(job.JobTitle ?? "-")</td>
-                                        <td>@(job.ManagerName ?? "-")</td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                        @if (Model.JobHistory.Any(x => x.IsCurrent))
-                        {
-                            <div class="form-text">* ردیف جاری</div>
-                        }
                     </div>
                 </section>
             </div>
-            <div class="tab-pane fade" id="tab-documents" role="tabpanel">
-                <h2 class="profile-page-title"><i class="bi bi-folder2-open"></i> مدارک</h2>
-                <div class="card">
-                    <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
-                        <span><i class="bi bi-folder2-open"></i> مدارک (@(Model.Documents?.Total ?? 0))</span>
-                        <a asp-page="/Documents/Index" asp-route-employeeId="@Model.Employee.Id" class="btn btn-sm btn-outline-primary">مدیریت مدارک</a>
-                    </div>
-                    <div class="card-body table-responsive">
-                        <table class="table table-sm table-striped align-middle text-center mb-0">
-                            <thead><tr><th>عنوان</th><th>دسته</th><th>حجم</th><th>بارگذاری</th><th>انقضا</th><th>دریافت</th></tr></thead>
+            @if (Model.CanViewPay)
+            {
+                <div class="tab-pane" id="tab-pay" role="tabpanel" aria-labelledby="profile-pay-tab" tabindex="0" data-pay-history>
+                    <h2 class="profile-page-title"><i class="bi bi-cash-coin" aria-hidden="true"></i> اطلاعات حقوق</h2>
+                    <section class="card">
+                        <div class="card-header"><h3><i class="bi bi-cash-stack" aria-hidden="true"></i> نرخ جاری</h3></div>
+                        <div class="card-body">
+                            @if (Model.PayHistory.FirstOrDefault(x => x.IsCurrent) is { } currentPay)
+                            {
+                                <div class="profile-pay-summary">
+                                    <div><span class="profile-pay-label">نوع حقوق</span><strong>@DetailsModel.PayTypeLabel(currentPay.PayType)</strong></div>
+                                    <div><span class="profile-pay-label">تاریخ مؤثر</span><strong>@Date(currentPay.StartDate)</strong></div>
+                                    <div><span class="profile-pay-label">نرخ ثبت‌شده</span><strong class="profile-pay-amount">@Fa(ProfileDisplay.PayRate(currentPay.Rate))</strong></div>
+                                </div>
+                            }
+                            else { <p class="profile-empty">اطلاعات حقوق جاری ثبت نشده است.</p> }
+                            <p class="profile-pay-note">این بخش نرخ قراردادی ثبت‌شده را نمایش می‌دهد. واحد پول در داده‌های فعلی مشخص نشده است.</p>
+                        </div>
+                    </section>
+                    <section class="card">
+                        <div class="card-header"><h3><i class="bi bi-clock-history" aria-hidden="true"></i> سابقهٔ نرخ حقوق</h3></div>
+                        <div class="card-body table-responsive"><table class="table align-middle mb-0">
+                            <caption class="visually-hidden">سابقهٔ نرخ حقوق @fullName</caption>
+                            <thead><tr><th scope="col">تاریخ شروع</th><th scope="col">تاریخ پایان</th><th scope="col">نوع حقوق</th><th scope="col">نرخ ثبت‌شده</th></tr></thead>
                             <tbody>
-                                @if (Model.Documents?.Rows.Count is null or 0)
-                                {
-                                    <tr><td colspan="6" class="text-muted">سندی برای این کارمند ثبت نشده است.</td></tr>
-                                }
-                                else
-                                {
-                                    @foreach (var document in Model.Documents.Rows)
-                                    {
-                                        <tr data-document-id="@document.Id">
-                                            <td>@document.Title</td>
-                                            <td>@(document.Category ?? "-")</td>
-                                            <td>@(document.FileSize / 1024.0).ToString("0.#") کیلوبایت</td>
-                                            <td>@JalaliDate.Format(DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(document.UploadedAtUtc, TimeZoneInfo.FindSystemTimeZoneById("Iran Standard Time")).DateTime))</td>
-                                            <td>@(document.ExpiryDate is { } expiry ? JalaliDate.Format(expiry) : "-")</td>
-                                            <td><a asp-page="/Documents/Index" asp-page-handler="Download" asp-route-employeeId="@Model.Employee.Id" asp-route-id="@document.Id" class="btn btn-sm btn-outline-secondary"><i class="bi bi-download"></i> دانلود</a></td>
-                                        </tr>
-                                    }
-                                }
+                            @if (Model.PayHistory.Count == 0) { <tr><td colspan="4" class="profile-empty">سابقهٔ نرخ حقوق ثبت نشده است.</td></tr> }
+                            @foreach (var pay in Model.PayHistory)
+                            {
+                                <tr class="@(pay.IsCurrent ? "profile-current-row" : "profile-history-row")"><td>@Date(pay.StartDate)</td><td>@(pay.EndDate is { } payEnd ? Date(payEnd) : "—")</td><td>@DetailsModel.PayTypeLabel(pay.PayType)</td><td>@Fa(ProfileDisplay.PayRate(pay.Rate))</td></tr>
+                            }
                             </tbody>
-                        </table>
-                    </div>
+                        </table></div>
+                    </section>
                 </div>
+            }
+            <div class="tab-pane" id="tab-documents" role="tabpanel" aria-labelledby="profile-documents-tab" tabindex="0">
+                <h2 class="profile-page-title"><i class="bi bi-folder2-open" aria-hidden="true"></i> مدارک</h2>
+                <section class="card"><div class="card-header"><h3><i class="bi bi-folder2-open" aria-hidden="true"></i> مدارک (@Fa((Model.Documents?.Total ?? 0).ToString()))</h3><a asp-page="/Documents/Index" asp-route-employeeId="@employee.Id" class="profile-update-link">@(Model.CanWrite ? "مدیریت مدارک" : "همهٔ مدارک") <i class="bi bi-chevron-left" aria-hidden="true"></i></a></div>
+                    <div class="card-body table-responsive">
+                        <table class="table align-middle mb-0"><caption class="visually-hidden">مدارک @fullName</caption><thead><tr><th scope="col">عنوان</th><th scope="col">دسته</th><th scope="col">حجم</th><th scope="col">بارگذاری</th><th scope="col">انقضا</th><th scope="col">دریافت</th></tr></thead><tbody>
+                        @if (Model.Documents?.Rows.Count is null or 0) { <tr><td colspan="6" class="profile-empty">سندی برای این کارمند ثبت نشده است.</td></tr> }
+                        else
+                        {
+                            @foreach (var document in Model.Documents.Rows)
+                            {
+                                <tr data-document-id="@document.Id"><td>@document.Title</td><td>@(document.Category ?? "—")</td><td>@Fa((document.FileSize / 1024.0).ToString("0.#")) کیلوبایت</td><td>@Date(DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(document.UploadedAtUtc, TimeZoneInfo.FindSystemTimeZoneById("Iran Standard Time")).DateTime))</td><td>@(document.ExpiryDate is { } expiry ? Date(expiry) : "—")</td><td><a asp-page="/Documents/Index" asp-page-handler="Download" asp-route-employeeId="@employee.Id" asp-route-id="@document.Id" class="profile-download"><i class="bi bi-download" aria-hidden="true"></i><span class="visually-hidden">دریافت @document.Title</span></a></td></tr>
+                            }
+                        }
+                        </tbody></table>
+                    </div>
+                </section>
             </div>
         </div>
     </div>
 </div>
+@if (Model.CanWrite)
+{
+    <div class="modal fade" id="photo-modal" tabindex="-1" aria-labelledby="photo-modal-title" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+            <div class="modal-header"><h2 class="modal-title fs-5" id="photo-modal-title">تصویر @fullName</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button></div>
+            <div class="modal-body">
+                <form method="post" enctype="multipart/form-data" asp-page="/Employees/Photo" asp-page-handler="Upload" asp-route-id="@employee.Id">
+                    <input type="hidden" name="Version" value="@photoVersion" /><label for="employee-photo-file" class="form-label">انتخاب تصویر</label>
+                    <input type="file" id="employee-photo-file" name="UploadFile" accept="image/png,image/jpeg" class="form-control" required aria-describedby="photo-help" />
+                    <p class="form-text" id="photo-help">تصویر PNG یا JPEG، حداکثر ۲ مگابایت. تصویر از مرکز در قاب دایره‌ای نمایش داده می‌شود.</p>
+                    <button type="submit" class="btn btn-primary mt-2">ذخیرهٔ تصویر</button>
+                </form>
+                @if (Model.Photo is not null)
+                {
+                    <form method="post" asp-page="/Employees/Photo" asp-page-handler="Delete" asp-route-id="@employee.Id" class="mt-4 pt-3 border-top"><input type="hidden" name="Version" value="@photoVersion" /><button type="submit" class="btn btn-outline-danger btn-sm">حذف تصویر فعلی</button></form>
+                }
+            </div>
+        </div></div>
+    </div>
+}
+@section Scripts { <script src="~/js/profile.js" asp-append-version="true"></script> }

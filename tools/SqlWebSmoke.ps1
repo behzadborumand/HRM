@@ -2,7 +2,8 @@
     [Parameter(Mandatory = $true)][string]$AppExe,
     [string]$DotnetRoot,
     [string]$Database = 'HRMS_Next_Trial_20261108',
-    [int]$Port = 52321
+    [int]$Port = 52321,
+    [string]$ScreenshotsDirectory
 )
 
 $ErrorActionPreference = 'Stop'
@@ -126,7 +127,22 @@ try {
     $memberHome = Invoke-WebRequest "$baseUrl/Login" -Method Post -WebSession $memberSession -UseBasicParsing -Body @{
         Username = $memberUsername; Password = $memberPassword; __RequestVerificationToken = $memberToken
     }
-    if ($memberHome.BaseResponse.ResponseUri.AbsolutePath -ne '/' -or $memberHome.Content -notmatch $memberUsername) { throw 'Employee-linked account could not sign in.' }    $titles = Invoke-WebRequest "$baseUrl/Settings/JobTitles" -WebSession $webSession -UseBasicParsing
+    if ($memberHome.BaseResponse.ResponseUri.AbsolutePath -ne '/' -or $memberHome.Content -notmatch $memberUsername) { throw 'Employee-linked account could not sign in.' }    $memberProfile = Invoke-WebRequest "$baseUrl$profilePath" -WebSession $memberSession -UseBasicParsing
+    if ($memberProfile.Content -notmatch 'data-pay-history') { throw 'Own pay-history tab was not available to the linked employee.' }
+    $readerUsername = 'smoke_reader_' + $suffix.Substring(0, 10)
+    $readerPassword = [Guid]::NewGuid().ToString('N') + 'A1!'
+    $createdReader = Invoke-WebRequest "$baseUrl/Settings/Users?handler=Create" -Method Post -WebSession $webSession -UseBasicParsing -Body @{
+        NewUsername=$readerUsername; NewPassword=$readerPassword; NewEmployeeId=''
+        NewCanRead='true'; __RequestVerificationToken=$accountToken
+    }
+    if ($createdReader.Content -notmatch $readerUsername) { throw 'Unlinked reader account creation failed.' }
+    $readerLogin = Invoke-WebRequest "$baseUrl/Login" -SessionVariable readerSession -UseBasicParsing
+    $readerHome = Invoke-WebRequest "$baseUrl/Login" -Method Post -WebSession $readerSession -UseBasicParsing -Body @{
+        Username=$readerUsername; Password=$readerPassword; __RequestVerificationToken=(Get-FormToken $readerLogin.Content)
+    }
+    $readerProfile = Invoke-WebRequest "$baseUrl$profilePath" -WebSession $readerSession -UseBasicParsing
+    if ($readerProfile.Content -match 'data-pay-history|profile-pay-tab|نرخ ثبت‌شده') { throw 'Pay data leaked into the general reader profile.' }
+    $titles = Invoke-WebRequest "$baseUrl/Settings/JobTitles" -WebSession $webSession -UseBasicParsing
     $titleToken = Get-FormToken $titles.Content
     $titleCreated = Invoke-WebRequest "$baseUrl/Settings/JobTitles?handler=Save" -Method Post -WebSession $webSession -UseBasicParsing -Body @{
         Name = 'Smoke engineer'; Description = 'Smoke test'; EditId = '0'; Version = ''; __RequestVerificationToken = $titleToken
@@ -159,7 +175,7 @@ try {
         __RequestVerificationToken = $jobToken
     }
     if ($jobChanged.BaseResponse.ResponseUri.AbsolutePath -ne $profilePath -or
-        $jobChanged.Content -match 'PayRate|PayType|نرخ ثبت‌شده' -or
+        $jobChanged.Content -notmatch 'data-pay-history' -or
         $jobChanged.Content -notmatch 'data-job-id="[1-9][0-9]*"' -or
         $jobChanged.Content -notmatch 'Smoke engineer') {
         $errors = [regex]::Matches($jobChanged.Content, '<li>[^<]*</li>') | ForEach-Object { [System.Net.WebUtility]::HtmlDecode($_.Value) }
@@ -296,11 +312,73 @@ try {
     }
     $documentsPage = Invoke-WebRequest "$baseUrl/Employees/$employeeId/Documents" -WebSession $webSession -UseBasicParsing
     if ($documentsPage.Content -match 'data-document-id=') { throw 'Deleted document remains visible.' }
-    Write-Output 'HTTPS login, Home, Settings, accounts, organization links, employee, job change, Leave, Reports, Training, Documents: PASS'
+
+    $photoProfile = Invoke-WebRequest "$baseUrl$profilePath" -WebSession $webSession -UseBasicParsing
+    if ($photoProfile.Content -notmatch 'profile-photo-trigger') { throw 'Private photo controls did not render.' }
+    $photoToken = Get-FormToken $photoProfile.Content
+    $photoBytes = [Convert]::FromBase64String('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j4l8AAAAASUVORK5CYII=')
+    $photoBoundary = '----HRMPhoto' + $suffix
+    $photoHeader = '--' + $photoBoundary + $newline +
+        'Content-Disposition: form-data; name="Version"' + $newline + $newline + $newline +
+        '--' + $photoBoundary + $newline +
+        'Content-Disposition: form-data; name="__RequestVerificationToken"' + $newline + $newline + $photoToken + $newline +
+        '--' + $photoBoundary + $newline +
+        'Content-Disposition: form-data; name="UploadFile"; filename="portrait.png"' + $newline +
+        'Content-Type: image/png' + $newline + $newline
+    $photoTail = $newline + '--' + $photoBoundary + '--' + $newline
+    $photoMultipart = [Collections.Generic.List[byte]]::new()
+    $photoMultipart.AddRange([Text.Encoding]::UTF8.GetBytes($photoHeader))
+    $photoMultipart.AddRange($photoBytes)
+    $photoMultipart.AddRange([Text.Encoding]::UTF8.GetBytes($photoTail))
+    $photoBody = Join-Path $env:TEMP ('hrm-photo-' + $suffix)
+    $photoDownload = Join-Path $env:TEMP ('hrm-photo-download-' + $suffix)
+    try {
+        [IO.File]::WriteAllBytes($photoBody, $photoMultipart.ToArray())
+        $photoHeaders = & curl.exe --insecure --silent --show-error --dump-header - --output NUL --max-time 20 -X POST -H ("Cookie: " + $cookieHeader) -H ("Content-Type: multipart/form-data; boundary=" + $photoBoundary) --data-binary ("@" + $photoBody) "$baseUrl$profilePath/Photo?handler=Upload"
+        if ($LASTEXITCODE -ne 0 -or ($photoHeaders -join ' ') -notmatch '302') { throw 'Photo upload failed.' }
+        $privatePhoto = Invoke-WebRequest "$baseUrl$profilePath/Photo" -WebSession $webSession -UseBasicParsing -OutFile $photoDownload -PassThru
+        if ($privatePhoto.Headers['Content-Type'] -notmatch 'image/png' -or [Convert]::ToBase64String([IO.File]::ReadAllBytes($photoDownload)) -ne [Convert]::ToBase64String($photoBytes)) { throw 'Private photo bytes or content type differ.' }
+        $anonymousPhoto = Invoke-WebRequest "$baseUrl$profilePath/Photo" -UseBasicParsing
+        if ($anonymousPhoto.BaseResponse.ResponseUri.AbsolutePath -ne '/Login') { throw 'Photo was accessible anonymously.' }
+    } finally { Remove-Item -LiteralPath $photoBody,$photoDownload -ErrorAction SilentlyContinue }
+    $photoProfile = Invoke-WebRequest "$baseUrl$profilePath" -WebSession $webSession -UseBasicParsing
+    $photoVersion = [System.Net.WebUtility]::HtmlDecode([regex]::Match($photoProfile.Content, '<input[^>]*name="Version"[^>]*value="([^"]*)"').Groups[1].Value)
+    if (!$photoVersion) { throw 'Photo concurrency version did not render.' }
+    $photoDeleted = Invoke-WebRequest "$baseUrl$profilePath/Photo?handler=Delete" -Method Post -WebSession $webSession -UseBasicParsing -Body @{
+        Version=$photoVersion; __RequestVerificationToken=(Get-FormToken $photoProfile.Content)
+    }
+    if ($photoDeleted.Content -match '<img[^>]+/Photo') { throw 'Deleted photo is still rendered.' }
+    if ($ScreenshotsDirectory) {
+        $visualFixture = @"
+SET ANSI_NULLS ON; SET ANSI_PADDING ON; SET ANSI_WARNINGS ON; SET ARITHABORT ON; SET CONCAT_NULL_YIELDS_NULL ON; SET NUMERIC_ROUNDABORT OFF; SET QUOTED_IDENTIFIER ON;
+DECLARE @company int=(SELECT Id FROM organization.Companies WHERE Name='$companyName');
+DECLARE @employee int=$employeeId, @department int=(SELECT DepartmentId FROM personnel.Employees WHERE Id=$employeeId AND CompanyId=@company);
+UPDATE personnel.Employees SET FirstName=N'آرمان',LastName=N'نیک‌روش',Email='arman.nikroush@example.test' WHERE Id=@employee AND CompanyId=@company;
+UPDATE organization.Departments SET Name=N'توسعهٔ محصول' WHERE Id=@department AND CompanyId=@company;
+INSERT personnel.Employees(CompanyId,DepartmentId,EmployeeNumber,FirstName,LastName,HireDate) VALUES(@company,@department,'$($employeeNumber)_M',N'مهدی',N'رضایی','2020-01-01');
+DECLARE @manager int=SCOPE_IDENTITY();
+INSERT personnel.Employees(CompanyId,DepartmentId,EmployeeNumber,FirstName,LastName,HireDate) VALUES(@company,@department,'$($employeeNumber)_R',N'سارا',N'نادری','2024-01-01');
+DECLARE @report int=SCOPE_IDENTITY();
+UPDATE personnel.EmployeeJobs SET StartDate='2025-01-01',JobTitle=N'کارشناس ارشد محصول',PayType='Salary',PayRate=720000000,ManagerEmployeeId=@manager WHERE EmployeeId=@employee AND CompanyId=@company AND IsCurrent=1;
+INSERT personnel.EmployeeJobs(CompanyId,EmployeeId,DepartmentId,ManagerEmployeeId,JobTitle,EmploymentType,StartDate,EndDate,IsCurrent,PayType,PayRate) VALUES
+(@company,@employee,@department,@manager,N'کارشناس محصول','FullTime','2024-09-01','2024-12-31',0,'Salary',600000000),
+(@company,@employee,@department,NULL,N'کارشناس برنامه‌ریزی','FullTime','2024-03-20','2024-08-31',0,'Salary',480000000),
+(@company,@report,@department,@employee,N'کارشناس محصول','FullTime','2024-01-01',NULL,1,'Salary',360000000);
+"@
+        $fixtureFile = Join-Path $env:TEMP ('hrm-visual-fixture-' + $suffix + '.sql')
+        try {
+            [IO.File]::WriteAllText($fixtureFile,$visualFixture,[Text.UTF8Encoding]::new($true))
+            $fixtureOutput = sqlcmd -S . -E -C -b -d $Database -i $fixtureFile 2>&1
+            if ($LASTEXITCODE -ne 0) { throw "Visual fixture failed: $fixtureOutput" }
+        } finally { Remove-Item -LiteralPath $fixtureFile -ErrorAction SilentlyContinue }
+        & (Join-Path $PSScriptRoot 'CaptureProfile.ps1') -BaseUrl $baseUrl -Username $username -Password $password -EmployeeId $employeeId -OutputDirectory $ScreenshotsDirectory
+    }
+
+    Write-Output 'HTTPS login, Home, Settings, accounts, organization links, employee/photo, job change, Leave, Reports, Training, Documents: PASS'
 }
 finally {
     if ($process) { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue }
-    $cleanup = "SET ANSI_NULLS ON; SET ANSI_PADDING ON; SET ANSI_WARNINGS ON; SET ARITHABORT ON; SET CONCAT_NULL_YIELDS_NULL ON; SET NUMERIC_ROUNDABORT OFF; SET QUOTED_IDENTIFIER ON; DECLARE @id int=(SELECT Id FROM organization.Companies WHERE Name='$companyName'); DELETE FROM training.Assignments WHERE CompanyId=@id; DELETE FROM training.Courses WHERE CompanyId=@id; DELETE FROM leave.Requests WHERE CompanyId=@id; DELETE FROM leave.Balances WHERE CompanyId=@id; DELETE FROM leave.Policies WHERE CompanyId=@id; DELETE FROM documents.EmployeeDocuments WHERE CompanyId=@id; DELETE FROM documents.DocumentAudits WHERE CompanyId=@id; DELETE FROM personnel.EmployeeAudits WHERE EmployeeId IN (SELECT Id FROM personnel.Employees WHERE CompanyId=@id); DELETE FROM personnel.EmployeeJobs WHERE CompanyId=@id; DELETE FROM personnel.Employees WHERE CompanyId=@id; DELETE FROM access.Audits WHERE CompanyId=@id; DELETE FROM access.Users WHERE CompanyId=@id; DELETE FROM organization.OrganizationLinks WHERE CompanyId=@id; DELETE FROM organization.JobTitles WHERE CompanyId=@id; DELETE FROM organization.Departments WHERE CompanyId=@id; DELETE FROM organization.Companies WHERE Id=@id;"
+    $cleanup = "SET ANSI_NULLS ON; SET ANSI_PADDING ON; SET ANSI_WARNINGS ON; SET ARITHABORT ON; SET CONCAT_NULL_YIELDS_NULL ON; SET NUMERIC_ROUNDABORT OFF; SET QUOTED_IDENTIFIER ON; DECLARE @id int=(SELECT Id FROM organization.Companies WHERE Name='$companyName'); DELETE FROM training.Assignments WHERE CompanyId=@id; DELETE FROM training.Courses WHERE CompanyId=@id; DELETE FROM leave.Requests WHERE CompanyId=@id; DELETE FROM leave.Balances WHERE CompanyId=@id; DELETE FROM leave.Policies WHERE CompanyId=@id; DELETE FROM documents.EmployeeDocuments WHERE CompanyId=@id; DELETE FROM documents.DocumentAudits WHERE CompanyId=@id; DELETE FROM personnel.EmployeeAudits WHERE EmployeeId IN (SELECT Id FROM personnel.Employees WHERE CompanyId=@id); DELETE FROM personnel.EmployeePhotos WHERE CompanyId=@id; DELETE FROM personnel.EmployeeJobs WHERE CompanyId=@id; DELETE FROM personnel.Employees WHERE CompanyId=@id; DELETE FROM access.Audits WHERE CompanyId=@id; DELETE FROM access.Users WHERE CompanyId=@id; DELETE FROM organization.OrganizationLinks WHERE CompanyId=@id; DELETE FROM organization.JobTitles WHERE CompanyId=@id; DELETE FROM organization.Departments WHERE CompanyId=@id; DELETE FROM organization.Companies WHERE Id=@id;"
     $cleanupOutput = sqlcmd -S . -E -C -b -d $Database -Q $cleanup 2>&1
     $cleanupExit = $LASTEXITCODE
     Remove-Item Env:ConnectionStrings__HrmsNext,Env:HRMS_BOOTSTRAP_USER,Env:HRMS_BOOTSTRAP_PASSWORD,Env:HRMS_BOOTSTRAP_COMPANY,Env:ASPNETCORE_ENVIRONMENT -ErrorAction SilentlyContinue

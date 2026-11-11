@@ -5,6 +5,7 @@ namespace HRMS.Next.Modules.Personnel;
 public sealed class PersonnelDbContext(DbContextOptions<PersonnelDbContext> options) : DbContext(options)
 {
     public DbSet<Employee> Employees => Set<Employee>();
+    public DbSet<EmployeePhoto> Photos => Set<EmployeePhoto>();
     public DbSet<EmployeeAudit> Audits => Set<EmployeeAudit>();
     public DbSet<EmployeeJob> EmployeeJobs => Set<EmployeeJob>();
 
@@ -21,6 +22,18 @@ public sealed class PersonnelDbContext(DbContextOptions<PersonnelDbContext> opti
             entity.Property(x => x.RowVersion).IsRowVersion();
             entity.HasIndex(x => new { x.CompanyId, x.EmployeeNumber }).IsUnique();
             entity.HasIndex(x => new { x.CompanyId, x.DepartmentId, x.LastName });
+            entity.HasIndex(x => new { x.CompanyId, x.LastName, x.FirstName, x.Id });
+        });
+        model.Entity<EmployeePhoto>(entity =>
+        {
+            entity.ToTable("EmployeePhotos", "personnel");
+            entity.HasKey(x => x.EmployeeId);
+            entity.Property(x => x.Bytes).HasMaxLength(EmployeePhotoService.MaxBytes).IsRequired();
+            entity.Property(x => x.ContentType).HasMaxLength(50).IsRequired();
+            entity.Property(x => x.Sha256).HasMaxLength(64).IsRequired();
+            entity.Property(x => x.RowVersion).IsRowVersion();
+            entity.HasOne<Employee>().WithOne().HasForeignKey<EmployeePhoto>(x => x.EmployeeId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasIndex(x => x.CompanyId);
         });
         model.Entity<EmployeeJob>(entity =>
         {
