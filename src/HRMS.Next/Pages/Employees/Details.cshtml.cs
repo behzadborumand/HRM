@@ -1,4 +1,6 @@
 using HRMS.Next.Modules.Access;
+using HRMS.Next.Modules.Leave;
+using HRMS.Next.Modules.Training;
 using HRMS.Next.Modules.Documents;
 using HRMS.Next.Modules.Organization;
 using HRMS.Next.Modules.Personnel;
@@ -9,7 +11,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 namespace HRMS.Next.Pages.Employees;
 
 [Authorize]
-public sealed class DetailsModel(AccessService access, EmployeeService employees, IOrganizationDirectory organization, DocumentService documents, EmployeeJobService jobs, EmployeeProfileDirectory directory, EmployeePhotoService photos, EmployeePayService pay, TimeProvider clock) : PageModel
+public sealed class DetailsModel(AccessService access, EmployeeService employees, IOrganizationDirectory organization, DocumentService documents, EmployeeJobService jobs, EmployeeProfileDirectory directory, EmployeePhotoService photos, EmployeePayService pay, IEmployeeLeaveProfile leave, IEmployeeTrainingProfile training, TimeProvider clock) : PageModel
 {
     public Employee? Employee { get; private set; }
     public bool CanWrite { get; private set; }
@@ -21,6 +23,9 @@ public sealed class DetailsModel(AccessService access, EmployeeService employees
     public ProfileNavigation? Navigation { get; private set; }
     public DirectReportPage DirectReports { get; private set; } = new([], 0);
     public int EmploymentDays { get; private set; }
+    public EmployeeLeaveProfile? LeaveProfile { get; private set; }
+    public EmployeeTrainingProfile? TrainingProfile { get; private set; }
+    public bool CanManageActivity { get; private set; }
     public bool CanViewPay { get; private set; }
     public IReadOnlyList<PayHistoryRow> PayHistory { get; private set; } = [];
     public static string PayTypeLabel(string? type) => type switch { "Salary" => "حقوق ثابت", "Hourly" => "ساعتی", _ => "—" };
@@ -33,7 +38,7 @@ public sealed class DetailsModel(AccessService access, EmployeeService employees
         "FullTime" => "تمام وقت", "PartTime" => "پاره وقت", "Contract" => "قراردادی", "Intern" => "کارآموز", _ => "-"
     };
 
-    public async Task<IActionResult> OnGetAsync(int id, CancellationToken ct)
+    public async Task<IActionResult> OnGetAsync(int id, CancellationToken ct, int leavePage = 1, int trainingPage = 1)
     {
         var actor = await access.GetActiveAsync(User, ct);
         if (actor is null || !AccessRules.CanRead(actor, actor.CompanyId)) return Forbid();
@@ -48,6 +53,12 @@ public sealed class DetailsModel(AccessService access, EmployeeService employees
             Documents = await documents.ListAsync(actor, id, 1, 20, ct);
             CanViewPay = AccessRules.CanReadPay(actor, actor.CompanyId, id);
             if (CanViewPay) PayHistory = await pay.HistoryAsync(actor, id, ct);
+            CanManageActivity = actor.IsAdmin;
+            if (AccessRules.CanReadEmployeeActivity(actor, actor.CompanyId, id))
+            {
+                LeaveProfile = await leave.ReadAsync(actor, id, leavePage, ct);
+                TrainingProfile = await training.ReadAsync(actor, id, trainingPage, ct);
+            }
             Photo = await photos.SummaryAsync(actor, id, ct);
             Navigation = await directory.NavigationAsync(actor, id, ct);
             DirectReports = await directory.DirectReportsAsync(actor, id, ct);

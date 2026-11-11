@@ -38,6 +38,8 @@ builder.Services.AddScoped<EmployeePayService>();
 builder.Services.AddScoped<EmployeeJobService>();
 builder.Services.AddScoped<IEmployeeDirectory, PersonnelDirectory>();
 builder.Services.AddScoped<LeaveService>();
+builder.Services.AddScoped<IEmployeeLeaveProfile, LeaveProfileService>();
+builder.Services.AddScoped<IEmployeeTrainingProfile, TrainingProfileService>();
 builder.Services.AddScoped<TrainingService>();
 builder.Services.AddScoped<DocumentService>();
 builder.Services.AddSingleton(TimeProvider.System);

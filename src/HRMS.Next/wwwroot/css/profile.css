@@ -97,3 +97,12 @@
 .profile-pay-summary .profile-pay-amount { display: inline-block; background: #168a24; color: #fff; padding: 8px 14px; font-size: 21px; }
 .profile-pay-note { color: #949994; font-size: 10px; line-height: 1.8; margin: 8px 0 0; }
 @media (max-width:700px) { .profile-pay-summary { grid-template-columns: repeat(2,minmax(0,1fr)); } .profile-pay-summary > div:last-child { grid-column: 1 / -1; } }
+.profile-activity-note { color: #777e77; font-size: 11px; line-height: 1.9; margin: 0 0 14px; }
+.profile-balance-available { color: #168a24; font-weight: 600; }
+.profile-record-count { color: #959b95; font-weight: 400; }
+.profile-activity-status { display: inline-block; border-radius: 3px; padding: 3px 7px; background: #f0f2ef; color: #646b64; white-space: nowrap; font-size: 10px; }
+.profile-activity-status.is-complete { color: #176d23; background: #ecf6e8; }
+.profile-activity-status.is-pending { color: #806318; background: #fff7de; }
+.profile-activity-status.is-overdue { color: #a13429; background: #fbeeea; }
+.profile-pagination { display: flex; gap: 18px; align-items: center; justify-content: flex-end; padding: 16px 0; font-size: 11px; }
+.profile-pagination span { color: #777e77; }

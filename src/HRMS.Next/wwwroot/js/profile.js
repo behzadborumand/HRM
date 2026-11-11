@@ -9,6 +9,7 @@
   tabs.forEach((tab, index) => {
     tab.addEventListener('shown.bs.tab', () => {
       update(tab);
+      tab.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'instant' });
       history.replaceState(null, '', tab.dataset.bsTarget);
     });
     tab.addEventListener('keydown', event => {

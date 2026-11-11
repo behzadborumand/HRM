@@ -39,6 +39,10 @@ public static class AccessRules
     public static bool CanReadPay(ActorScope? user, int companyId, int employeeId) =>
         user is { IsActive: true } && user.CompanyId == companyId && (user.IsAdmin || user.EmployeeId == employeeId);
 
+    public static bool CanReadEmployeeActivity(ActorScope? user, int companyId, int employeeId) =>
+        user is { IsActive: true } && companyId > 0 && employeeId > 0 && user.CompanyId == companyId
+        && (user.IsAdmin || user.EmployeeId == employeeId);
+
     public static bool CanWrite(ActorScope? user, int companyId) =>
         user is { IsActive: true } && user.CompanyId == companyId && (user.IsAdmin || user.CanWriteEmployees);
 }

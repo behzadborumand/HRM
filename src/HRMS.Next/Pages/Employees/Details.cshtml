@@ -47,7 +47,9 @@
         <ul class="nav nav-tabs" role="tablist">
             <li class="nav-item" role="presentation"><button class="nav-link" id="profile-personal-tab" data-bs-toggle="tab" data-bs-target="#tab-personal" type="button" role="tab" aria-controls="tab-personal" aria-selected="false" tabindex="-1">اطلاعات شخصی</button></li>
             <li class="nav-item" role="presentation"><button class="nav-link active" id="profile-job-tab" data-bs-toggle="tab" data-bs-target="#tab-job" type="button" role="tab" aria-controls="tab-job" aria-selected="true" tabindex="0">شغل</button></li>
+            @if (Model.LeaveProfile is not null) { <li class="nav-item" role="presentation"><button class="nav-link" id="profile-leave-tab" data-bs-toggle="tab" data-bs-target="#tab-leave" type="button" role="tab" aria-controls="tab-leave" aria-selected="false" tabindex="-1">مرخصی</button></li> }
             @if (Model.CanViewPay) { <li class="nav-item" role="presentation"><button class="nav-link" id="profile-pay-tab" data-bs-toggle="tab" data-bs-target="#tab-pay" type="button" role="tab" aria-controls="tab-pay" aria-selected="false" tabindex="-1">اطلاعات حقوق</button></li> }
+            @if (Model.TrainingProfile is not null) { <li class="nav-item" role="presentation"><button class="nav-link" id="profile-training-tab" data-bs-toggle="tab" data-bs-target="#tab-training" type="button" role="tab" aria-controls="tab-training" aria-selected="false" tabindex="-1">آموزش</button></li> }
             <li class="nav-item" role="presentation"><button class="nav-link" id="profile-documents-tab" data-bs-toggle="tab" data-bs-target="#tab-documents" type="button" role="tab" aria-controls="tab-documents" aria-selected="false" tabindex="-1">مدارک</button></li>
         </ul>
     </nav>
@@ -174,6 +176,8 @@
                     </section>
                 </div>
             }
+            @if (Model.LeaveProfile is not null) { <partial name="_ProfileLeave" model="Model" /> }
+            @if (Model.TrainingProfile is not null) { <partial name="_ProfileTraining" model="Model" /> }
             <div class="tab-pane" id="tab-documents" role="tabpanel" aria-labelledby="profile-documents-tab" tabindex="0">
                 <h2 class="profile-page-title"><i class="bi bi-folder2-open" aria-hidden="true"></i> مدارک</h2>
                 <section class="card"><div class="card-header"><h3><i class="bi bi-folder2-open" aria-hidden="true"></i> مدارک (@Fa((Model.Documents?.Total ?? 0).ToString()))</h3><a asp-page="/Documents/Index" asp-route-employeeId="@employee.Id" class="profile-update-link">@(Model.CanWrite ? "مدیریت مدارک" : "همهٔ مدارک") <i class="bi bi-chevron-left" aria-hidden="true"></i></a></div>

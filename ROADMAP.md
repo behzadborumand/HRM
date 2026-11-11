@@ -33,6 +33,7 @@
 - [x] Documents private list/upload/download/delete flow, SQL tests and HTTPS smoke.
 - [x] Personnel job change closes dated history, updates current department and audit atomically; trial SQL and HTTPS flows pass.
 - [x] Reference-aligned profile shell, scoped employee neighbours/direct reports, private audited photos and checksum-verified trial portrait transfer; desktop/mobile/keyboard checks.
+- [x] Real admin/linked-owner Leave balances/request history and Training assignment/status profile tabs through module-owned scoped contracts, with SQL/HTTPS and desktop/mobile pagination verification.
 - [x] Dedicated admin/linked-owner pay history, excluded from general employee read/write access, with SQL/HTTPS leak checks.
 - [x] Company-scoped job title catalog, archive/restore, selection in job change, trial transfer and SQL/HTTPS verification.
 - [x] Department administration with scoped hierarchy, cycle rejection, archive/restore, headcounts, preserved employee history and SQL/HTTPS verification.

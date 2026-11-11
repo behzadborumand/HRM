@@ -1,0 +1,54 @@
+@model HRMS.Next.Pages.Employees.DetailsModel
+@{
+    var leave = Model.LeaveProfile!;
+    var pages = Math.Max(1, (leave.Total - 1) / leave.PageSize + 1);
+    string Fa(string value) => string.Concat(value.Select(c => c is >= '0' and <= '9' ? (char)('۰' + c - '0') : c));
+    string Hours(decimal value) => Fa(value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture));
+    string Date(DateOnly value) => Fa(JalaliDate.Format(value));
+    string Label(string status) => status switch { "Approved" => "تأیید شده", "Rejected" => "رد شده", "Cancelled" => "لغو شده", "Pending" => "در انتظار تأیید", _ => "نامشخص" };
+}
+<div class="tab-pane" id="tab-leave" role="tabpanel" aria-labelledby="profile-leave-tab" tabindex="0" data-profile-leave>
+    <h2 class="profile-page-title"><i class="bi bi-calendar2-week" aria-hidden="true"></i> مرخصی</h2>
+    <section class="card" aria-labelledby="leave-balances-title">
+        <div class="card-header">
+            <h3 id="leave-balances-title"><i class="bi bi-hourglass-split" aria-hidden="true"></i> ماندهٔ مرخصی</h3>
+            @if (Model.CanManageActivity) { <a asp-page="/Leave/Index" class="profile-update-link">مدیریت مرخصی <i class="bi bi-chevron-left" aria-hidden="true"></i></a> }
+        </div>
+        <div class="card-body">
+            <p class="profile-activity-note">سال حساب مانده: @Fa(leave.Year.ToString()) میلادی. همهٔ مقادیر به ساعت است؛ ماندهٔ قابل استفاده پس از کسر درخواست‌های در انتظار محاسبه می‌شود.</p>
+            <div class="table-responsive"><table class="table align-middle mb-0">
+                <caption class="visually-hidden">ماندهٔ مرخصی سال @Fa(leave.Year.ToString()) میلادی</caption>
+                <thead><tr><th scope="col">نوع مرخصی</th><th scope="col">تخصیص‌یافته</th><th scope="col">مصرف‌شده</th><th scope="col">در انتظار</th><th scope="col">قابل استفاده</th></tr></thead>
+                <tbody>
+                @if (leave.Balances.Count == 0) { <tr><td colspan="5" class="profile-empty">مانده‌ای برای این سال ثبت نشده است.</td></tr> }
+                @foreach (var balance in leave.Balances)
+                {
+                    <tr><td>@balance.PolicyName</td><td>@Hours(balance.AccruedHours)</td><td>@Hours(balance.UsedHours)</td><td>@Hours(balance.PendingHours)</td><td class="profile-balance-available">@Hours(balance.AvailableHours)</td></tr>
+                }
+                </tbody>
+            </table></div>
+        </div>
+    </section>
+    <section class="card" aria-labelledby="leave-history-title">
+        <div class="card-header"><h3 id="leave-history-title"><i class="bi bi-clock-history" aria-hidden="true"></i> سوابق درخواست‌ها <span class="profile-record-count">(@Fa(leave.Total.ToString()))</span></h3></div>
+        <div class="card-body table-responsive"><table class="table align-middle mb-0">
+            <caption class="visually-hidden">سوابق درخواست مرخصی کارمند</caption>
+            <thead><tr><th scope="col">از تاریخ</th><th scope="col">تا تاریخ</th><th scope="col">نوع مرخصی</th><th scope="col">ساعت</th><th scope="col">وضعیت</th></tr></thead>
+            <tbody>
+            @if (leave.Total == 0) { <tr><td colspan="5" class="profile-empty">درخواست مرخصی ثبت نشده است.</td></tr> }
+            @foreach (var request in leave.Requests)
+            {
+                <tr data-profile-request-id="@request.Id"><td>@Date(request.StartDate)</td><td>@Date(request.EndDate)</td><td>@request.PolicyName</td><td>@Hours(request.Hours)</td><td><span class="profile-activity-status @(request.Status == "Approved" ? "is-complete" : request.Status == "Pending" ? "is-pending" : "")">@Label(request.Status)</span></td></tr>
+            }
+            </tbody>
+        </table></div>
+        @if (pages > 1)
+        {
+            <nav class="profile-pagination" aria-label="صفحه‌بندی سوابق مرخصی">
+                @if (leave.Page > 1) { <a asp-page="Details" asp-route-id="@Model.Employee!.Id" asp-route-leavePage="@(leave.Page - 1)" asp-route-trainingPage="@Model.TrainingProfile?.Page" asp-fragment="tab-leave" data-activity-page="leave-previous">قبلی</a> }
+                <span aria-current="page">صفحهٔ @Fa(leave.Page.ToString()) از @Fa(pages.ToString())</span>
+                @if (leave.Page < pages) { <a asp-page="Details" asp-route-id="@Model.Employee!.Id" asp-route-leavePage="@(leave.Page + 1)" asp-route-trainingPage="@Model.TrainingProfile?.Page" asp-fragment="tab-leave" data-activity-page="leave-next">بعدی</a> }
+            </nav>
+        }
+    </section>
+</div>

@@ -10,8 +10,8 @@ The new application lives under `src/HRMS.Next`, with tests in `tests/HRMS.Next.
 | Organization | Companies, departments, job titles, organization links | Company, department and active title lookup; scoped catalog and link commands |
 | Personnel | Employees, employment history, profile, private portrait bytes, custom fields | Employee lookup and scoped operations; separate admin/owner pay projection and authorized photo use cases |
 | Documents | Private files and metadata | Authorized document retrieval |
-| Training | Courses and assignments | Employee ID based commands and queries |
-| Leave | Policies, balances, requests | Employee ID based commands and queries |
+| Training | Courses and assignments | Employee ID based commands and queries; scoped IEmployeeTrainingProfile DTO projection |
+| Leave | Policies, balances, requests | Employee ID based commands and queries; scoped IEmployeeLeaveProfile DTO projection |
 | Reporting | Read projections | Company-scoped employee, leave and dashboard reads with capped CSV exports; no pay fields |
 
 Job classification, position requirements, personnel orders, contractor personnel, appraisal, insurance and retirement, welfare, medical, and Tavanir have no implementation evidence in the current source. Their final boundaries and contracts require business data and rules. They are roadmap items, not completed modules.

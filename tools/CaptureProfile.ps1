@@ -90,13 +90,26 @@ try {
     Evaluate "document.querySelector('#profile-job-tab').focus();true" | Out-Null
     Invoke-Cdp 'Input.dispatchKeyEvent' @{type='keyDown';key='ArrowRight';code='ArrowRight';windowsVirtualKeyCode=39} | Out-Null
     Invoke-Cdp 'Input.dispatchKeyEvent' @{type='keyUp';key='ArrowRight';code='ArrowRight';windowsVirtualKeyCode=39} | Out-Null
-    Wait-Expression "document.querySelector('#profile-pay-tab').getAttribute('aria-selected')==='true' && document.activeElement.id==='profile-pay-tab'"
+    Wait-Expression "document.querySelector('#profile-leave-tab').getAttribute('aria-selected')==='true' && document.activeElement.id==='profile-leave-tab'"
     Evaluate "document.querySelector('#profile-personal-tab').click();true" | Out-Null
     Wait-Expression "document.querySelector('#tab-personal').classList.contains('active')"
     Capture 'profile-personal.png'
     Evaluate "document.querySelector('#profile-pay-tab').click();true" | Out-Null
     Wait-Expression "document.querySelector('#tab-pay').classList.contains('active')"
     Capture 'profile-pay.png'
+    Evaluate "document.querySelector('#profile-leave-tab').click();true" | Out-Null
+    Wait-Expression "document.querySelector('#tab-leave').classList.contains('active')"
+    Capture 'profile-leave.png'
+    Evaluate "document.querySelector('#profile-training-tab').click();true" | Out-Null
+    Wait-Expression "document.querySelector('#tab-training').classList.contains('active')"
+    Capture 'profile-training.png'
+    Evaluate "document.querySelector('[data-activity-page=training-next]').click();true" | Out-Null
+    Wait-Expression "location.search.includes('trainingPage=2') && !!document.querySelector('#tab-training.active') && document.readyState==='complete'"
+    Evaluate "document.querySelector('#profile-leave-tab').click();document.querySelector('[data-activity-page=leave-next]').click();true" | Out-Null
+    Wait-Expression "location.search.includes('leavePage=2') && location.search.includes('trainingPage=2') && !!document.querySelector('#tab-leave.active') && document.readyState==='complete'"
+    if (!(Evaluate "document.querySelectorAll('#tab-leave [data-profile-request-id]').length===6 && document.querySelectorAll('#tab-training [data-profile-assignment-id]').length===6")) { throw 'Profile activity pagination did not retain both page selections.' }
+    Invoke-Cdp 'Page.navigate' @{url=($BaseUrl+'/Employees/'+$EmployeeId)} | Out-Null
+    Wait-Expression "!!document.querySelector('#tab-job.active') && document.readyState==='complete'"
     Evaluate "document.querySelector('#profile-job-tab').click();true" | Out-Null
     Wait-Expression "document.querySelector('#tab-job').classList.contains('active')"
     Evaluate "document.activeElement.blur();true" | Out-Null
@@ -107,6 +120,13 @@ try {
     Invoke-Cdp 'Emulation.setDeviceMetricsOverride' @{width=390;height=844;deviceScaleFactor=1;mobile=$true} | Out-Null
     Capture 'profile-mobile.png'
     if(!(Evaluate "document.documentElement.scrollWidth <= innerWidth+1")){throw 'Mobile profile overflows the viewport.'}
+    foreach ($activityTab in @('leave','training')) {
+        Evaluate ("document.querySelector('#profile-"+$activityTab+"-tab').click();true") | Out-Null
+        Wait-Expression ("!!document.querySelector('#tab-"+$activityTab+".active')")
+        if(!(Evaluate "document.documentElement.scrollWidth <= innerWidth+1")) { throw 'Mobile activity profile overflows the viewport.' }
+        if(!(Evaluate "(() => { const tab=document.querySelector('.profile-tabs [aria-selected=true]').getBoundingClientRect(); const strip=document.querySelector('.profile-tabs').getBoundingClientRect(); return tab.left >= strip.left-1 && tab.right <= strip.right+1; })()")) { throw 'Selected mobile tab is clipped outside the tab strip.' }
+        Capture ("profile-mobile-"+$activityTab+".png")
+    }
     Evaluate "document.querySelector('.profile-photo-trigger').click();true" | Out-Null
     Wait-Expression "document.querySelector('#photo-modal').classList.contains('show') && getComputedStyle(document.querySelector('#photo-modal')).opacity === '1'"
     Capture 'profile-photo-dialog.png'

@@ -128,6 +128,7 @@ try {
         Username = $memberUsername; Password = $memberPassword; __RequestVerificationToken = $memberToken
     }
     if ($memberHome.BaseResponse.ResponseUri.AbsolutePath -ne '/' -or $memberHome.Content -notmatch $memberUsername) { throw 'Employee-linked account could not sign in.' }    $memberProfile = Invoke-WebRequest "$baseUrl$profilePath" -WebSession $memberSession -UseBasicParsing
+    if ($memberProfile.Content -notmatch 'data-profile-leave' -or $memberProfile.Content -notmatch 'data-profile-training') { throw 'Own Leave/Training profile tabs were not rendered.' }
     if ($memberProfile.Content -notmatch 'data-pay-history') { throw 'Own pay-history tab was not available to the linked employee.' }
     $readerUsername = 'smoke_reader_' + $suffix.Substring(0, 10)
     $readerPassword = [Guid]::NewGuid().ToString('N') + 'A1!'
@@ -141,7 +142,7 @@ try {
         Username=$readerUsername; Password=$readerPassword; __RequestVerificationToken=(Get-FormToken $readerLogin.Content)
     }
     $readerProfile = Invoke-WebRequest "$baseUrl$profilePath" -WebSession $readerSession -UseBasicParsing
-    if ($readerProfile.Content -match 'data-pay-history|profile-pay-tab|نرخ ثبت‌شده') { throw 'Pay data leaked into the general reader profile.' }
+    if ($readerProfile.Content -match 'data-pay-history|profile-pay-tab|نرخ ثبت‌شده|data-profile-leave|data-profile-training|profile-leave-tab|profile-training-tab') { throw 'Pay data leaked into the general reader profile.' }
     $titles = Invoke-WebRequest "$baseUrl/Settings/JobTitles" -WebSession $webSession -UseBasicParsing
     $titleToken = Get-FormToken $titles.Content
     $titleCreated = Invoke-WebRequest "$baseUrl/Settings/JobTitles?handler=Save" -Method Post -WebSession $webSession -UseBasicParsing -Body @{
@@ -262,6 +263,21 @@ try {
     if ($training.Content -notmatch ('<option value="' + $courseId + '">Safety smoke edited</option>')) {
         throw 'Reactivated Training course was not available.'
     }
+    foreach ($activitySession in @($webSession, $memberSession)) {
+        $activityProfile = Invoke-WebRequest "$baseUrl$profilePath" -WebSession $activitySession -UseBasicParsing
+        if ($activityProfile.Content -notmatch ('data-profile-request-id="' + $requestId + '"') -or
+            $activityProfile.Content -notmatch ('data-profile-assignment-id="' + $assignmentId + '"') -or
+            $activityProfile.Content -notmatch 'Safety smoke edited' -or $activityProfile.Content -notmatch 'Annual smoke') {
+            throw 'Real Leave/Training records were not projected into the authorized employee profile.'
+        }
+        if ($activityProfile.Content -match 'SMOKE-CERT|Smoke approved') { throw 'Private certificate or decision comments leaked into profile activity.' }
+    }
+    $ownerActivityProfile = Invoke-WebRequest "$baseUrl$profilePath" -WebSession $memberSession -UseBasicParsing
+    if ($ownerActivityProfile.Content -match 'href="/Leave"|href="/Training"') { throw 'Owner activity view exposes administrator-only management links.' }
+    $readerActivityProfile = Invoke-WebRequest "$baseUrl$profilePath" -WebSession $readerSession -UseBasicParsing
+    if ($readerActivityProfile.Content -match 'data-profile-request-id|data-profile-assignment-id|Annual smoke|Safety smoke edited') {
+        throw 'Private employee activity leaked to a general reader.'
+    }
     $documentsPage = Invoke-WebRequest "$baseUrl/Employees/$employeeId/Documents" -WebSession $webSession -UseBasicParsing
     if ($documentsPage.Content -notmatch 'name="UploadFile"') { throw 'Documents page did not load.' }
     $documentToken = Get-FormToken $documentsPage.Content
@@ -364,6 +380,27 @@ INSERT personnel.EmployeeJobs(CompanyId,EmployeeId,DepartmentId,ManagerEmployeeI
 (@company,@employee,@department,@manager,N'کارشناس محصول','FullTime','2024-09-01','2024-12-31',0,'Salary',600000000),
 (@company,@employee,@department,NULL,N'کارشناس برنامه‌ریزی','FullTime','2024-03-20','2024-08-31',0,'Salary',480000000),
 (@company,@report,@department,@employee,N'کارشناس محصول','FullTime','2024-01-01',NULL,1,'Salary',360000000);
+
+DECLARE @balanceYear int=DATEPART(year,SYSDATETIMEOFFSET() AT TIME ZONE 'Iran Standard Time');
+DECLARE @policy int=(SELECT TOP(1) Id FROM leave.Policies WHERE CompanyId=@company);
+DECLARE @course int=(SELECT TOP(1) Id FROM training.Courses WHERE CompanyId=@company);
+UPDATE leave.Policies SET Name=N'مرخصی استحقاقی' WHERE Id=@policy AND CompanyId=@company;
+UPDATE training.Courses SET Title=N'اصول ایمنی و سلامت محیط کار',Provider=N'واحد آموزش' WHERE Id=@course AND CompanyId=@company;
+INSERT leave.Balances(CompanyId,EmployeeId,PolicyId,Year,AccruedHours,UsedHours,UpdatedAtUtc) VALUES(@company,@employee,@policy,@balanceYear,160,24,SYSDATETIMEOFFSET());
+DECLARE @n int=0;
+WHILE @n < 24
+BEGIN
+  INSERT leave.Requests(CompanyId,EmployeeId,PolicyId,StartDate,EndDate,Hours,Status,RequestedAtUtc)
+  VALUES(@company,@employee,@policy,DATEADD(day,@n,'2025-01-01'),DATEADD(day,@n,'2025-01-01'),8,'Approved',SYSDATETIMEOFFSET());
+  INSERT training.Assignments(CompanyId,EmployeeId,CourseId,AssignedDate,DueDate,CompletedDate)
+  VALUES(@company,@employee,@course,DATEADD(day,@n,'2025-01-01'),DATEADD(day,@n,'2025-02-01'),DATEADD(day,@n,'2025-01-02'));
+  SET @n=@n+1;
+END;
+INSERT leave.Requests(CompanyId,EmployeeId,PolicyId,StartDate,EndDate,Hours,Status,RequestedAtUtc)
+VALUES(@company,@employee,@policy,DATEFROMPARTS(@balanceYear,11,1),DATEFROMPARTS(@balanceYear,11,1),8,'Pending',SYSDATETIMEOFFSET());
+INSERT training.Assignments(CompanyId,EmployeeId,CourseId,AssignedDate,DueDate)
+VALUES(@company,@employee,@course,'2026-10-01','2026-10-31');
+
 "@
         $fixtureFile = Join-Path $env:TEMP ('hrm-visual-fixture-' + $suffix + '.sql')
         try {
