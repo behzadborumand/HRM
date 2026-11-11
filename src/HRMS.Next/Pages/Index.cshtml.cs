@@ -1,9 +1,33 @@
+using HRMS.Next.Modules.Access;
+using HRMS.Next.Modules.Organization;
+using HRMS.Next.Modules.Personnel;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace HRMS.Next.Pages;
 
-public sealed class IndexModel : PageModel
+[Authorize]
+public sealed class IndexModel(AccessService access, OrganizationLinkService links, EmployeeService employees) : PageModel
 {
-    public IActionResult OnGet() => RedirectToPage("/Employees/Index");
+    public string Username { get; private set; } = "";
+    public bool CanBrowsePeople { get; private set; }
+    public bool CanWriteEmployees { get; private set; }
+    public bool IsAdmin { get; private set; }
+    public int EmployeeCount { get; private set; }
+    public IReadOnlyList<OrganizationLink> OrganizationLinks { get; private set; } = [];
+
+    public async Task<IActionResult> OnGetAsync(CancellationToken ct)
+    {
+        var actor = await access.GetActiveAsync(User, ct);
+        if (actor is null) return Forbid();
+        Username = actor.Username;
+        CanBrowsePeople = AccessRules.CanRead(actor, actor.CompanyId);
+        CanWriteEmployees = AccessRules.CanWrite(actor, actor.CompanyId);
+        IsAdmin = actor.IsAdmin;
+        OrganizationLinks = await links.ActiveAsync(actor, ct);
+        if (CanBrowsePeople)
+            EmployeeCount = (await employees.SearchAsync(actor, null, null, 1, 1, ct)).Total;
+        return Page();
+    }
 }

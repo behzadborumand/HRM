@@ -1,0 +1,41 @@
+@page "/Settings/OrganizationLinks"
+@model HRMS.Next.Pages.Settings.OrganizationLinksModel
+@{ ViewData["Title"] = "پیوندهای سازمانی"; }
+@section Hero {
+    <div class="d-flex justify-content-between gap-3 flex-wrap align-items-center"><h1>پیوندهای سازمانی</h1><a asp-page="Index" class="btn btn-hero"><i class="bi bi-arrow-right"></i> تنظیمات</a></div>
+}
+<p class="text-muted small">پیوندهای فعال در صفحهٔ اصلی کاربران همان شرکت نمایش داده می‌شوند. عدد کوچک‌تر، بالاتر قرار می‌گیرد.</p>
+<div class="row g-3">
+    <div class="col-lg-7">
+        <section class="card"><div class="card-header">پیوندهای ثبت‌شده</div>
+            @if (Model.Rows.Count == 0)
+            {
+                <div class="card-body text-muted">هنوز پیوندی ثبت نشده است.</div>
+            }
+            else
+            {
+                <div class="table-responsive"><table class="table table-striped align-middle mb-0"><thead><tr><th>عنوان و توضیح</th><th>ترتیب</th><th>وضعیت</th><th>عملیات</th></tr></thead><tbody>
+                @foreach (var row in Model.Rows)
+                {
+                    <tr data-link-id="@row.Id"><td><strong>@row.Title</strong><div class="small text-muted text-break">@row.Description</div><div class="small text-muted text-break" dir="ltr">@row.Url</div></td><td>@row.SortOrder</td><td><span class="badge text-bg-@(row.Active ? "success" : "secondary")">@(row.Active ? "فعال" : "غیرفعال")</span></td><td>
+                        <a asp-page="OrganizationLinks" asp-route-edit="@row.Id" class="btn btn-sm btn-outline-secondary" aria-label="ویرایش @row.Title"><i class="bi bi-pencil"></i></a>
+                        <form method="post" asp-page-handler="Delete" class="d-inline"><input type="hidden" name="id" value="@row.Id" /><input type="hidden" name="version" value="@Convert.ToBase64String(row.RowVersion)" /><button type="submit" class="btn btn-sm btn-outline-danger" aria-label="حذف @row.Title" onclick="return confirm('این پیوند حذف شود؟');"><i class="bi bi-trash"></i></button></form>
+                    </td></tr>
+                }
+                </tbody></table></div>
+            }
+        </section>
+    </div>
+    <div class="col-lg-5"><section class="card"><div class="card-header">@(Model.EditId > 0 ? "ویرایش پیوند" : "افزودن پیوند")</div><div class="card-body">
+        <form method="post" asp-page-handler="Save">
+            <div asp-validation-summary="All" class="text-danger small"></div>
+            <input type="hidden" asp-for="EditId" /><input type="hidden" asp-for="Version" />
+            <div class="mb-3"><label asp-for="Title" class="form-label">عنوان پیوند</label><input asp-for="Title" class="form-control" maxlength="100" required /><span asp-validation-for="Title" class="text-danger small"></span></div>
+            <div class="mb-3"><label asp-for="LinkUrl" class="form-label">نشانی وب</label><input asp-for="LinkUrl" class="form-control" dir="ltr" type="url" maxlength="2000" placeholder="https://example.com" required /><span asp-validation-for="Url" class="text-danger small"></span><div class="form-text">نشانی کامل HTTP یا HTTPS؛ بدون نام کاربری و رمز.</div></div>
+            <div class="mb-3"><label asp-for="Description" class="form-label">توضیح کوتاه</label><textarea asp-for="Description" class="form-control" maxlength="300" rows="2"></textarea></div>
+            <div class="mb-3"><label asp-for="SortOrder" class="form-label">ترتیب نمایش</label><input asp-for="SortOrder" class="form-control" dir="ltr" type="number" min="0" max="9999" /></div>
+            <div class="form-check form-switch mb-3"><input asp-for="Active" class="form-check-input" /><label asp-for="Active" class="form-check-label">فعال</label></div>
+            <button type="submit" class="btn btn-primary">ذخیره</button><a asp-page="OrganizationLinks" class="btn btn-light">انصراف</a>
+        </form>
+    </div></section></div>
+</div>

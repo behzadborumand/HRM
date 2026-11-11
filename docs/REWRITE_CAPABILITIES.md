@@ -5,12 +5,12 @@ Legacy source is the separate `D:\SourceCodes\GitProjects\HRMS_BHR` repository: 
 | Current capability | New owner and location | Transfer status |
 | --- | --- | --- |
 | Cookie login, users, roles, permission claims | Access | Partial: login and scoped administrator/user grants; full roles not transferred |
-| Companies, departments, job titles, organization links | Organization; job classification boundary to be refined | Partial: company/department bootstrap and lookup; company-scoped job title catalog CRUD via archive/restore, selection and trial transfer; department administration with archive/restore and hierarchy now present; organization links pending |
+| Companies, departments, job titles, organization links | Organization; job classification boundary to be refined | Partial: company/department bootstrap and lookup; company-scoped job title catalog CRUD via archive/restore, selection and trial transfer; department administration with archive/restore and hierarchy now present; company-scoped organization links administration and Home card present; legacy source has zero rows |
 | Employee list, profile, CRUD, job history, bulk edit, photos | Personnel | Partial: list/profile/create/edit and dated job history read/change with audited close-and-insert; 12 legacy jobs transferred in trial; bulk edit and photos pending |
 | Leave policies, requests, balances, manager approval | Leave | Partial: separate schema, policy/balance/request model and admin service; administrator Razor Page and HTTPS flow; no manager grants; trial transfer covers policies, balances and all 8 requests |
 | Courses and assignments | Training | Partial: independent schema, administrator course create/edit/activation, assignment/completion flow, Razor Page and SQL/HTTPS tests; 6 legacy courses and 5 assignments imported in trial; staff self-service pending |
 | Private employee documents | Documents | Partial: independent schema, private paginated list/upload/download/delete, SHA256 and audit, SQL/HTTPS tests; legacy source has 0 rows; employee self-service and nonempty file transfer pending |
-| Dashboard and HR reports | Reporting | Planned |
+| Dashboard and HR reports | Reporting | Partial Home shell with working shortcuts and scoped employee count; Leave/event panels and HR reports pending |
 | Persian RTL shell and Jalali binder | Host presentation | Partial: legacy UI theme and implemented Razor Pages ported; remaining screens await their backend modules |
 | Tavanir, contractors, orders, position requirements, appraisal, insurance, retirement, welfare, medical, dynamic fields | Corresponding future modules or Personnel metadata | No source implementation found |
 

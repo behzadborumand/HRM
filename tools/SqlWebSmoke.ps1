@@ -51,7 +51,7 @@ try {
     $employeeListResponse = Invoke-WebRequest "$baseUrl/Login" -Method Post -WebSession $webSession -UseBasicParsing -Body @{
         Username = $username; Password = $password; __RequestVerificationToken = $loginToken
     }
-    if ($employeeListResponse.BaseResponse.ResponseUri.AbsolutePath -ne '/Employees') { throw 'Login did not reach employee list.' }
+    if ($employeeListResponse.BaseResponse.ResponseUri.AbsolutePath -ne '/' -or $employeeListResponse.Content -notmatch 'home-workspace') { throw 'Login did not reach Home.' }
 
     $settings = Invoke-WebRequest "$baseUrl/Settings" -WebSession $webSession -UseBasicParsing
     if ($settings.Content -notmatch 'واحدهای سازمانی') { throw 'Settings hub did not render departments.' }
@@ -61,6 +61,18 @@ try {
         Name = 'Smoke unit'; ParentId = ''; EditId = '0'; Version = ''; __RequestVerificationToken = $departmentToken
     }
     if ($departmentCreated.Content -notmatch 'Smoke unit') { throw 'Department administration did not save the test unit.' }
+    $links = Invoke-WebRequest "$baseUrl/Settings/OrganizationLinks" -WebSession $webSession -UseBasicParsing
+    $linkToken = Get-FormToken $links.Content
+    $invalidLink = Invoke-WebRequest "$baseUrl/Settings/OrganizationLinks?handler=Save" -Method Post -WebSession $webSession -UseBasicParsing -Body @{
+        Title = 'Bad smoke'; LinkUrl = 'javascript:alert(1)'; Description = ''; SortOrder = '0'; Active = 'true'; EditId = '0'; Version = ''; __RequestVerificationToken = $linkToken
+    }
+    if ($invalidLink.BaseResponse.ResponseUri.AbsolutePath -ne '/Settings/OrganizationLinks' -or $invalidLink.Content -match 'data-link-id=') { throw 'Unsafe organization link was accepted.' }
+    $linkCreated = Invoke-WebRequest "$baseUrl/Settings/OrganizationLinks?handler=Save" -Method Post -WebSession $webSession -UseBasicParsing -Body @{
+        Title = 'Smoke help'; LinkUrl = 'https://example.com/help'; Description = 'Smoke'; SortOrder = '1'; Active = 'true'; EditId = '0'; Version = ''; __RequestVerificationToken = $linkToken
+    }
+    if ($linkCreated.Content -notmatch 'Smoke help') { throw 'Organization link did not save.' }
+    $homeResponse = Invoke-WebRequest "$baseUrl/" -WebSession $webSession -UseBasicParsing
+    if ($homeResponse.Content -notmatch 'Smoke help' -or $homeResponse.Content -notmatch 'rel="noopener noreferrer"') { throw 'Active organization link was not rendered safely on Home.' }
     $create = Invoke-WebRequest "$baseUrl/Employees/Create" -WebSession $webSession -UseBasicParsing
     $createToken = Get-FormToken $create.Content
     $departmentId = [regex]::Match($create.Content, '<option value="([1-9][0-9]*)">').Groups[1].Value
@@ -257,11 +269,11 @@ try {
     }
     $documentsPage = Invoke-WebRequest "$baseUrl/Employees/$employeeId/Documents" -WebSession $webSession -UseBasicParsing
     if ($documentsPage.Content -match 'data-document-id=') { throw 'Deleted document remains visible.' }
-    Write-Output 'HTTPS login, Settings, employee, job change, Leave, Training, Documents: PASS'
+    Write-Output 'HTTPS login, Home, Settings, organization links, employee, job change, Leave, Training, Documents: PASS'
 }
 finally {
     if ($process) { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue }
-    $cleanup = "SET ANSI_NULLS ON; SET ANSI_PADDING ON; SET ANSI_WARNINGS ON; SET ARITHABORT ON; SET CONCAT_NULL_YIELDS_NULL ON; SET NUMERIC_ROUNDABORT OFF; SET QUOTED_IDENTIFIER ON; DECLARE @id int=(SELECT Id FROM organization.Companies WHERE Name='$companyName'); DELETE FROM training.Assignments WHERE CompanyId=@id; DELETE FROM training.Courses WHERE CompanyId=@id; DELETE FROM leave.Requests WHERE CompanyId=@id; DELETE FROM leave.Balances WHERE CompanyId=@id; DELETE FROM leave.Policies WHERE CompanyId=@id; DELETE FROM documents.EmployeeDocuments WHERE CompanyId=@id; DELETE FROM documents.DocumentAudits WHERE CompanyId=@id; DELETE FROM personnel.EmployeeAudits WHERE EmployeeId IN (SELECT Id FROM personnel.Employees WHERE CompanyId=@id); DELETE FROM personnel.EmployeeJobs WHERE CompanyId=@id; DELETE FROM personnel.Employees WHERE CompanyId=@id; DELETE FROM access.Users WHERE CompanyId=@id; DELETE FROM organization.JobTitles WHERE CompanyId=@id; DELETE FROM organization.Departments WHERE CompanyId=@id; DELETE FROM organization.Companies WHERE Id=@id;"
+    $cleanup = "SET ANSI_NULLS ON; SET ANSI_PADDING ON; SET ANSI_WARNINGS ON; SET ARITHABORT ON; SET CONCAT_NULL_YIELDS_NULL ON; SET NUMERIC_ROUNDABORT OFF; SET QUOTED_IDENTIFIER ON; DECLARE @id int=(SELECT Id FROM organization.Companies WHERE Name='$companyName'); DELETE FROM training.Assignments WHERE CompanyId=@id; DELETE FROM training.Courses WHERE CompanyId=@id; DELETE FROM leave.Requests WHERE CompanyId=@id; DELETE FROM leave.Balances WHERE CompanyId=@id; DELETE FROM leave.Policies WHERE CompanyId=@id; DELETE FROM documents.EmployeeDocuments WHERE CompanyId=@id; DELETE FROM documents.DocumentAudits WHERE CompanyId=@id; DELETE FROM personnel.EmployeeAudits WHERE EmployeeId IN (SELECT Id FROM personnel.Employees WHERE CompanyId=@id); DELETE FROM personnel.EmployeeJobs WHERE CompanyId=@id; DELETE FROM personnel.Employees WHERE CompanyId=@id; DELETE FROM access.Users WHERE CompanyId=@id; DELETE FROM organization.OrganizationLinks WHERE CompanyId=@id; DELETE FROM organization.JobTitles WHERE CompanyId=@id; DELETE FROM organization.Departments WHERE CompanyId=@id; DELETE FROM organization.Companies WHERE Id=@id;"
     $cleanupOutput = sqlcmd -S . -E -C -b -d $Database -Q $cleanup 2>&1
     $cleanupExit = $LASTEXITCODE
     Remove-Item Env:ConnectionStrings__HrmsNext,Env:HRMS_BOOTSTRAP_USER,Env:HRMS_BOOTSTRAP_PASSWORD,Env:HRMS_BOOTSTRAP_COMPANY,Env:ASPNETCORE_ENVIRONMENT -ErrorAction SilentlyContinue

@@ -9,6 +9,7 @@
     var isProfile = path.StartsWith("/Employees/", StringComparison.OrdinalIgnoreCase)
         && int.TryParse(path["/Employees/".Length..], out _);
     var isEmployees = path.StartsWith("/Employees", StringComparison.OrdinalIgnoreCase);
+    var isDashboard = path == "/";
     var isLeave = path.StartsWith("/Leave", StringComparison.OrdinalIgnoreCase);
     var isTraining = path.StartsWith("/Training", StringComparison.OrdinalIgnoreCase);
 }
@@ -22,17 +23,19 @@
     <link rel="stylesheet" href="~/lib/bootstrap-icons/font/bootstrap-icons.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/next-compat.css" asp-append-version="true" />
+    @if (isDashboard) { <link rel="stylesheet" href="~/css/home.css" asp-append-version="true" /> }
 </head>
-<body class="@(isProfile ? "page-profile" : "page-standard")">
+<body class="@(isProfile ? "page-profile" : isDashboard ? "page-dashboard" : "page-standard")">
     <a class="skip-link" href="#main">رفتن به محتوای اصلی</a>
     <nav class="topbar" aria-label="ناوبری اصلی">
         <div class="topbar-inner">
-            <a class="brand" asp-page="/Employees/Index" aria-label="سامانه منابع انسانی، کارکنان">
+            <a class="brand" asp-page="/Index" aria-label="سامانه منابع انسانی، خانه">
                 <svg class="brand-mark" width="25" height="28" viewBox="0 0 25 28" aria-hidden="true"><path d="M12 26V10M12 17C3 18 1 12 1 8c7 0 11 2 11 9Zm0-6C12 4 18 1 24 1c0 8-4 11-12 10Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg><span>hrms<span class="brand-suffix">BHR</span></span>
             </a>
             @if (isAuthed)
             {
                 <ul class="topnav">
+                    <li><a class="nav-link @(isDashboard ? "active" : null)" aria-current="@(isDashboard ? "page" : null)" asp-page="/Index"><i class="bi bi-speedometer2"></i> خانه</a></li>
                     @if (canReadEmployees)
                     {
                         <li><a class="nav-link @(isEmployees ? "active" : null)" aria-current="@(isEmployees ? "page" : null)" asp-page="/Employees/Index"><i class="bi bi-person-lines-fill"></i> کارکنان</a></li>

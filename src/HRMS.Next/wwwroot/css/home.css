@@ -1,0 +1,73 @@
+/* A partial structural update using the existing HRMS theme. */
+.home-workspace { display: grid; grid-template-columns: 280px minmax(0, 1fr); align-items: start; gap: 20px; direction: ltr; }
+.home-sidebar, .home-content { min-width: 0; direction: rtl; display: grid; gap: 18px; }
+.home-workspace .card-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+.home-workspace h2 { font-size: 14px; font-weight: 600; margin: 0; line-height: 1.7; }
+.home-workspace .card-header h2 > .bi { color: var(--hrms-green-dark); margin-inline-end: 4px; }
+.home-profile-card .avatar { width: 54px; height: 54px; border: 2px solid #e6efe6; }
+.home-profile-text { min-width: 0; }
+.home-profile-text > strong { display: block; font-size: 14px; overflow-wrap: anywhere; }
+.home-profile-text > span { display: block; font-size: 11px; color: var(--hrms-muted); margin: 4px 0 8px; }
+.home-profile-text > a { font-size: 11px; text-decoration: none; }
+.home-balance-year { font-size: 10px; color: var(--hrms-muted); margin: 0 0 12px; }
+.home-balance-policy { padding: 12px 0; border-bottom: 1px solid var(--hrms-line); }
+.home-balance-policy > div { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; font-size: 12px; }
+.home-balance-policy > div > strong { font-weight: 500; }
+.home-balance-policy > div > span { font-weight: 600; }
+.home-balance-policy > small { display: block; color: var(--hrms-muted); font-size: 10px; margin-top: 6px; line-height: 1.8; }
+.home-empty { color: var(--hrms-muted); font-size: 12px; margin: 0; line-height: 1.9; }
+.home-all-link { display: block; text-align: center; margin-top: 12px; text-decoration: none; font-size: 11px; }
+.home-day-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 3px; border-radius: 5px; background: #f2f5f2; }
+.home-day-tabs .nav-link { width: 100%; padding: 7px 3px; font-size: 11px; color: var(--hrms-muted); }
+.home-day-tabs .nav-link.active { background: var(--hrms-green); color: #fff; }
+.home-day-date { font-size: 11px; color: var(--hrms-muted); margin: 13px 0 9px; }
+.home-absent-person { display: flex; align-items: center; gap: 9px; padding: 10px 0; border-bottom: 1px solid var(--hrms-line); text-decoration: none; font-size: 12px; }
+.home-absent-person:last-child { border: 0; }
+.home-absent-person > .bi { color: #87a48b; font-size: 25px; }
+.home-absent-person small { display: block; font-size: 10px; color: var(--hrms-muted); margin-top: 3px; }
+.home-shortcuts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.home-shortcut { display: flex; align-items: center; gap: 10px; min-height: 88px; padding: 14px 12px; border: 1px solid var(--hrms-line); border-radius: 5px; text-decoration: none; color: #434743; transition: border-color .15s, background-color .15s; }
+.home-shortcut:hover { border-color: #a6c7aa; background: #f7fbf7; color: var(--hrms-green-dark); }
+.home-shortcut:focus-visible { outline: 2px solid var(--hrms-green); outline-offset: 2px; }
+.home-shortcut > .bi:first-child { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 9px; background: #edf6ee; color: var(--hrms-green-dark); font-size: 21px; flex: 0 0 auto; }
+.home-shortcut > span { flex: 1; min-width: 0; }
+.home-shortcut strong { display: block; font-size: 12px; font-weight: 600; }
+.home-shortcut small { display: block; font-size: 10px; color: var(--hrms-muted); margin-top: 5px; line-height: 1.7; }
+.home-shortcut-arrow { color: #a2ada3; font-size: 10px; }
+.home-workspace .table td, .home-workspace .table th { padding: 11px 13px; }
+.home-workspace .table { font-size: 12px; }
+.home-workspace .table th { white-space: nowrap; }
+.home-header-link { text-decoration: none; font-size: 11px; }
+.home-section-heading { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin: 5px 0 12px; }
+.home-section-heading > a { text-decoration: none; font-size: 11px; }
+.home-organization .stat-card .card-body { padding: 14px; }
+.home-organization .stat-card .card-title { font-size: 12px; }
+.home-organization .stat-card a { font-size: 11px; text-decoration: none; }
+.home-guide-links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 20px; }
+.home-guide-links a { display: block; padding: 12px; background: #f5f9f5; border: 1px solid #e4ece4; border-radius: 5px; text-decoration: none; }
+.home-person-row { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--hrms-line); text-decoration: none; min-width: 0; }
+.home-person-row:last-child { border-bottom: 0; }
+.home-person-row > span { min-width: 0; overflow-wrap: anywhere; }
+.home-person-row strong { display: block; font-size: 12px; font-weight: 500; }
+.home-person-row small { display: block; font-size: 10px; color: var(--hrms-muted); margin-top: 5px; line-height: 1.8; }
+.home-event-icon { display: grid; place-items: center; width: 34px; height: 34px; background: #edf6ee; border-radius: 50%; flex: 0 0 auto; color: var(--hrms-green-dark); font-size: 18px; }
+.home-new-hires-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+.home-new-hires-list .home-person-row { border: 0; align-items: flex-start; }
+.home-new-hires-list .avatar { width: 44px; height: 44px; flex: 0 0 auto; }
+@media (max-width: 1150px) and (min-width: 992px) {
+  .home-workspace { grid-template-columns: 260px minmax(0, 1fr); gap: 16px; }
+  .home-shortcuts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 991.98px) {
+  .home-workspace { grid-template-columns: minmax(0, 1fr); }
+  .home-content { order: 1; }
+  .home-sidebar { order: 2; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+  .home-availability { grid-column: 1 / -1; }
+}
+@media (max-width: 575.98px) {
+  .home-sidebar { grid-template-columns: minmax(0, 1fr); }
+  .home-shortcuts { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .home-shortcut { flex-direction: column; align-items: flex-start; gap: 9px; padding: 12px; }
+  .home-shortcut-arrow { display: none; }
+  .home-guide-links { grid-template-columns: minmax(0, 1fr); }
+}

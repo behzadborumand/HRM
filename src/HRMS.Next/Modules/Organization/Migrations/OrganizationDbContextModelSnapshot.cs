@@ -116,6 +116,53 @@ namespace HRMS.Next.Modules.Organization.Migrations
                     b.ToTable("JobTitles", "organization");
                 });
 
+            modelBuilder.Entity("HRMS.Next.Modules.Organization.OrganizationLink", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Active")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "Active", "SortOrder");
+
+                    b.ToTable("OrganizationLinks", "organization", t =>
+                        {
+                            t.HasCheckConstraint("CK_OrganizationLinks_SortOrder", "[SortOrder] >= 0 AND [SortOrder] <= 9999");
+                        });
+                });
+
             modelBuilder.Entity("HRMS.Next.Modules.Organization.Department", b =>
                 {
                     b.HasOne("HRMS.Next.Modules.Organization.Company", null)
@@ -131,6 +178,15 @@ namespace HRMS.Next.Modules.Organization.Migrations
                 });
 
             modelBuilder.Entity("HRMS.Next.Modules.Organization.JobTitle", b =>
+                {
+                    b.HasOne("HRMS.Next.Modules.Organization.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("HRMS.Next.Modules.Organization.OrganizationLink", b =>
                 {
                     b.HasOne("HRMS.Next.Modules.Organization.Company", null)
                         .WithMany()

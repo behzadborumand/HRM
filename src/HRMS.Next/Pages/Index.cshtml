@@ -1,2 +1,53 @@
 @page
-@model IndexModel
+@model HRMS.Next.Pages.IndexModel
+@{ ViewData["Title"] = "خانه"; }
+@section Hero {
+    <div class="d-flex justify-content-between align-items-end gap-3 flex-wrap">
+        <div><h1>سلام @Model.Username، امروز چطور می‌توانم کمکتان کنم؟</h1><p class="hero-sub">دسترسی‌های فعال و پیوندهای سازمانی شما</p></div>
+        @if (Model.CanWriteEmployees)
+        {
+            <a asp-page="/Employees/Create" class="btn btn-hero"><i class="bi bi-person-plus"></i> افزودن کارمند</a>
+        }
+    </div>
+}
+<div class="home-workspace">
+    <aside class="home-sidebar" aria-label="خلاصهٔ کاربر و پیوندها">
+        <section class="card home-profile-card"><div class="card-body d-flex align-items-center gap-3"><span class="avatar avatar-md avatar-fallback" aria-hidden="true"><i class="bi bi-person"></i></span><div class="home-profile-text"><strong>@Model.Username</strong><span>حساب کاربری</span></div></div></section>
+        <section class="card home-organization-links">
+            <div class="card-header"><h2><i class="bi bi-link-45deg"></i> پیوندهای سازمانی</h2>
+                @if (Model.IsAdmin) { <a asp-page="/Settings/OrganizationLinks" class="home-header-link">مدیریت پیوندها</a> }
+            </div>
+            <div class="card-body">
+                @if (Model.OrganizationLinks.Count == 0)
+                {
+                    <p class="home-empty">هنوز پیوند فعالی برای سازمان ثبت نشده است.</p>
+                }
+                @foreach (var link in Model.OrganizationLinks)
+                {
+                    <a href="@link.Url" target="_blank" rel="noopener noreferrer" class="home-person-row"><i class="bi bi-box-arrow-up-left" aria-hidden="true"></i><span><strong>@link.Title</strong>@if (!string.IsNullOrWhiteSpace(link.Description)) { <small>@link.Description</small> }</span><span class="visually-hidden">(در زبانهٔ جدید)</span></a>
+                }
+            </div>
+        </section>
+    </aside>
+    <div class="home-content">
+        <section class="card home-shortcut-card" aria-labelledby="shortcuts-title">
+            <div class="card-header"><h2 id="shortcuts-title"><i class="bi bi-grid"></i> دسترسی سریع</h2><span class="small text-muted">کارهای پرتکرار شما</span></div>
+            <div class="card-body"><div class="home-shortcuts">
+                @if (Model.CanBrowsePeople)
+                {
+                    <a asp-page="/Employees/Index" class="home-shortcut"><i class="bi bi-people"></i><span><strong>کارکنان</strong><small>جستجو و مشاهدهٔ پرونده‌ها</small></span><i class="bi bi-chevron-left home-shortcut-arrow"></i></a>
+                }
+                @if (Model.IsAdmin)
+                {
+                    <a asp-page="/Leave/Index" class="home-shortcut"><i class="bi bi-calendar-check"></i><span><strong>مرخصی</strong><small>درخواست‌ها و سیاست‌ها</small></span><i class="bi bi-chevron-left home-shortcut-arrow"></i></a>
+                    <a asp-page="/Training/Index" class="home-shortcut"><i class="bi bi-mortarboard"></i><span><strong>آموزش‌ها</strong><small>دوره‌ها و واگذاری‌ها</small></span><i class="bi bi-chevron-left home-shortcut-arrow"></i></a>
+                    <a asp-page="/Settings/Index" class="home-shortcut"><i class="bi bi-gear"></i><span><strong>تنظیمات</strong><small>ساختار و پیوندهای سازمانی</small></span><i class="bi bi-chevron-left home-shortcut-arrow"></i></a>
+                }
+            </div></div>
+        </section>
+        @if (Model.CanBrowsePeople)
+        {
+            <section class="card"><div class="card-header"><h2><i class="bi bi-people"></i> نمای سازمان</h2></div><div class="card-body"><p class="mb-0">@Model.EmployeeCount کارمند ثبت‌شده</p></div></section>
+        }
+    </div>
+</div>
