@@ -52,6 +52,7 @@ try {
         Username = $username; Password = $password; __RequestVerificationToken = $loginToken
     }
     if ($employeeListResponse.BaseResponse.ResponseUri.AbsolutePath -ne '/' -or $employeeListResponse.Content -notmatch 'home-workspace') { throw 'Login did not reach Home.' }
+    if ($employeeListResponse.Content -notmatch 'home-availability' -or $employeeListResponse.Content -notmatch 'home-new-hires' -or $employeeListResponse.Content -notmatch 'home-organization') { throw 'Home highlights did not render.' }
 
     $settings = Invoke-WebRequest "$baseUrl/Settings" -WebSession $webSession -UseBasicParsing
     if ($settings.Content -notmatch 'واحدهای سازمانی') { throw 'Settings hub did not render departments.' }

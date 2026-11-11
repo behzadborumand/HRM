@@ -1,0 +1,3 @@
+# Home read projections — 2026-11-11
+
+Reuse the legacy Home layout and its byte-identical home.css. Add bounded, company-scoped read projections for recent hires, three days of approved absences, and the administrator pending queue. Connect the existing reporting dashboard to the four organization cards. Require employee-read access for people highlights and administrator access for pending requests/statistics. Verify company isolation in SQL and actual Razor rendering through HTTPS smoke. Birthdays and personal Leave cards require employee-linked accounts and birth dates and remain explicit follow-up work.

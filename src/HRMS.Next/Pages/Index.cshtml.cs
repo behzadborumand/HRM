@@ -1,6 +1,7 @@
 using HRMS.Next.Modules.Access;
 using HRMS.Next.Modules.Organization;
 using HRMS.Next.Modules.Personnel;
+using HRMS.Next.Modules.Reporting;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -8,13 +9,15 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 namespace HRMS.Next.Pages;
 
 [Authorize]
-public sealed class IndexModel(AccessService access, OrganizationLinkService links, EmployeeService employees) : PageModel
+public sealed class IndexModel(AccessService access, OrganizationLinkService links, EmployeeService employees, HomeHighlightsService highlights, ReportingService reports) : PageModel
 {
     public string Username { get; private set; } = "";
     public bool CanBrowsePeople { get; private set; }
     public bool CanWriteEmployees { get; private set; }
     public bool IsAdmin { get; private set; }
     public int EmployeeCount { get; private set; }
+    public HomeHighlights? Highlights { get; private set; }
+    public ReportingDashboard? Stats { get; private set; }
     public IReadOnlyList<OrganizationLink> OrganizationLinks { get; private set; } = [];
 
     public async Task<IActionResult> OnGetAsync(CancellationToken ct)
@@ -27,7 +30,11 @@ public sealed class IndexModel(AccessService access, OrganizationLinkService lin
         IsAdmin = actor.IsAdmin;
         OrganizationLinks = await links.ActiveAsync(actor, ct);
         if (CanBrowsePeople)
+            {
             EmployeeCount = (await employees.SearchAsync(actor, null, null, 1, 1, ct)).Total;
+            Highlights = await highlights.LoadAsync(actor, ct);
+        }
+        if (IsAdmin) Stats = await reports.DashboardAsync(actor, ct);
         return Page();
     }
 }

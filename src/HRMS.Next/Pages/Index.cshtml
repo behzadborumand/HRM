@@ -13,7 +13,34 @@
 <div class="home-workspace">
     <aside class="home-sidebar" aria-label="خلاصهٔ کاربر و پیوندها">
         <section class="card home-profile-card"><div class="card-body d-flex align-items-center gap-3"><span class="avatar avatar-md avatar-fallback" aria-hidden="true"><i class="bi bi-person"></i></span><div class="home-profile-text"><strong>@Model.Username</strong><span>حساب کاربری</span></div></div></section>
-        <section class="card home-organization-links">
+        @if (Model.Highlights is { } home)
+        {
+            <section class="card home-availability">
+                <div class="card-header"><h2><i class="bi bi-person-dash"></i> مرخصی همکاران</h2></div>
+                <div class="card-body">
+                    <ul class="nav nav-pills home-day-tabs" role="tablist" aria-label="روزهای مرخصی">
+                        @for (var i = 0; i < home.AbsenceDays.Count; i++)
+                        {
+                            <li class="nav-item" role="presentation"><button class="nav-link @(i == 0 ? "active" : "")" id="home-day-tab-@i" data-bs-toggle="tab" data-bs-target="#home-day-@i" type="button" role="tab" aria-controls="home-day-@i" aria-selected="@(i == 0 ? "true" : "false")">@home.AbsenceDays[i].Caption</button></li>
+                        }
+                    </ul>
+                    <div class="tab-content">
+                        @for (var i = 0; i < home.AbsenceDays.Count; i++)
+                        {
+                            var day = home.AbsenceDays[i];
+                            <div class="tab-pane @(i == 0 ? "show active" : "")" id="home-day-@i" role="tabpanel" aria-labelledby="home-day-tab-@i">
+                                <p class="home-day-date">@HRMS.Next.Pages.Employees.JalaliDate.Format(day.Date)</p>
+                                @if (day.People.Count == 0) { <p class="home-empty">مرخصی تأییدشده‌ای برای این روز ثبت نشده است.</p> }
+                                @foreach (var person in day.People)
+                                {
+                                    <a asp-page="/Employees/Details" asp-route-id="@person.EmployeeId" class="home-absent-person"><i class="bi bi-person-circle"></i><span>@person.FullName<small>@person.DepartmentName</small></span></a>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            </section>
+        }        <section class="card home-organization-links">
             <div class="card-header"><h2><i class="bi bi-link-45deg"></i> پیوندهای سازمانی</h2>
                 @if (Model.IsAdmin) { <a asp-page="/Settings/OrganizationLinks" class="home-header-link">مدیریت پیوندها</a> }
             </div>
@@ -46,9 +73,44 @@
                 }
             </div></div>
         </section>
-        @if (Model.CanBrowsePeople)
+        @if (Model.Highlights is { } homeContent)
         {
-            <section class="card"><div class="card-header"><h2><i class="bi bi-people"></i> نمای سازمان</h2></div><div class="card-body"><p class="mb-0">@Model.EmployeeCount کارمند ثبت‌شده</p></div></section>
+            <section class="card home-new-hires">
+                <div class="card-header"><h2><i class="bi bi-person-plus"></i> به همکاران تازه‌وارد خوش آمد می‌گوییم</h2><span class="small text-muted">۳۰ روز گذشته</span></div>
+                <div class="card-body">
+                    @if (homeContent.NewHires.Count == 0) { <p class="home-empty">در ۳۰ روز گذشته همکار تازه‌ای به سازمان نپیوسته است.</p> }
+                    <div class="home-new-hires-list">
+                        @foreach (var person in homeContent.NewHires)
+                        {
+                            <a asp-page="/Employees/Details" asp-route-id="@person.EmployeeId" class="home-person-row"><span class="avatar avatar-fallback" aria-hidden="true"><i class="bi bi-person"></i></span><span><strong>@person.FullName</strong><small>@person.DepartmentName</small><small>شروع همکاری: @HRMS.Next.Pages.Employees.JalaliDate.Format(person.HireDate)</small></span></a>
+                        }
+                    </div>
+                </div>
+            </section>
+            @if (Model.IsAdmin && homeContent.PendingRequests.Count > 0)
+            {
+                <section class="card home-approvals">
+                    <div class="card-header"><h2><i class="bi bi-check2-circle"></i> منتظر تصمیم شما</h2><a asp-page="/Leave/Index" class="btn btn-sm btn-outline-primary">رفتن به صف تأیید</a></div>
+                    <div class="table-responsive"><table class="table table-sm align-middle mb-0"><thead><tr><th>کارمند</th><th>نوع</th><th>از</th><th>ساعت</th></tr></thead><tbody>
+                    @foreach (var request in homeContent.PendingRequests)
+                    {
+                        <tr><td>@request.EmployeeName</td><td>@request.PolicyName</td><td>@HRMS.Next.Pages.Employees.JalaliDate.Format(request.StartDate)</td><td>@request.Hours.ToString("0.##")</td></tr>
+                    }
+                    </tbody></table></div>
+                </section>
+            }
+        }
+        @if (Model.Stats is { } stats)
+        {
+            <section class="home-organization" aria-labelledby="organization-title">
+                <div class="home-section-heading"><h2 id="organization-title">نمای سازمان</h2><a asp-page="/Reports/Index">همهٔ گزارش‌ها <i class="bi bi-chevron-left"></i></a></div>
+                <div class="row g-3">
+                    <div class="col-md-6 col-xl-3"><div class="card stat-card h-100"><div class="card-body"><h5 class="card-title text-muted"><i class="bi bi-people text-primary"></i> کل کارکنان</h5><p class="stat-value">@stats.TotalEmployees</p><a asp-page="/Reports/Employees">مشاهده لیست</a></div></div></div>
+                    <div class="col-md-6 col-xl-3"><div class="card stat-card h-100"><div class="card-body"><h5 class="card-title text-muted"><i class="bi bi-person-check text-primary"></i> فعال</h5><p class="stat-value">@stats.ActiveEmployees</p><span class="small text-muted">در مرخصی: @stats.OnLeaveEmployees</span></div></div></div>
+                    <div class="col-md-6 col-xl-3"><div class="card stat-card h-100"><div class="card-body"><h5 class="card-title text-muted"><i class="bi bi-calendar-event text-primary"></i> درخواست در انتظار</h5><p class="stat-value">@stats.PendingRequests</p><a asp-page="/Leave/Index">بررسی درخواست‌ها</a></div></div></div>
+                    <div class="col-md-6 col-xl-3"><div class="card stat-card h-100"><div class="card-body"><h5 class="card-title text-muted"><i class="bi bi-diagram-3 text-primary"></i> واحدهای سازمانی</h5><p class="stat-value">@stats.DepartmentCount</p><a asp-page="/Reports/Index">مشاهده گزارش‌ها</a></div></div></div>
+                </div>
+            </section>
         }
     </div>
 </div>
