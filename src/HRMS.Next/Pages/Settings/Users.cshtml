@@ -1,0 +1,62 @@
+@page "/Settings/Users"
+@model HRMS.Next.Pages.Settings.UsersModel
+@{ ViewData["Title"] = "حساب‌های کاربری"; }
+@section Hero {
+    <div class="d-flex justify-content-between gap-3 flex-wrap align-items-center"><h1>حساب‌های کاربری</h1><a asp-page="Index" class="btn btn-hero"><i class="bi bi-arrow-right"></i> تنظیمات</a></div>
+}
+<p class="text-muted small">هر حساب می‌تواند به یک پروندهٔ کارمند در همین شرکت متصل شود. برای هر پرونده فقط یک حساب مجاز است.</p>
+<div asp-validation-summary="All" class="text-danger small"></div>
+<div class="row g-3">
+    <div class="col-xl-8">
+        <section class="card"><div class="card-header">کاربران این شرکت</div>
+            @if (Model.Accounts?.Rows.Count == 0) { <div class="card-body text-muted">حسابی ثبت نشده است.</div> }
+            else if (Model.Accounts is { } accounts)
+            {
+                <div class="table-responsive"><table class="table table-striped align-middle mb-0"><thead><tr><th>کاربر</th><th>کارمند</th><th>دسترسی و وضعیت</th><th>عملیات</th></tr></thead><tbody>
+                @foreach (var row in accounts.Rows)
+                {
+                    <tr data-user-id="@row.Id">
+                        <td><strong>@row.Username</strong>@if (row.IsAdmin) { <span class="badge text-bg-primary ms-1">مدیر</span> }</td>
+                        <td>@if (row.EmployeeId is { } linkedId) { <a asp-page="/Employees/Details" asp-route-id="@linkedId">پروندهٔ @linkedId</a> } else { <span class="text-muted">بدون پیوند</span> }</td>
+                        <td><span class="badge text-bg-@(row.IsActive ? "success" : "secondary")">@(row.IsActive ? "فعال" : "غیرفعال")</span><div class="small text-muted">@(row.CanWriteEmployees ? "ویرایش کارکنان" : row.CanReadEmployees ? "مشاهده کارکنان" : "بدون دسترسی کارکنان")</div></td>
+                        <td>
+                            @if (!row.IsAdmin)
+                            {
+                                <details><summary class="btn btn-sm btn-outline-secondary">ویرایش حساب</summary>
+                                    <form method="post" asp-page-handler="Update" class="border rounded p-2 mt-2" style="min-width: 220px">
+                                        <input type="hidden" name="id" value="@row.Id" /><input type="hidden" name="version" value="@Convert.ToBase64String(row.RowVersion)" /><input type="hidden" name="page" value="@accounts.Page" />
+                                        <label class="form-label small" for="employee-@row.Id">شناسهٔ کارمند</label><input id="employee-@row.Id" name="employeeId" type="number" min="1" value="@row.EmployeeId" class="form-control form-control-sm mb-2" />
+                                        <label class="d-block small"><input type="checkbox" name="canRead" value="true" checked="@row.CanReadEmployees" /> مشاهده کارکنان</label>
+                                        <label class="d-block small"><input type="checkbox" name="canWrite" value="true" checked="@row.CanWriteEmployees" /> ویرایش کارکنان</label>
+                                        <label class="d-block small"><input type="checkbox" name="isActive" value="true" checked="@row.IsActive" /> حساب فعال</label>
+                                        <button type="submit" class="btn btn-sm btn-primary mt-2">ذخیره</button>
+                                    </form>
+                                    <form method="post" asp-page-handler="Reset" class="border rounded p-2 mt-2">
+                                        <input type="hidden" name="id" value="@row.Id" /><input type="hidden" name="page" value="@accounts.Page" />
+                                        <label class="form-label small" for="password-@row.Id">رمز تازه</label><input id="password-@row.Id" name="newPassword" type="password" autocomplete="new-password" minlength="12" maxlength="128" required class="form-control form-control-sm" />
+                                        <button type="submit" class="btn btn-sm btn-outline-primary mt-2">تغییر رمز</button>
+                                    </form>
+                                </details>
+                            }
+                        </td>
+                    </tr>
+                }
+                </tbody></table></div>
+                <div class="card-footer bg-white d-flex justify-content-between align-items-center"><span class="small text-muted">@accounts.Total حساب</span><div class="d-flex gap-2">
+                    @if (accounts.Page > 1) { <a asp-page="Users" asp-route-page="@(accounts.Page - 1)" class="btn btn-sm btn-outline-secondary">قبلی</a> }
+                    @if (accounts.Page * accounts.PageSize < accounts.Total) { <a asp-page="Users" asp-route-page="@(accounts.Page + 1)" class="btn btn-sm btn-outline-secondary">بعدی</a> }
+                </div></div>
+            }
+        </section>
+    </div>
+    <div class="col-xl-4"><section class="card"><div class="card-header">افزودن حساب کارمند</div><div class="card-body">
+        <form method="post" asp-page-handler="Create">
+            <div class="mb-3"><label asp-for="NewUsername" class="form-label">نام کاربری</label><input asp-for="NewUsername" class="form-control" minlength="3" maxlength="100" autocomplete="off" required /></div>
+            <div class="mb-3"><label asp-for="NewPassword" class="form-label">رمز اولیه</label><input asp-for="NewPassword" type="password" class="form-control" minlength="12" maxlength="128" autocomplete="new-password" required /><div class="form-text">حداقل ۱۲ نویسه؛ رمز در گزارش حساب‌ها نمایش داده نمی‌شود.</div></div>
+            <div class="mb-3"><label asp-for="NewEmployeeId" class="form-label">شناسهٔ پروندهٔ کارمند</label><input asp-for="NewEmployeeId" type="number" min="1" class="form-control" /><div class="form-text">شناسه را از <a asp-page="/Employees/Index">فهرست کارکنان</a> بردارید. برای حساب بدون پرونده خالی بگذارید.</div></div>
+            <label class="d-block mb-2"><input asp-for="NewCanRead" type="checkbox" /> مشاهده کارکنان</label>
+            <label class="d-block mb-3"><input asp-for="NewCanWrite" type="checkbox" /> ویرایش کارکنان</label>
+            <button type="submit" class="btn btn-primary">ایجاد حساب</button>
+        </form>
+    </div></section></div>
+</div>

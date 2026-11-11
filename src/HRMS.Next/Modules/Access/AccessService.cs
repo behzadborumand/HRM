@@ -6,6 +6,7 @@ namespace HRMS.Next.Modules.Access;
 
 public sealed class AccessService(AccessDbContext db, IPasswordHasher<AppUser> hasher)
 {
+    public const string AuthVersionClaim = "hrms:auth-version";
     public async Task<ActorScope?> ValidateAsync(string username, string password, CancellationToken ct)
     {
         var user = await db.Users.SingleOrDefaultAsync(x => x.Username == username && x.IsActive, ct);
@@ -17,12 +18,17 @@ public sealed class AccessService(AccessDbContext db, IPasswordHasher<AppUser> h
     public async Task<ActorScope?> GetActiveAsync(ClaimsPrincipal principal, CancellationToken ct)
     {
         if (!int.TryParse(principal.FindFirstValue(ClaimTypes.NameIdentifier), out var id)) return null;
+        var claim = principal.FindFirstValue(AuthVersionClaim);
+        if (string.IsNullOrWhiteSpace(claim)) return null;
+        byte[] version;
+        try { version = Convert.FromBase64String(claim); }
+        catch (FormatException) { return null; }
         var user = await db.Users.AsNoTracking().SingleOrDefaultAsync(x => x.Id == id && x.IsActive, ct);
-        return user is null ? null : ToActor(user);
+        return user is null || !user.RowVersion.SequenceEqual(version) ? null : ToActor(user);
     }
 
     private static ActorScope ToActor(AppUser user) => new(user.Id, user.Username, user.CompanyId,
-        user.IsActive, user.IsAdmin, user.CanReadEmployees, user.CanWriteEmployees);
+        user.IsActive, user.IsAdmin, user.CanReadEmployees, user.CanWriteEmployees, user.EmployeeId, user.RowVersion);
 }
 
 public static class AccessRules

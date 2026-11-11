@@ -110,7 +110,23 @@ try {
         $messages = [regex]::Matches($updated.Content, '<li>[^<]*</li>') | ForEach-Object { [System.Net.WebUtility]::HtmlDecode($_.Value) }
         throw "Edit returned $($updated.BaseResponse.ResponseUri.AbsolutePath); validation: $($messages -join '; ')"
     }
-    $titles = Invoke-WebRequest "$baseUrl/Settings/JobTitles" -WebSession $webSession -UseBasicParsing
+    $employeeId = [regex]::Match($profilePath, '/Employees/([0-9]+)').Groups[1].Value
+    $accounts = Invoke-WebRequest "$baseUrl/Settings/Users" -WebSession $webSession -UseBasicParsing
+    if ($accounts.Content -notmatch 'حساب‌های کاربری') { throw 'Account administration did not load.' }
+    $accountToken = Get-FormToken $accounts.Content
+    $memberUsername = 'smoke_member_' + $suffix.Substring(0, 10)
+    $memberPassword = [Guid]::NewGuid().ToString('N') + 'A1!'
+    $createdAccount = Invoke-WebRequest "$baseUrl/Settings/Users?handler=Create" -Method Post -WebSession $webSession -UseBasicParsing -Body @{
+        NewUsername = $memberUsername; NewPassword = $memberPassword; NewEmployeeId = $employeeId
+        NewCanRead = 'true'; __RequestVerificationToken = $accountToken
+    }
+    if ($createdAccount.Content -notmatch $memberUsername -or $createdAccount.Content -notmatch "پروندهٔ $employeeId") { throw 'Employee-linked account was not created.' }
+    $memberLogin = Invoke-WebRequest "$baseUrl/Login" -SessionVariable memberSession -UseBasicParsing
+    $memberToken = Get-FormToken $memberLogin.Content
+    $memberHome = Invoke-WebRequest "$baseUrl/Login" -Method Post -WebSession $memberSession -UseBasicParsing -Body @{
+        Username = $memberUsername; Password = $memberPassword; __RequestVerificationToken = $memberToken
+    }
+    if ($memberHome.BaseResponse.ResponseUri.AbsolutePath -ne '/' -or $memberHome.Content -notmatch $memberUsername) { throw 'Employee-linked account could not sign in.' }    $titles = Invoke-WebRequest "$baseUrl/Settings/JobTitles" -WebSession $webSession -UseBasicParsing
     $titleToken = Get-FormToken $titles.Content
     $titleCreated = Invoke-WebRequest "$baseUrl/Settings/JobTitles?handler=Save" -Method Post -WebSession $webSession -UseBasicParsing -Body @{
         Name = 'Smoke engineer'; Description = 'Smoke test'; EditId = '0'; Version = ''; __RequestVerificationToken = $titleToken
@@ -280,11 +296,11 @@ try {
     }
     $documentsPage = Invoke-WebRequest "$baseUrl/Employees/$employeeId/Documents" -WebSession $webSession -UseBasicParsing
     if ($documentsPage.Content -match 'data-document-id=') { throw 'Deleted document remains visible.' }
-    Write-Output 'HTTPS login, Home, Settings, organization links, employee, job change, Leave, Reports, Training, Documents: PASS'
+    Write-Output 'HTTPS login, Home, Settings, accounts, organization links, employee, job change, Leave, Reports, Training, Documents: PASS'
 }
 finally {
     if ($process) { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue }
-    $cleanup = "SET ANSI_NULLS ON; SET ANSI_PADDING ON; SET ANSI_WARNINGS ON; SET ARITHABORT ON; SET CONCAT_NULL_YIELDS_NULL ON; SET NUMERIC_ROUNDABORT OFF; SET QUOTED_IDENTIFIER ON; DECLARE @id int=(SELECT Id FROM organization.Companies WHERE Name='$companyName'); DELETE FROM training.Assignments WHERE CompanyId=@id; DELETE FROM training.Courses WHERE CompanyId=@id; DELETE FROM leave.Requests WHERE CompanyId=@id; DELETE FROM leave.Balances WHERE CompanyId=@id; DELETE FROM leave.Policies WHERE CompanyId=@id; DELETE FROM documents.EmployeeDocuments WHERE CompanyId=@id; DELETE FROM documents.DocumentAudits WHERE CompanyId=@id; DELETE FROM personnel.EmployeeAudits WHERE EmployeeId IN (SELECT Id FROM personnel.Employees WHERE CompanyId=@id); DELETE FROM personnel.EmployeeJobs WHERE CompanyId=@id; DELETE FROM personnel.Employees WHERE CompanyId=@id; DELETE FROM access.Users WHERE CompanyId=@id; DELETE FROM organization.OrganizationLinks WHERE CompanyId=@id; DELETE FROM organization.JobTitles WHERE CompanyId=@id; DELETE FROM organization.Departments WHERE CompanyId=@id; DELETE FROM organization.Companies WHERE Id=@id;"
+    $cleanup = "SET ANSI_NULLS ON; SET ANSI_PADDING ON; SET ANSI_WARNINGS ON; SET ARITHABORT ON; SET CONCAT_NULL_YIELDS_NULL ON; SET NUMERIC_ROUNDABORT OFF; SET QUOTED_IDENTIFIER ON; DECLARE @id int=(SELECT Id FROM organization.Companies WHERE Name='$companyName'); DELETE FROM training.Assignments WHERE CompanyId=@id; DELETE FROM training.Courses WHERE CompanyId=@id; DELETE FROM leave.Requests WHERE CompanyId=@id; DELETE FROM leave.Balances WHERE CompanyId=@id; DELETE FROM leave.Policies WHERE CompanyId=@id; DELETE FROM documents.EmployeeDocuments WHERE CompanyId=@id; DELETE FROM documents.DocumentAudits WHERE CompanyId=@id; DELETE FROM personnel.EmployeeAudits WHERE EmployeeId IN (SELECT Id FROM personnel.Employees WHERE CompanyId=@id); DELETE FROM personnel.EmployeeJobs WHERE CompanyId=@id; DELETE FROM personnel.Employees WHERE CompanyId=@id; DELETE FROM access.Audits WHERE CompanyId=@id; DELETE FROM access.Users WHERE CompanyId=@id; DELETE FROM organization.OrganizationLinks WHERE CompanyId=@id; DELETE FROM organization.JobTitles WHERE CompanyId=@id; DELETE FROM organization.Departments WHERE CompanyId=@id; DELETE FROM organization.Companies WHERE Id=@id;"
     $cleanupOutput = sqlcmd -S . -E -C -b -d $Database -Q $cleanup 2>&1
     $cleanupExit = $LASTEXITCODE
     Remove-Item Env:ConnectionStrings__HrmsNext,Env:HRMS_BOOTSTRAP_USER,Env:HRMS_BOOTSTRAP_PASSWORD,Env:HRMS_BOOTSTRAP_COMPANY,Env:ASPNETCORE_ENVIRONMENT -ErrorAction SilentlyContinue

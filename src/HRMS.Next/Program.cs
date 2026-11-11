@@ -6,6 +6,7 @@ using HRMS.Next.Modules.Leave;
 using HRMS.Next.Modules.Training;
 using HRMS.Next.Modules.Documents;
 using HRMS.Next.Modules.Reporting;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -23,6 +24,7 @@ builder.Services.AddDbContext<TrainingDbContext>(o => o.UseSqlServer(connection,
 builder.Services.AddDbContext<DocumentDbContext>(o => o.UseSqlServer(connection, sql => sql.MigrationsHistoryTable("__EFMigrationsHistory", "documents")));
 builder.Services.AddScoped<IPasswordHasher<AppUser>, PasswordHasher<AppUser>>();
 builder.Services.AddScoped<AccessService>();
+builder.Services.AddScoped<AccountAdministrationService>();
 builder.Services.AddScoped<IOrganizationDirectory, OrganizationDirectory>();
 builder.Services.AddScoped<JobTitleService>();
 builder.Services.AddScoped<DepartmentService>();
@@ -45,6 +47,15 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     o.Cookie.SecurePolicy = CookieSecurePolicy.Always;
     o.Cookie.SameSite = SameSiteMode.Lax;
     o.ExpireTimeSpan = TimeSpan.FromHours(8);
+    o.Events.OnValidatePrincipal = async context =>
+    {
+        var service = context.HttpContext.RequestServices.GetRequiredService<AccessService>();
+        if (context.Principal is null || await service.GetActiveAsync(context.Principal, context.HttpContext.RequestAborted) is null)
+        {
+            context.RejectPrincipal();
+            await context.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        }
+    };
 });
 builder.Services.AddAuthorization();
 builder.Services.AddHealthChecks();

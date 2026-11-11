@@ -16,7 +16,7 @@ The new application lives under `src/HRMS.Next`, with tests in `tests/HRMS.Next.
 
 Job classification, position requirements, personnel orders, contractor personnel, appraisal, insurance and retirement, welfare, medical, and Tavanir have no implementation evidence in the current source. Their final boundaries and contracts require business data and rules. They are roadmap items, not completed modules.
 
-Company and department are owned by Organization. Employee identity and employment facts are owned by Personnel. Access stores the employee ID but does not reference Personnel EF entities. Cross-module reports may join read projections in the Reporting module; writes go through owning module application services.
+Company and department are owned by Organization. Employee identity and employment facts are owned by Personnel. Access stores a nullable employee ID, validated through the Personnel directory contract; it does not reference Personnel EF entities. Cross-module reports may join read projections in the Reporting module; writes go through owning module application services.
 
 ## Decisions
 

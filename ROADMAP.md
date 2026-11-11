@@ -13,6 +13,7 @@
 - [x] Native .NET 10 build and SQL/HTTPS integration on the disposable trial database.
 - [x] Port the legacy HRMS_BHR RTL theme, shell and implemented employee/Leave/Training/Documents pages without redesigning the visual system.
 - [ ] Complete module-specific Persian RTL UI patterns, accessibility, selection and large-list behaviors.
+- [x] Administrator account provisioning, same-company employee linkage, password reset, deactivation, audit, concurrency and session revocation with SQL/HTTPS verification.
 - [ ] Complete access grants, roles, company/department/employee scope and external Web API contracts.
 
 ## Stage 2: repeatable trial transfer
