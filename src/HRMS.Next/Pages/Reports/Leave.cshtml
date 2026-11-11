@@ -1,0 +1,15 @@
+@page "/Reports/Leave"
+@model HRMS.Next.Pages.Reports.LeaveModel
+@{ ViewData["Title"] = "گزارش خلاصه مرخصی"; }
+@section Hero {
+    <div class="d-flex justify-content-between align-items-end gap-3 flex-wrap"><h1>گزارش خلاصه مرخصی</h1><div class="d-flex gap-2"><a asp-page-handler="Export" asp-route-year="@Model.Year" asp-route-departmentId="@Model.DepartmentId" class="btn btn-hero"><i class="bi bi-file-earmark-spreadsheet"></i> خروجی CSV</a><a asp-page="Index" class="btn btn-hero"><i class="bi bi-arrow-right"></i> گزارش‌ها</a></div></div>
+}
+<div asp-validation-summary="All" class="text-danger" role="alert"></div>
+<div class="card mb-3"><div class="card-body"><form method="get" class="row g-2 align-items-end"><div class="col-md-3"><label class="form-label" for="year">سال (میلادی)</label><input type="number" class="form-control" id="year" name="year" value="@Model.Year" min="2015" max="2100" /></div><div class="col-md-4"><label class="form-label" for="departmentId">واحد سازمانی</label><select class="form-select" id="departmentId" name="departmentId"><option value="">همه واحدها</option>@foreach (var department in Model.Departments) { <option value="@department.Id" selected="@(Model.DepartmentId == department.Id)">@department.Name</option> }</select></div><div class="col-md-2"><button type="submit" class="btn btn-primary w-100">اجرا</button></div></form></div></div>
+@if (Model.Result is { } result)
+{
+    <div class="card"><div class="card-body"><div class="table-responsive"><table class="table table-striped align-middle text-center"><thead><tr><th>کارمند</th><th>واحد</th><th>نوع مرخصی</th><th>تعلق‌گرفته</th><th>استفاده‌شده</th><th>مانده</th><th>درخواست</th></tr></thead><tbody>
+        @if (result.Rows.Count == 0) { <tr><td colspan="7" class="text-muted py-4">برای این سال مانده‌ای ثبت نشده است.</td></tr> }
+        @foreach (var row in result.Rows) { <tr><td class="text-start"><a asp-page="/Employees/Details" asp-route-id="@row.EmployeeId">@row.EmployeeName</a></td><td>@row.DepartmentName</td><td>@row.PolicyName</td><td>@row.AccruedHours.ToString("0.##")</td><td>@row.UsedHours.ToString("0.##")</td><td class="@(row.AvailableHours < 0 ? "text-danger fw-semibold" : "text-success")">@row.AvailableHours.ToString("0.##")</td><td>@row.RequestCount</td></tr> }
+    </tbody></table></div><div class="d-flex justify-content-between align-items-center"><span>تعداد: @result.Total</span><div class="d-flex gap-2">@if (result.Page > 1) { <a asp-page="Leave" asp-route-year="@Model.Year" asp-route-departmentId="@Model.DepartmentId" asp-route-pageNumber="@(result.Page - 1)" class="btn btn-sm btn-outline-primary">قبلی</a> }@if (result.Page * result.PageSize < result.Total) { <a asp-page="Leave" asp-route-year="@Model.Year" asp-route-departmentId="@Model.DepartmentId" asp-route-pageNumber="@(result.Page + 1)" class="btn btn-sm btn-outline-primary">بعدی</a> }</div></div></div></div>
+}

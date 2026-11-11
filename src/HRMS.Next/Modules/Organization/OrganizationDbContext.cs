@@ -28,7 +28,8 @@ public sealed class OrganizationDbContext(DbContextOptions<OrganizationDbContext
             entity.Property(x => x.RowVersion).IsRowVersion();
             entity.HasIndex(x => new { x.CompanyId, x.Active, x.SortOrder });
             entity.HasOne<Company>().WithMany().HasForeignKey(x => x.CompanyId).OnDelete(DeleteBehavior.Restrict);
-        });        model.Entity<JobTitle>(entity =>
+        });
+        model.Entity<JobTitle>(entity =>
         {
             entity.ToTable("JobTitles", "organization");
             entity.HasKey(x => x.Id);

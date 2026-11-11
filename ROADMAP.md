@@ -38,6 +38,7 @@
 - [ ] Finish manager permissions, employee self-service and document retention rules.
 - [ ] Implement personnel history, job classification and position requirements, orders and contractors, appraisal, insurance and retirement, welfare and medical.
 - [ ] Implement Tavanir exchange only after validating its ۱۴۰۳ contract and credential requirements.
-- [ ] Implement reports, dynamic fields, full UI behavior and external API.
+- [x] Scoped employee/leave reports, dashboard counts, filters and capped safe CSV exports with SQL/HTTPS checks.
+- [ ] Complete pay-specific and remaining reports, dynamic fields, full UI behavior and external API.
 
 A module is complete only when its required workflows, authorization, transfer and tests pass. The current rewrite is partial and has not been published or deployed.

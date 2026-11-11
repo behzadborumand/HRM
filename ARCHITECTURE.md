@@ -12,7 +12,7 @@ The new application lives under `src/HRMS.Next`, with tests in `tests/HRMS.Next.
 | Documents | Private files and metadata | Authorized document retrieval |
 | Training | Courses and assignments | Employee ID based commands and queries |
 | Leave | Policies, balances, requests | Employee ID based commands and queries |
-| Reporting | Read projections | Cross-module read only projections |
+| Reporting | Read projections | Company-scoped employee, leave and dashboard reads with capped CSV exports; no pay fields |
 
 Job classification, position requirements, personnel orders, contractor personnel, appraisal, insurance and retirement, welfare, medical, and Tavanir have no implementation evidence in the current source. Their final boundaries and contracts require business data and rules. They are roadmap items, not completed modules.
 

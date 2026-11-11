@@ -44,6 +44,7 @@
                     {
                         <li><a class="nav-link @(isLeave ? "active" : null)" aria-current="@(isLeave ? "page" : null)" asp-page="/Leave/Index"><i class="bi bi-calendar-check"></i> مرخصی</a></li>
                         <li><a class="nav-link @(path.StartsWith("/Settings", StringComparison.OrdinalIgnoreCase) ? "active" : null)" asp-page="/Settings/Index"><i class="bi bi-gear"></i> تنظیمات</a></li>
+                        <li><a class="nav-link @(path.StartsWith("/Reports", StringComparison.OrdinalIgnoreCase) ? "active" : null)" asp-page="/Reports/Index"><i class="bi bi-file-earmark-bar-graph"></i> گزارش‌ها</a></li>
                         <li><a class="nav-link @(isTraining ? "active" : null)" aria-current="@(isTraining ? "page" : null)" asp-page="/Training/Index"><i class="bi bi-mortarboard"></i> آموزش‌ها</a></li>
                     }
                 </ul>

@@ -170,6 +170,16 @@ try {
     }
     $leave = Invoke-WebRequest "$baseUrl/Leave" -WebSession $webSession -UseBasicParsing
     if ([System.Net.WebUtility]::HtmlDecode($leave.Content) -notmatch 'تأیید شده') { throw 'Leave request was not approved.' }
+    $reports = Invoke-WebRequest "$baseUrl/Reports" -WebSession $webSession -UseBasicParsing
+    if ($reports.Content -notmatch 'گزارش لیست کارکنان' -or $reports.Content -notmatch 'گزارش خلاصه مرخصی') { throw 'Reports hub did not load.' }
+    $employeeReport = Invoke-WebRequest "$baseUrl/Reports/Employees?keyword=$employeeNumber" -WebSession $webSession -UseBasicParsing
+    if ($employeeReport.Content -notmatch $employeeNumber -or $employeeReport.Content -match '<th>حقوق</th>') { throw 'Scoped employee report is invalid or exposes pay.' }
+    $employeeCsv = Invoke-WebRequest "$baseUrl/Reports/Employees?handler=Export&keyword=$employeeNumber" -WebSession $webSession -UseBasicParsing
+    if ($employeeCsv.Headers['Content-Type'] -notmatch 'text/csv' -or $employeeCsv.Content -notmatch $employeeNumber) { throw 'Employee CSV export failed.' }
+    $leaveReport = Invoke-WebRequest "$baseUrl/Reports/Leave?year=2024" -WebSession $webSession -UseBasicParsing
+    if ($leaveReport.Content -notmatch 'Annual smoke') { throw 'Leave summary report did not show the test policy.' }
+    $leaveCsv = Invoke-WebRequest "$baseUrl/Reports/Leave?handler=Export&year=2024" -WebSession $webSession -UseBasicParsing
+    if ($leaveCsv.Headers['Content-Type'] -notmatch 'text/csv' -or $leaveCsv.Content -notmatch 'Annual smoke') { throw 'Leave CSV export failed.' }
     $training = Invoke-WebRequest "$baseUrl/Training" -WebSession $webSession -UseBasicParsing
     $trainingToken = Get-FormToken $training.Content
     $courseCreated = Invoke-WebRequest "$baseUrl/Training?handler=Course" -Method Post -WebSession $webSession -UseBasicParsing -Body @{
@@ -269,7 +279,7 @@ try {
     }
     $documentsPage = Invoke-WebRequest "$baseUrl/Employees/$employeeId/Documents" -WebSession $webSession -UseBasicParsing
     if ($documentsPage.Content -match 'data-document-id=') { throw 'Deleted document remains visible.' }
-    Write-Output 'HTTPS login, Home, Settings, organization links, employee, job change, Leave, Training, Documents: PASS'
+    Write-Output 'HTTPS login, Home, Settings, organization links, employee, job change, Leave, Reports, Training, Documents: PASS'
 }
 finally {
     if ($process) { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue }

@@ -10,7 +10,7 @@ Legacy source is the separate `D:\SourceCodes\GitProjects\HRMS_BHR` repository: 
 | Leave policies, requests, balances, manager approval | Leave | Partial: separate schema, policy/balance/request model and admin service; administrator Razor Page and HTTPS flow; no manager grants; trial transfer covers policies, balances and all 8 requests |
 | Courses and assignments | Training | Partial: independent schema, administrator course create/edit/activation, assignment/completion flow, Razor Page and SQL/HTTPS tests; 6 legacy courses and 5 assignments imported in trial; staff self-service pending |
 | Private employee documents | Documents | Partial: independent schema, private paginated list/upload/download/delete, SHA256 and audit, SQL/HTTPS tests; legacy source has 0 rows; employee self-service and nonempty file transfer pending |
-| Dashboard and HR reports | Reporting | Partial Home shell with working shortcuts and scoped employee count; Leave/event panels and HR reports pending |
+| Dashboard and HR reports | Reporting | Partial Home shell with working shortcuts and scoped employee count; admin employee and leave reports, dashboard counts and safe CSV exports present; Leave/event Home panels and pay-specific reports pending |
 | Persian RTL shell and Jalali binder | Host presentation | Partial: legacy UI theme and implemented Razor Pages ported; remaining screens await their backend modules |
 | Tavanir, contractors, orders, position requirements, appraisal, insurance, retirement, welfare, medical, dynamic fields | Corresponding future modules or Personnel metadata | No source implementation found |
 
