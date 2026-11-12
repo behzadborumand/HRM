@@ -53,7 +53,10 @@ try {
         Username = $username; Password = $password; __RequestVerificationToken = $loginToken
     }
     if ($employeeListResponse.BaseResponse.ResponseUri.AbsolutePath -ne '/' -or $employeeListResponse.Content -notmatch 'home-workspace') { throw 'Login did not reach Home.' }
-    if ($employeeListResponse.Content -notmatch 'home-availability' -or $employeeListResponse.Content -notmatch 'home-new-hires' -or $employeeListResponse.Content -notmatch 'home-organization') { throw 'Home highlights did not render.' }
+    if ($employeeListResponse.Content -notmatch 'home-availability' -or $employeeListResponse.Content -notmatch 'home-new-hires' -or $employeeListResponse.Content -notmatch 'home-organization' -or $employeeListResponse.Content -notmatch 'home-celebrations') { throw 'Home highlights did not render.' }
+
+    $sidebarHtml = [regex]::Match($employeeListResponse.Content, '(?s)<aside class="home-sidebar".*?</aside>').Value
+    if ($sidebarHtml -notmatch 'home-celebrations' -or $sidebarHtml.IndexOf('home-celebrations') -gt $sidebarHtml.IndexOf('home-organization-links')) { throw 'Home celebrations must retain the legacy sidebar position before organization links.' }
 
     $settings = Invoke-WebRequest "$baseUrl/Settings" -WebSession $webSession -UseBasicParsing
     if ($settings.Content -notmatch 'واحدهای سازمانی') { throw 'Settings hub did not render departments.' }
@@ -427,6 +430,7 @@ try {
     if ($photoDeleted.Content -match '<img[^>]+/Photo') { throw 'Deleted photo is still rendered.' }
     & (Join-Path $PSScriptRoot 'TestPersonalWorkflow.ps1') -BaseUrl $baseUrl -AdminSession $webSession -OwnerSession $memberSession -ReaderSession $readerSession -EmployeeId $employeeId -PeerId $peerId
     & (Join-Path $PSScriptRoot 'TestTeamWorkflow.ps1') -BaseUrl $baseUrl -AdminSession $webSession -CompanyName $companyName -EmployeeId $employeeId -PeerId $peerId -PolicyId $policyId -DepartmentId $departmentId -ScreenshotsDirectory $ScreenshotsDirectory
+    & (Join-Path $PSScriptRoot 'TestCelebrationsWorkflow.ps1') -BaseUrl $baseUrl -AdminSession $webSession -OwnerSession $memberSession -ReaderSession $readerSession -CompanyName $companyName
     if ($ScreenshotsDirectory) {
         $visualFixture = @"
 SET ANSI_NULLS ON; SET ANSI_PADDING ON; SET ANSI_WARNINGS ON; SET ARITHABORT ON; SET CONCAT_NULL_YIELDS_NULL ON; SET NUMERIC_ROUNDABORT OFF; SET QUOTED_IDENTIFIER ON;

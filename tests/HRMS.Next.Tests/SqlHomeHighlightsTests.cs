@@ -43,7 +43,7 @@ public sealed class SqlHomeHighlightsTests
         await leave.SaveChangesAsync();
         try
         {
-            var service = new HomeHighlightsService(people, leave, org, TimeProvider.System);
+            var service = new HomeHighlightsService(people, leave, org, TimeProvider.System, new EmployeeCelebrationService(people));
             var actor = new ActorScope(1, "admin", company.Id, true, true, true, true);
             var snapshot = await service.LoadAsync(actor, CancellationToken.None);
             Assert.Single(snapshot.NewHires);

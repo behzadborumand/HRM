@@ -10,10 +10,10 @@ public sealed record HomePerson(int EmployeeId, string FullName, string Departme
 public sealed record HomeAbsenceDay(DateOnly Date, string Caption, IReadOnlyList<HomePerson> People);
 public sealed record HomePendingRequest(int EmployeeId, string EmployeeName, string PolicyName, DateOnly StartDate, decimal Hours);
 public sealed record HomeHighlights(IReadOnlyList<HomePerson> NewHires, IReadOnlyList<HomeAbsenceDay> AbsenceDays,
-    IReadOnlyList<HomePendingRequest> PendingRequests);
+    IReadOnlyList<HomePendingRequest> PendingRequests, IReadOnlyList<EmployeeCelebration> Celebrations);
 
 public sealed class HomeHighlightsService(PersonnelDbContext people, LeaveDbContext leave,
-    OrganizationDbContext organization, TimeProvider clock)
+    OrganizationDbContext organization, TimeProvider clock, EmployeeCelebrationService celebrations)
 {
     public async Task<HomeHighlights> LoadAsync(ActorScope actor, CancellationToken ct)
     {
@@ -71,6 +71,6 @@ public sealed class HomeHighlightsService(PersonnelDbContext people, LeaveDbCont
             return person is null ? null : new HomePendingRequest(x.EmployeeId, person.FullName,
                 policies.GetValueOrDefault(x.PolicyId, "-"), x.StartDate, x.Hours);
         }).OfType<HomePendingRequest>().ToList();
-        return new HomeHighlights(newHires, days, pendingRows);
+        return new HomeHighlights(newHires, days, pendingRows, await celebrations.LoadAsync(actor, today, ct));
     }
 }

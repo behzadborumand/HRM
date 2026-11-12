@@ -52,7 +52,9 @@
                     </div>
                 </div>
             </section>
-        }        <section class="card home-organization-links">
+            <partial name="_HomeCelebrations" model="home.Celebrations" />
+        }
+        <section class="card home-organization-links">
             <div class="card-header"><h2><i class="bi bi-link-45deg"></i> پیوندهای سازمانی</h2>
                 @if (Model.IsAdmin) { <a asp-page="/Settings/OrganizationLinks" class="home-header-link">مدیریت پیوندها</a> }
             </div>

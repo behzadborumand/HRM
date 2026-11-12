@@ -36,6 +36,7 @@ builder.Services.AddScoped<ReportingService>();
 builder.Services.AddScoped<HomeHighlightsService>();
 builder.Services.AddScoped<EmployeeService>();
 builder.Services.AddScoped<EmployeePersonalService>();
+builder.Services.AddScoped<EmployeeCelebrationService>();
 builder.Services.AddScoped<EmployeeProfileDirectory>();
 builder.Services.AddScoped<EmployeePhotoService>();
 builder.Services.AddScoped<EmployeePayService>();

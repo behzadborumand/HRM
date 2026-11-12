@@ -85,6 +85,25 @@ try {
     $passwordJson=$Password | ConvertTo-Json -Compress
     Evaluate ("document.querySelector('[name=Username]').value="+$userJson+";document.querySelector('[name=Password]').value="+$passwordJson+";document.querySelector('form[method=post]').requestSubmit();true") | Out-Null
     Wait-Expression "location.pathname==='/' && !!document.querySelector('.home-workspace')"
+    Wait-Expression "document.readyState==='complete' && document.querySelectorAll('[data-celebration]').length>=2"
+    if(!(Evaluate "!!document.querySelector('[data-celebration=Birthday]') && !!document.querySelector('[data-celebration=Anniversary]')")){throw 'Home browser celebration kinds missing.'}
+    if(!(Evaluate "document.documentElement.scrollWidth<=innerWidth+1")){throw 'Home desktop overflow.'}
+    if(!(Evaluate "!!document.querySelector('.home-sidebar > .home-celebrations')")){throw 'Home card is outside the legacy sidebar.'}
+    Capture 'home-desktop.png'
+    Evaluate "document.querySelector('.home-celebrations').scrollIntoView({block:'center'});true" | Out-Null
+    Capture 'home-celebrations-desktop.png'
+    Evaluate "document.querySelector('[data-celebration]').focus();true" | Out-Null
+    Invoke-Cdp 'Input.dispatchKeyEvent' @{type='keyDown';key='Enter';code='Enter';windowsVirtualKeyCode=13;text=([string][char]13);unmodifiedText=([string][char]13)} | Out-Null
+    Invoke-Cdp 'Input.dispatchKeyEvent' @{type='keyUp';key='Enter';code='Enter';windowsVirtualKeyCode=13} | Out-Null
+    Wait-Expression "location.pathname.startsWith('/Employees/') && !!document.querySelector('.employee-content')"
+    Invoke-Cdp 'Page.navigate' @{url=($BaseUrl+'/')} | Out-Null
+    Wait-Expression "location.pathname==='/' && !!document.querySelector('.home-celebrations') && document.readyState==='complete'"
+    Invoke-Cdp 'Emulation.setDeviceMetricsOverride' @{width=390;height=844;deviceScaleFactor=1;mobile=$true} | Out-Null
+    if(!(Evaluate "document.documentElement.scrollWidth<=innerWidth+1")){throw 'Home mobile overflow.'}
+    Evaluate "document.querySelector('.home-celebrations').scrollIntoView({block:'center'});true" | Out-Null
+    Capture 'home-celebrations-mobile.png'
+    Invoke-Cdp 'Emulation.setDeviceMetricsOverride' @{width=1280;height=850;deviceScaleFactor=1;mobile=$false} | Out-Null
+
     Invoke-Cdp 'Page.navigate' @{url=($BaseUrl+'/Settings/Roles')} | Out-Null
     Wait-Expression "!!document.querySelector('[name=Name]') && document.readyState==='complete'"
     Capture 'roles-desktop.png'

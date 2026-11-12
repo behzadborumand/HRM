@@ -1,0 +1,22 @@
+@using HRMS.Next.Modules.Personnel
+@model IReadOnlyList<EmployeeCelebration>
+@{
+    static string PersianDigits(string value) =>
+        string.Concat(value.Select(c => c is >= '0' and <= '9' ? (char)('۰' + c - '0') : c));
+}
+<section class="card home-celebrations" aria-labelledby="celebrations-title">
+    <div class="card-header"><h2 id="celebrations-title"><i class="bi bi-gift"></i> مناسبت‌ها</h2><span class="small text-muted">۳۰ روز آینده</span></div>
+    <div class="card-body">
+        @if (Model.Count == 0)
+        {
+            <p class="home-empty">در این بازه مناسبتی ثبت نشده است.</p>
+        }
+        @foreach (var item in Model)
+        {
+            <a asp-page="/Employees/Details" asp-route-id="@item.EmployeeId" class="home-person-row" data-celebration="@item.Kind">
+                <span class="home-event-icon" aria-hidden="true"><i class="bi @(item.Kind == CelebrationKind.Birthday ? "bi-gift" : "bi-award")"></i></span>
+                <span><strong>@item.FullName</strong><small>@(item.Kind == CelebrationKind.Birthday ? "تولد" : $"سالگرد {PersianDigits(item.Years.GetValueOrDefault().ToString(System.Globalization.CultureInfo.InvariantCulture))} سال همکاری") · @PersianDigits(HRMS.Next.Pages.Employees.JalaliDate.Format(item.Date))</small></span>
+            </a>
+        }
+    </div>
+</section>

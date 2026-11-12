@@ -38,7 +38,7 @@ if($created.Content -notmatch ('<strong>'+$managerUsername+'</strong>')){throw '
 TrialSql "UPDATE personnel.EmployeeJobs SET ManagerEmployeeId=$managerId WHERE CompanyId=@company AND EmployeeId=$EmployeeId AND IsCurrent=1;"
 $login=Invoke-WebRequest ($BaseUrl+'/Login') -SessionVariable teamSession -UseBasicParsing
 $teamHome=Post '/Login' @{Username=$managerUsername;Password=$managerPassword;__RequestVerificationToken=(Token $login.Content)} $teamSession
-if($teamHome.Content -notmatch 'href="/Team"' -or $teamHome.Content -match 'form class="searchbox"'){throw 'Manager home navigation scope failed.'}
+if($teamHome.Content -notmatch 'href="/Team"' -or $teamHome.Content -match 'form class="searchbox"|home-celebrations|data-celebration='){throw 'Manager home navigation scope failed.'}
 $team=Get '/Team' $teamSession
 if($team.Content -notmatch "data-team-employee=`"$EmployeeId`"" -or $team.Content -match "data-team-employee=`"$PeerId`""){throw 'Team list scope failed.'}
 $profile=Get "/Employees/$EmployeeId" $teamSession
