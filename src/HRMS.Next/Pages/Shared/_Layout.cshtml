@@ -44,6 +44,10 @@
                         <li><a class="nav-link @(isMyInfo ? "active" : null)" aria-current="@(isMyInfo ? "page" : null)" asp-page="/MyInfo"><i class="bi bi-person-vcard"></i> اطلاعات من</a></li>
                         <li><a class="nav-link @(path.Equals("/My/Leave", StringComparison.OrdinalIgnoreCase) ? "active" : null)" asp-page="/My/Leave"><i class="bi bi-calendar-plus"></i> مرخصی من</a></li>
                     }
+                    @if (AccessRules.CanUseTeam(actor))
+                    {
+                        <li><a class="nav-link @(path.StartsWith("/Team", StringComparison.OrdinalIgnoreCase) ? "active" : null)" asp-page="/Team/Index"><i class="bi bi-people"></i> تیم من</a></li>
+                    }
                     @if (canReadEmployees)
                     {
                         <li><a class="nav-link @(isEmployees ? "active" : null)" aria-current="@(isEmployees ? "page" : null)" asp-page="/Employees/Index"><i class="bi bi-person-lines-fill"></i> کارکنان</a></li>

@@ -24,14 +24,14 @@ public sealed class EmployeePhotoService(PersonnelDbContext db, TimeProvider clo
 
     public async Task<PhotoSummary?> SummaryAsync(ActorScope actor, int employeeId, CancellationToken ct)
     {
-        RequireRead(actor, employeeId);
+        await PersonnelReadScope.RequireAsync(db, actor, employeeId, ct);
         return await db.Photos.AsNoTracking().Where(x => x.EmployeeId == employeeId && x.CompanyId == actor.CompanyId)
             .Select(x => new PhotoSummary(x.Sha256, x.RowVersion)).SingleOrDefaultAsync(ct);
     }
 
     public async Task<PhotoDownload?> ReadAsync(ActorScope actor, int employeeId, CancellationToken ct)
     {
-        RequireRead(actor, employeeId);
+        await PersonnelReadScope.RequireAsync(db, actor, employeeId, ct);
         var photo = await db.Photos.AsNoTracking()
             .SingleOrDefaultAsync(x => x.EmployeeId == employeeId && x.CompanyId == actor.CompanyId, ct);
         if (photo is null) return null;
@@ -92,12 +92,7 @@ public sealed class EmployeePhotoService(PersonnelDbContext db, TimeProvider clo
             throw new KeyNotFoundException("پروندهٔ کارمند یافت نشد.");
     }
 
-    private static void RequireRead(ActorScope actor, int employeeId)
-    {
-        if (!AccessRules.CanReadEmployee(actor, actor.CompanyId, employeeId)) throw new UnauthorizedAccessException();
-    }
-
-    private void Audit(ActorScope actor, int employeeId, string action) =>
+private void Audit(ActorScope actor, int employeeId, string action) =>
         db.Audits.Add(new EmployeeAudit { EmployeeId = employeeId, ActorUserId = actor.Id,
             AtUtc = clock.GetUtcNow(), Action = action, Summary = "Employee portrait" });
 }

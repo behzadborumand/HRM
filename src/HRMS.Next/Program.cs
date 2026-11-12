@@ -25,6 +25,9 @@ builder.Services.AddDbContext<DocumentDbContext>(o => o.UseSqlServer(connection,
 builder.Services.AddScoped<IPasswordHasher<AppUser>, PasswordHasher<AppUser>>();
 builder.Services.AddScoped<AccessService>();
 builder.Services.AddScoped<AccountAdministrationService>();
+builder.Services.AddScoped<RoleAdministrationService>();
+builder.Services.AddScoped<PersonnelTeamService>();
+builder.Services.AddScoped<TeamLeaveBoard>();
 builder.Services.AddScoped<IOrganizationDirectory, OrganizationDirectory>();
 builder.Services.AddScoped<JobTitleService>();
 builder.Services.AddScoped<DepartmentService>();

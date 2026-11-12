@@ -9,10 +9,10 @@ public sealed class AccessService(AccessDbContext db, IPasswordHasher<AppUser> h
     public const string AuthVersionClaim = "hrms:auth-version";
     public async Task<ActorScope?> ValidateAsync(string username, string password, CancellationToken ct)
     {
-        var user = await db.Users.SingleOrDefaultAsync(x => x.Username == username && x.IsActive, ct);
+        var user = await db.Users.AsNoTracking().SingleOrDefaultAsync(x => x.Username == username && x.IsActive, ct);
         if (user is null) return null;
         var result = hasher.VerifyHashedPassword(user, user.PasswordHash, password);
-        return result == PasswordVerificationResult.Failed ? null : ToActor(user);
+        return result == PasswordVerificationResult.Failed ? null : await ToActorAsync(user, ct);
     }
 
     public async Task<ActorScope?> GetActiveAsync(ClaimsPrincipal principal, CancellationToken ct)
@@ -24,15 +24,23 @@ public sealed class AccessService(AccessDbContext db, IPasswordHasher<AppUser> h
         try { version = Convert.FromBase64String(claim); }
         catch (FormatException) { return null; }
         var user = await db.Users.AsNoTracking().SingleOrDefaultAsync(x => x.Id == id && x.IsActive, ct);
-        return user is null || !user.RowVersion.SequenceEqual(version) ? null : ToActor(user);
+        return user is null || !user.RowVersion.SequenceEqual(version) ? null : await ToActorAsync(user, ct);
     }
 
-    private static ActorScope ToActor(AppUser user) => new(user.Id, user.Username, user.CompanyId,
-        user.IsActive, user.IsAdmin, user.CanReadEmployees, user.CanWriteEmployees, user.EmployeeId, user.RowVersion);
+    private async Task<ActorScope> ToActorAsync(AppUser user, CancellationToken ct)
+    {
+        var role = user.RoleId is null ? null : await db.Roles.AsNoTracking().SingleOrDefaultAsync(r => r.Id == user.RoleId && r.CompanyId == user.CompanyId && r.Active, ct);
+        return new(user.Id, user.Username, user.CompanyId,
+        user.IsActive, user.IsAdmin, user.CanReadEmployees || user.CanWriteEmployees || role is { CanReadEmployees: true } || role is { CanWriteEmployees: true },
+            user.CanWriteEmployees || role is { CanWriteEmployees: true }, user.EmployeeId, user.RowVersion,
+            user.EmployeeId is > 0 && role is { CanManageTeam: true }, user.RoleId);
+    }
 }
 
 public static class AccessRules
 {
+    public static bool CanUseTeam(ActorScope? user) => user is { IsActive: true, CompanyId: > 0, EmployeeId: > 0 } && (user.IsAdmin || user.CanManageTeam);
+
     public static bool CanRead(ActorScope? user, int companyId) =>
         user is { IsActive: true } && user.CompanyId == companyId && (user.IsAdmin || user.CanReadEmployees || user.CanWriteEmployees);
 

@@ -1,5 +1,5 @@
 # Employee self-service
-The existing BambooHR shell and profile are reused. This milestone provides real employee-owned reads and personal Leave workflows; configurable roles and manager/department scope remain pending.
+The existing BambooHR shell and profile are reused. This milestone provides real employee-owned reads and personal Leave workflows; company roles and direct-manager scope are implemented; the full permission catalog, department grants and remaining self-service editing are pending.
 
 ## Provisioning
 Administrator: Settings > Users, link the account to an existing employee in the same company. Leave general employee read/write unchecked for self-service-only access. The unique employee/account link and rowversion-bound cookie validation already protect linkage. Deactivation, relinking or grant changes revoke previous cookies.
@@ -33,4 +33,20 @@ An actual parallel SQL test exposed two Serializable approvals retaining shared 
 SQL tests cover no-grant ownership, company/employee boundary, file bytes, denied writes/admin operations, request metadata, overlapping/insufficient leave, inactive/unlinked/departed users, pending paging and stale/replayed cancellation. The deadlock regression verifies both approvals complete and balances are consumed once.
 HTTPS checks use a no-grant employee account, crafted employee/company IDs, invalid Jalali input, missing CSRF, stale cancellation, personal file download and account revocation. Headless Chromium signs in through actual forms, captures Home/profile/Leave at desktop/mobile sizes and submits/cancels a personal request. Generated tenant fixtures are removed; all writes are confined to HRMS_Next_Trial_20261108.
 
-Final native/SQL suite: 62/62 passed, including the real deadlock regression. Build and local HTTPS/browser checks are recorded in CHECKPOINT.md. Screenshots contain generated fictional employee/account data.
+Final native/SQL suite: 66/66 passed, including the real deadlock regression. Build and local HTTPS/browser checks are recorded in CHECKPOINT.md. Screenshots contain generated fictional employee/account data.
+
+## Company roles and direct managers
+Settings > Roles defines read employees, write employees and manage team capabilities for the current company. Settings > Users assigns one active role; explicit user read/write remain additional grants. Role write implies read. A manager role requires employee linkage. An archived current role may be retained while deactivating/updating an account, but cannot be newly assigned. Roles never grant administrator. Editing/archiving a role records RoleAudit and atomically refreshes all assigned user rowversions; previous cookies expire. Archived roles contribute no grants.
+
+| Workflow | Manager grant without company read/write |
+| --- | --- |
+| /Team and search | active current direct reports, same company, paginated20 |
+| Report profile/job/photo | permitted only while manager and report remain active/current |
+| Company directory, reports, settings/catalogs | denied |
+| Report pay/documents/private Leave or Training profile data | denied |
+| /Team/Leave | pending current direct reports only, paginated20; reasons/comments excluded |
+| Approve/reject | live relationship rechecked, self denied, exact request version required |
+| Write employee/job/photo/documents | denied |
+
+The Personnel relationship check and team list use the current EmployeeJobs manager ID; department membership and indirect reports do not imply access. A manager reassignment or departure changes access on the next request. Admin approval behavior remains compatible. Full permission catalog, department-scoped grants and self-service editing remain pending.
+Current role/team HTTPS checks also verify unlinked-role rejection, actual role assignment, manager-only profile HTML, forbidden peer/admin/file routes, stale/missing-CSRF decisions, reassignment denial, approval and archive-cookie revocation. Chromium captures team/queue/profile and role administration at desktop/mobile widths. Exact profile pagination remains checked after the additional team-approved request. Current evidence and local host are in CHECKPOINT.md.

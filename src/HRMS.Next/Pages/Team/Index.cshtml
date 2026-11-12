@@ -1,0 +1,20 @@
+@page "/Team"
+@model HRMS.Next.Pages.Team.IndexModel
+@{ ViewData["Title"] = "تیم من"; }
+@section Hero {
+    <div class="d-flex justify-content-between gap-3 flex-wrap align-items-center"><div><h1>تیم من</h1><p class="hero-sub">همکاران تحت مدیریت مستقیم شما</p></div><a asp-page="Leave" class="btn btn-hero"><i class="bi bi-calendar-check"></i> بررسی مرخصی تیم</a></div>
+}
+<section class="card">
+    <div class="card-header"><form method="get" class="d-flex gap-2 flex-wrap align-items-end"><div><label asp-for="Query" class="form-label small">جستجو در تیم</label><input asp-for="Query" type="search" maxlength="100" class="form-control" placeholder="نام یا شمارهٔ پرسنلی" /></div><button class="btn btn-primary" type="submit">جستجو</button></form></div>
+    @if (Model.Team is { } team)
+    {
+        <div class="table-responsive"><table class="table table-striped align-middle mb-0"><caption class="visually-hidden">اعضای مستقیم تیم</caption><thead><tr><th scope="col">همکار</th><th scope="col">شمارهٔ پرسنلی</th><th scope="col">عنوان شغلی</th><th scope="col">پرونده</th></tr></thead><tbody>
+        @if (team.Rows.Count == 0) { <tr><td colspan="4" class="text-muted p-4">همکاری با این مشخصات در تیم مستقیم شما یافت نشد.</td></tr> }
+        @foreach (var person in team.Rows) { <tr data-team-employee="@person.Id"><td><a asp-page="/Employees/Details" asp-route-id="@person.Id" class="text-decoration-none"><span class="avatar avatar-sm avatar-fallback me-2" aria-hidden="true"><i class="bi bi-person"></i></span><strong>@person.FullName</strong></a></td><td>@person.EmployeeNumber</td><td>@(person.JobTitle ?? "—")</td><td><a asp-page="/Employees/Details" asp-route-id="@person.Id" class="btn btn-sm btn-outline-secondary" aria-label="پروندهٔ @person.FullName">مشاهده</a></td></tr> }
+        </tbody></table></div>
+        <div class="card-footer bg-white d-flex justify-content-between align-items-center"><span class="small text-muted">@team.Total همکار</span><nav class="d-flex gap-2" aria-label="صفحات تیم">
+        @if (team.Page > 1) { <a asp-route-query="@Model.Query" asp-route-pageNumber="@(team.Page - 1)" class="btn btn-sm btn-outline-secondary">قبلی</a> }
+        @if (team.Page * team.PageSize < team.Total) { <a asp-route-query="@Model.Query" asp-route-pageNumber="@(team.Page + 1)" class="btn btn-sm btn-outline-secondary">بعدی</a> }
+        </nav></div>
+    }
+</section>

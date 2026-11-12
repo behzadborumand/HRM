@@ -19,3 +19,5 @@ Verification uses real SQL Server and HTTPS. Optional visual smoke creates an is
 
 Run visual verification:
 powershell -NoProfile -ExecutionPolicy Bypass -File tools/SqlWebSmoke.ps1 -AppExe src/HRMS.Next/bin/Debug/net10.0/HRMS.Next.exe -DotnetRoot C:\Users\Behzad\.dotnet -Database HRMS_Next_Trial_20261108 -Port 52321 -ScreenshotsDirectory "$env:TEMP\HRM-Profile-Review"
+
+Direct-manager access requires an active account with explicit team grant and an active same-company linked employee. Only active current direct reports are exposed. Managed profiles keep the same BambooHR shell and job/photo/basic fields; pay, private documents, Leave/Training activity, company neighbours and write controls are absent unless separately authorized. Direct file routes retain their existing owner/company policy.

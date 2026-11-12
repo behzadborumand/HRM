@@ -18,8 +18,9 @@ public sealed class PhotoModel(AccessService access, EmployeePhotoService photos
     public async Task<IActionResult> OnGetAsync(int id, CancellationToken ct)
     {
         var actor = await access.GetActiveAsync(User, ct);
-        if (actor is null || !AccessRules.CanReadEmployee(actor, actor.CompanyId, id)) return Forbid();
-        var photo = await photos.ReadAsync(actor, id, ct);
+        if (actor is null) return Forbid();
+        PhotoDownload? photo;
+        try { photo = await photos.ReadAsync(actor, id, ct); } catch (UnauthorizedAccessException) { return Forbid(); }
         if (photo is null) return NotFound();
         Response.Headers.CacheControl = "private, no-store";
         Response.Headers["X-Content-Type-Options"] = "nosniff";

@@ -82,16 +82,21 @@ public sealed class LeaveService(LeaveDbContext db, IEmployeeDirectory employees
         return request.Id;
     }
 
-    public async Task DecideAsync(ActorScope actor, int requestId, bool approve, string? comments, CancellationToken ct) =>
-        await LeaveTransaction.RunAsync(db, async () => { await DecideCoreAsync(actor, requestId, approve, comments, ct); return true; }, ct);
+    public async Task DecideAsync(ActorScope actor, int requestId, bool approve, string? comments, CancellationToken ct, byte[]? expectedVersion = null) =>
+        await LeaveTransaction.RunAsync(db, async () => { await DecideCoreAsync(actor, requestId, approve, comments, expectedVersion, ct); return true; }, ct);
 
-    private async Task DecideCoreAsync(ActorScope actor, int requestId, bool approve, string? comments, CancellationToken ct)
+    private async Task DecideCoreAsync(ActorScope actor, int requestId, bool approve, string? comments, byte[]? expectedVersion, CancellationToken ct)
     {
-        RequireAdmin(actor);
+        if (!actor.IsActive || actor.CompanyId <= 0 || (!actor.IsAdmin && !AccessRules.CanUseTeam(actor))) throw new UnauthorizedAccessException();
         if (comments?.Length > 1000) throw new ArgumentException("Comments are too long.");
         await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
         var request = await db.Requests.SingleOrDefaultAsync(x => x.Id == requestId && x.CompanyId == actor.CompanyId, ct)
             ?? throw new UnauthorizedAccessException("Request is outside the active company.");
+        if (!actor.IsAdmin && (request.EmployeeId == actor.EmployeeId ||
+            !await employees.IsDirectManagerAsync(actor.CompanyId, actor.EmployeeId!.Value, request.EmployeeId, ct)))
+            throw new UnauthorizedAccessException();
+        if ((!actor.IsAdmin && expectedVersion is null) || (expectedVersion is not null && !request.RowVersion.SequenceEqual(expectedVersion)))
+            throw new DbUpdateConcurrencyException("درخواست تغییر کرده است؛ صفحه را تازه کنید.");
         if (request.Status != "Pending") throw new ArgumentException("Request is already decided.");
         if (approve)
         {
@@ -111,6 +116,7 @@ public sealed class LeaveService(LeaveDbContext db, IEmployeeDirectory employees
         }
         request.Status = approve ? "Approved" : "Rejected";
         request.DecidedByUserId = actor.Id;
+        request.DecidedByEmployeeId = actor.EmployeeId;
         request.DecidedAtUtc = clock.GetUtcNow();
         request.Comments = comments?.Trim();
         await db.SaveChangesAsync(ct);

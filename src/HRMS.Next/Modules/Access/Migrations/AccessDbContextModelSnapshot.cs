@@ -58,6 +58,52 @@ namespace HRMS.Next.Modules.Access.Migrations
                     b.ToTable("Audits", "access");
                 });
 
+            modelBuilder.Entity("HRMS.Next.Modules.Access.AccessRole", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Active")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("CanManageTeam")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("CanReadEmployees")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("CanWriteEmployees")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("Roles", "access");
+                });
+
             modelBuilder.Entity("HRMS.Next.Modules.Access.AppUser", b =>
                 {
                     b.Property<int>("Id")
@@ -89,6 +135,9 @@ namespace HRMS.Next.Modules.Access.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<int?>("RoleId")
+                        .HasColumnType("int");
+
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .IsRequired()
@@ -109,7 +158,67 @@ namespace HRMS.Next.Modules.Access.Migrations
                         .IsUnique()
                         .HasFilter("[EmployeeId] IS NOT NULL");
 
+                    b.HasIndex("RoleId", "CompanyId");
+
                     b.ToTable("Users", "access");
+                });
+
+            modelBuilder.Entity("HRMS.Next.Modules.Access.RoleAudit", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<int>("ActorUserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("AtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RoleId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RoleId", "CompanyId");
+
+                    b.HasIndex("CompanyId", "RoleId", "AtUtc");
+
+                    b.ToTable("RoleAudits", "access");
+                });
+
+            modelBuilder.Entity("HRMS.Next.Modules.Access.AppUser", b =>
+                {
+                    b.HasOne("HRMS.Next.Modules.Access.AccessRole", null)
+                        .WithMany()
+                        .HasForeignKey("RoleId", "CompanyId")
+                        .HasPrincipalKey("Id", "CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("HRMS.Next.Modules.Access.RoleAudit", b =>
+                {
+                    b.HasOne("HRMS.Next.Modules.Access.AccessRole", null)
+                        .WithMany()
+                        .HasForeignKey("RoleId", "CompanyId")
+                        .HasPrincipalKey("Id", "CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

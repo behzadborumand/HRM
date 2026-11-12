@@ -17,6 +17,7 @@ public sealed class IndexModel(AccessService access, OrganizationLinkService lin
     public EmployeeLeaveProfile? OwnLeave { get; private set; }
     public bool CanBrowsePeople { get; private set; }
     public bool CanWriteEmployees { get; private set; }
+    public bool CanUseTeam { get; private set; }
     public bool IsAdmin { get; private set; }
     public int EmployeeCount { get; private set; }
     public HomeHighlights? Highlights { get; private set; }
@@ -31,6 +32,7 @@ public sealed class IndexModel(AccessService access, OrganizationLinkService lin
         CanBrowsePeople = AccessRules.CanRead(actor, actor.CompanyId);
         CanWriteEmployees = AccessRules.CanWrite(actor, actor.CompanyId);
         IsAdmin = actor.IsAdmin;
+        CanUseTeam = AccessRules.CanUseTeam(actor);
         OrganizationLinks = await links.ActiveAsync(actor, ct);
         if (CanBrowsePeople)
             {

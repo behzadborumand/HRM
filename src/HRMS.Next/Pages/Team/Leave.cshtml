@@ -1,0 +1,27 @@
+@page "/Team/Leave"
+@model HRMS.Next.Pages.Team.LeaveModel
+@using HRMS.Next.Pages.Employees
+@{ ViewData["Title"] = "مرخصی تیم"; }
+@section Hero {
+    <div class="d-flex justify-content-between gap-3 flex-wrap align-items-center"><div><h1>مرخصی تیم</h1><p class="hero-sub">درخواست‌های در انتظار همکاران تحت مدیریت مستقیم</p></div><a asp-page="Index" class="btn btn-hero"><i class="bi bi-people"></i> تیم من</a></div>
+}
+@if (TempData["TeamLeaveMessage"] is string message) { <div class="alert alert-success" role="status">@message</div> }
+<div asp-validation-summary="All" class="text-danger" role="alert"></div>
+<section class="card"><div class="card-header">درخواست‌های در انتظار تأیید</div>
+@if (Model.Requests is { } requests)
+{
+    <div class="table-responsive"><table class="table table-striped align-middle mb-0"><caption class="visually-hidden">درخواست مرخصی همکاران تیم</caption><thead><tr><th scope="col">همکار</th><th scope="col">نوع مرخصی</th><th scope="col">از</th><th scope="col">تا</th><th scope="col">ساعت</th><th scope="col">بررسی</th></tr></thead><tbody>
+    @if (requests.Rows.Count == 0) { <tr><td colspan="6" class="text-muted p-4">درخواست در انتظاری برای بررسی ندارید.</td></tr> }
+    @foreach (var request in requests.Rows)
+    {
+        <tr data-team-request="@request.Id"><td><a asp-page="/Employees/Details" asp-route-id="@request.EmployeeId">@request.EmployeeName</a></td><td>@request.PolicyName</td><td class="text-nowrap">@JalaliDate.Format(request.StartDate)</td><td class="text-nowrap">@JalaliDate.Format(request.EndDate)</td><td>@request.Hours.ToString("0.##")</td><td>
+            <form method="post" asp-page-handler="Decide" class="d-flex gap-2"><input name="id" type="hidden" value="@request.Id" /><input name="version" type="hidden" value="@Convert.ToBase64String(request.RowVersion)" /><input name="pageNumber" type="hidden" value="@requests.Page" /><button name="decision" value="Approve" type="submit" class="btn btn-sm btn-primary" aria-label="تأیید مرخصی @request.EmployeeName">تأیید</button><button name="decision" value="Reject" type="submit" class="btn btn-sm btn-outline-danger" aria-label="رد مرخصی @request.EmployeeName">رد</button></form>
+        </td></tr>
+    }
+    </tbody></table></div>
+    <div class="card-footer bg-white d-flex justify-content-between align-items-center"><span class="small text-muted">@requests.Total درخواست</span><nav class="d-flex gap-2" aria-label="صفحات مرخصی تیم">
+        @if (requests.Page > 1) { <a asp-route-pageNumber="@(requests.Page - 1)" class="btn btn-sm btn-outline-secondary">قبلی</a> }
+        @if (requests.Page * requests.PageSize < requests.Total) { <a asp-route-pageNumber="@(requests.Page + 1)" class="btn btn-sm btn-outline-secondary">بعدی</a> }
+    </nav></div>
+}
+</section>

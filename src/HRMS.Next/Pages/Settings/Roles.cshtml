@@ -1,0 +1,46 @@
+@page "/Settings/Roles"
+@model HRMS.Next.Pages.Settings.RolesModel
+@{ ViewData["Title"] = "نقش‌ها و دسترسی‌ها"; }
+@section Hero {
+    <div class="d-flex justify-content-between gap-3 flex-wrap align-items-center"><h1>نقش‌ها و دسترسی‌ها</h1><a asp-page="Index" class="btn btn-hero"><i class="bi bi-arrow-right"></i> تنظیمات</a></div>
+}
+<p class="text-muted small">مجوزهای هر نقش در همین شرکت اعمال می‌شود. تغییر یا غیرفعال‌سازی نقش، ورود دوبارهٔ اعضای آن را لازم می‌کند.</p>
+<div asp-validation-summary="All" class="text-danger" role="alert"></div>
+<div class="row g-3">
+    <div class="col-xl-8"><section class="card"><div class="card-header">نقش‌های شرکت</div>
+    @if (Model.Roles is { } roles)
+    {
+        <div class="table-responsive"><table class="table table-striped align-middle mb-0"><caption class="visually-hidden">نقش‌های شرکت و مجوزها</caption><thead><tr><th scope="col">نقش</th><th scope="col">مجوزها</th><th scope="col">اعضا</th><th scope="col">وضعیت</th><th scope="col">عملیات</th></tr></thead><tbody>
+        @if (roles.Rows.Count == 0) { <tr><td colspan="5" class="text-muted p-4">هنوز نقشی تعریف نشده است.</td></tr> }
+        @foreach (var role in roles.Rows)
+        {
+            <tr data-role-id="@role.Id"><td><strong>@role.Name</strong><div class="small text-muted">@role.Description</div></td><td>
+                @if (role.CanReadEmployees) { <span class="d-block small">مشاهده کارکنان</span> }
+                @if (role.CanWriteEmployees) { <span class="d-block small">ویرایش کارکنان</span> }
+                @if (role.CanManageTeam) { <span class="d-block small">سرپرستی تیم</span> }
+                @if (!role.CanReadEmployees && !role.CanWriteEmployees && !role.CanManageTeam) { <span class="small text-muted">بدون مجوز اضافی</span> }
+            </td><td>@role.UserCount</td><td><span class="badge text-bg-@(role.Active ? "success" : "secondary")">@(role.Active ? "فعال" : "غیرفعال")</span></td><td><a asp-route-edit="@role.Id" asp-route-pageNumber="@roles.Page" class="btn btn-sm btn-outline-secondary" aria-label="ویرایش نقش @role.Name">ویرایش</a></td></tr>
+        }
+        </tbody></table></div>
+        <div class="card-footer bg-white d-flex justify-content-between align-items-center"><span class="small text-muted">@roles.Total نقش</span><nav class="d-flex gap-2" aria-label="صفحات نقش‌ها">
+            @if (roles.Page > 1) { <a asp-route-pageNumber="@(roles.Page - 1)" class="btn btn-sm btn-outline-secondary">قبلی</a> }
+            @if (roles.Page * roles.PageSize < roles.Total) { <a asp-route-pageNumber="@(roles.Page + 1)" class="btn btn-sm btn-outline-secondary">بعدی</a> }
+        </nav></div>
+    }
+    </section></div>
+    <div class="col-xl-4"><section class="card"><div class="card-header">@(Model.EditId == 0 ? "افزودن نقش" : "ویرایش نقش")</div><div class="card-body">
+        <form method="post" asp-page-handler="Save">
+            <input asp-for="EditId" type="hidden" /><input asp-for="Version" type="hidden" /><input type="hidden" name="pageNumber" value="@(Model.Roles?.Page ?? 1)" />
+            <div class="mb-3"><label asp-for="Name" class="form-label">نام نقش</label><input asp-for="Name" class="form-control" maxlength="100" required /></div>
+            <div class="mb-3"><label asp-for="Description" class="form-label">توضیح</label><textarea asp-for="Description" class="form-control" maxlength="500" rows="2"></textarea></div>
+            <fieldset class="mb-3"><legend class="fs-6">مجوزها</legend>
+                <label class="d-block mb-2"><input asp-for="CanRead" /> مشاهده کارکنان شرکت</label>
+                <label class="d-block mb-2"><input asp-for="CanWrite" /> ویرایش کارکنان شرکت</label>
+                <label class="d-block mb-2"><input asp-for="CanManageTeam" /> سرپرستی تیم و بررسی مرخصی</label>
+                <p class="form-text mb-0">سرپرست به پروندهٔ شغلی افراد تحت مدیریت مستقیم و درخواست مرخصی در انتظار آن‌ها دسترسی دارد. حساب سرپرست باید به پروندهٔ کارمند متصل باشد.</p>
+            </fieldset>
+            <label class="d-block mb-3"><input asp-for="Active" /> نقش فعال</label>
+            <div class="d-flex gap-2"><button class="btn btn-primary" type="submit">ذخیره نقش</button>@if (Model.EditId != 0) { <a asp-page="Roles" class="btn btn-outline-secondary">انصراف</a> }</div>
+        </form>
+    </div></section><p class="small text-muted mt-3">نقش را از <a asp-page="Users">حساب‌های کاربری</a> به اعضا اختصاص دهید.</p></div>
+</div>

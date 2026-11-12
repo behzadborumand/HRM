@@ -121,7 +121,7 @@ try {
         NewUsername = $memberUsername; NewPassword = $memberPassword; NewEmployeeId = $employeeId
         NewCanRead = 'false'; __RequestVerificationToken = $accountToken
     }
-    if ($createdAccount.Content -notmatch $memberUsername -or $createdAccount.Content -notmatch "پروندهٔ $employeeId") { throw 'Employee-linked account was not created.' }
+    if ($createdAccount.Content -notmatch $memberUsername -or $createdAccount.Content -notmatch "پروندهٔ $employeeId") { $messages = [regex]::Matches($createdAccount.Content,'<li>[^<]*</li>') | ForEach-Object { [Net.WebUtility]::HtmlDecode($_.Value) }; throw ('Employee-linked account was not created: ' + ($messages -join ' ')) }
     $memberLogin = Invoke-WebRequest "$baseUrl/Login" -SessionVariable memberSession -UseBasicParsing
     $memberToken = Get-FormToken $memberLogin.Content
     $memberHome = Invoke-WebRequest "$baseUrl/Login" -Method Post -WebSession $memberSession -UseBasicParsing -Body @{
@@ -425,6 +425,7 @@ try {
         Version=$photoVersion; __RequestVerificationToken=(Get-FormToken $photoProfile.Content)
     }
     if ($photoDeleted.Content -match '<img[^>]+/Photo') { throw 'Deleted photo is still rendered.' }
+    & (Join-Path $PSScriptRoot 'TestTeamWorkflow.ps1') -BaseUrl $baseUrl -AdminSession $webSession -CompanyName $companyName -EmployeeId $employeeId -PeerId $peerId -PolicyId $policyId -DepartmentId $departmentId -ScreenshotsDirectory $ScreenshotsDirectory
     if ($ScreenshotsDirectory) {
         $visualFixture = @"
 SET ANSI_NULLS ON; SET ANSI_PADDING ON; SET ANSI_WARNINGS ON; SET ARITHABORT ON; SET CONCAT_NULL_YIELDS_NULL ON; SET NUMERIC_ROUNDABORT OFF; SET QUOTED_IDENTIFIER ON;
@@ -488,7 +489,7 @@ VALUES(@company,@employee,@course,'2026-10-01','2026-10-31');
 }
 finally {
     if ($process) { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue }
-    $cleanup = "SET ANSI_NULLS ON; SET ANSI_PADDING ON; SET ANSI_WARNINGS ON; SET ARITHABORT ON; SET CONCAT_NULL_YIELDS_NULL ON; SET NUMERIC_ROUNDABORT OFF; SET QUOTED_IDENTIFIER ON; DECLARE @id int=(SELECT Id FROM organization.Companies WHERE Name='$companyName'); DELETE FROM training.Assignments WHERE CompanyId=@id; DELETE FROM training.Courses WHERE CompanyId=@id; DELETE FROM leave.Requests WHERE CompanyId=@id; DELETE FROM leave.Balances WHERE CompanyId=@id; DELETE FROM leave.Policies WHERE CompanyId=@id; DELETE FROM documents.EmployeeDocuments WHERE CompanyId=@id; DELETE FROM documents.DocumentAudits WHERE CompanyId=@id; DELETE FROM personnel.EmployeeAudits WHERE EmployeeId IN (SELECT Id FROM personnel.Employees WHERE CompanyId=@id); DELETE FROM personnel.EmployeePhotos WHERE CompanyId=@id; DELETE FROM personnel.EmployeeJobs WHERE CompanyId=@id; DELETE FROM personnel.Employees WHERE CompanyId=@id; DELETE FROM access.Audits WHERE CompanyId=@id; DELETE FROM access.Users WHERE CompanyId=@id; DELETE FROM organization.OrganizationLinks WHERE CompanyId=@id; DELETE FROM organization.JobTitles WHERE CompanyId=@id; DELETE FROM organization.Departments WHERE CompanyId=@id; DELETE FROM organization.Companies WHERE Id=@id;"
+    $cleanup = "SET ANSI_NULLS ON; SET ANSI_PADDING ON; SET ANSI_WARNINGS ON; SET ARITHABORT ON; SET CONCAT_NULL_YIELDS_NULL ON; SET NUMERIC_ROUNDABORT OFF; SET QUOTED_IDENTIFIER ON; DECLARE @id int=(SELECT Id FROM organization.Companies WHERE Name='$companyName'); DELETE FROM training.Assignments WHERE CompanyId=@id; DELETE FROM training.Courses WHERE CompanyId=@id; DELETE FROM leave.Requests WHERE CompanyId=@id; DELETE FROM leave.Balances WHERE CompanyId=@id; DELETE FROM leave.Policies WHERE CompanyId=@id; DELETE FROM documents.EmployeeDocuments WHERE CompanyId=@id; DELETE FROM documents.DocumentAudits WHERE CompanyId=@id; DELETE FROM personnel.EmployeeAudits WHERE EmployeeId IN (SELECT Id FROM personnel.Employees WHERE CompanyId=@id); DELETE FROM personnel.EmployeePhotos WHERE CompanyId=@id; DELETE FROM personnel.EmployeeJobs WHERE CompanyId=@id; DELETE FROM personnel.Employees WHERE CompanyId=@id; DELETE FROM access.Audits WHERE CompanyId=@id; DELETE FROM access.Users WHERE CompanyId=@id; DELETE FROM access.RoleAudits WHERE CompanyId=@id; DELETE FROM access.Roles WHERE CompanyId=@id; DELETE FROM organization.OrganizationLinks WHERE CompanyId=@id; DELETE FROM organization.JobTitles WHERE CompanyId=@id; DELETE FROM organization.Departments WHERE CompanyId=@id; DELETE FROM organization.Companies WHERE Id=@id;"
     $cleanupOutput = sqlcmd -S . -E -C -b -d $Database -Q $cleanup 2>&1
     $cleanupExit = $LASTEXITCODE
     Remove-Item Env:ConnectionStrings__HrmsNext,Env:HRMS_BOOTSTRAP_USER,Env:HRMS_BOOTSTRAP_PASSWORD,Env:HRMS_BOOTSTRAP_COMPANY,Env:ASPNETCORE_ENVIRONMENT -ErrorAction SilentlyContinue

@@ -15,6 +15,8 @@ namespace HRMS.Next.Pages.Employees;
 public sealed class DetailsModel(AccessService access, EmployeeService employees, IOrganizationDirectory organization, DocumentService documents, EmployeeJobService jobs, EmployeeProfileDirectory directory, EmployeePhotoService photos, EmployeePayService pay, IEmployeeLeaveProfile leave, IEmployeeTrainingProfile training, TimeProvider clock) : PageModel
 {
     public Employee? Employee { get; private set; }
+    public bool CanViewDocuments { get; private set; }
+    public bool CanUseTeam { get; private set; }
     public bool CanWrite { get; private set; }
     public bool CanBrowseEmployees { get; private set; }
     public bool IsOwnProfile { get; private set; }
@@ -44,18 +46,20 @@ public sealed class DetailsModel(AccessService access, EmployeeService employees
     public async Task<IActionResult> OnGetAsync(int id, CancellationToken ct, int leavePage = 1, int trainingPage = 1)
     {
         var actor = await access.GetActiveAsync(User, ct);
-        if (actor is null || !AccessRules.CanReadEmployee(actor, actor.CompanyId, id)) return Forbid();
-        Employee = await employees.GetAsync(actor, id, ct);
+        if (actor is null) return Forbid();
+        try { Employee = await employees.GetAsync(actor, id, ct); } catch (UnauthorizedAccessException) { return Forbid(); }
         CanWrite = AccessRules.CanWrite(actor, actor.CompanyId);
         CanBrowseEmployees = AccessRules.CanRead(actor, actor.CompanyId);
         IsOwnProfile = actor.EmployeeId == id;
+        CanUseTeam = AccessRules.CanUseTeam(actor);
         if (Employee is not null)
         {
             DepartmentNames = (await organization.DepartmentsAsync(actor.CompanyId, ct))
                 .ToDictionary(x => x.Id, x => x.Name);
             DepartmentName = DepartmentLabel(Employee.DepartmentId);
             JobHistory = await jobs.HistoryAsync(actor, id, ct);
-            Documents = await documents.ListAsync(actor, id, 1, 20, ct);
+            CanViewDocuments = AccessRules.CanReadEmployee(actor, actor.CompanyId, id);
+            if (CanViewDocuments) Documents = await documents.ListAsync(actor, id, 1, 20, ct);
             CanViewPay = AccessRules.CanReadPay(actor, actor.CompanyId, id);
             if (CanViewPay) PayHistory = await pay.HistoryAsync(actor, id, ct);
             CanManageActivity = actor.IsAdmin;

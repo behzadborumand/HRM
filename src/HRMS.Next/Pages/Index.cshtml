@@ -78,6 +78,11 @@
                     <a asp-page="/My/Leave" class="home-shortcut"><i class="bi bi-calendar-plus"></i><span><strong>مرخصی من</strong><small>ثبت و لغو درخواست</small></span><i class="bi bi-chevron-left home-shortcut-arrow"></i></a>
                     <a asp-page="/Employees/Details" asp-route-id="@ownId" asp-fragment="tab-training" class="home-shortcut"><i class="bi bi-mortarboard"></i><span><strong>آموزش‌های من</strong><small>دوره‌ها و سررسیدها</small></span><i class="bi bi-chevron-left home-shortcut-arrow"></i></a>
                 }
+                @if (Model.CanUseTeam)
+                {
+                    <a asp-page="/Team/Index" class="home-shortcut"><i class="bi bi-people"></i><span><strong>تیم من</strong><small>همکاران تحت مدیریت مستقیم</small></span><i class="bi bi-chevron-left home-shortcut-arrow"></i></a>
+                    <a asp-page="/Team/Leave" class="home-shortcut"><i class="bi bi-calendar-check"></i><span><strong>مرخصی تیم</strong><small>بررسی درخواست‌های در انتظار</small></span><i class="bi bi-chevron-left home-shortcut-arrow"></i></a>
+                }
                 @if (Model.CanBrowsePeople)
                 {
                     <a asp-page="/Employees/Index" class="home-shortcut"><i class="bi bi-people"></i><span><strong>کارکنان</strong><small>جستجو و مشاهدهٔ پرونده‌ها</small></span><i class="bi bi-chevron-left home-shortcut-arrow"></i></a>

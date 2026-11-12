@@ -85,6 +85,13 @@ try {
     $passwordJson=$Password | ConvertTo-Json -Compress
     Evaluate ("document.querySelector('[name=Username]').value="+$userJson+";document.querySelector('[name=Password]').value="+$passwordJson+";document.querySelector('form[method=post]').requestSubmit();true") | Out-Null
     Wait-Expression "location.pathname==='/' && !!document.querySelector('.home-workspace')"
+    Invoke-Cdp 'Page.navigate' @{url=($BaseUrl+'/Settings/Roles')} | Out-Null
+    Wait-Expression "!!document.querySelector('[name=Name]') && document.readyState==='complete'"
+    Capture 'roles-desktop.png'
+    Invoke-Cdp 'Emulation.setDeviceMetricsOverride' @{width=390;height=844;deviceScaleFactor=1;mobile=$true} | Out-Null
+    if(!(Evaluate "document.documentElement.scrollWidth<=innerWidth+1")){throw 'Roles mobile overflow.'}
+    Capture 'roles-mobile.png'
+    Invoke-Cdp 'Emulation.setDeviceMetricsOverride' @{width=1280;height=850;deviceScaleFactor=1;mobile=$false} | Out-Null
     Invoke-Cdp 'Page.navigate' @{url=($BaseUrl+'/Employees/'+$EmployeeId)} | Out-Null
     Wait-Expression "!!document.querySelector('#profile-job-tab') && document.readyState==='complete'"
     Capture 'profile-desktop.png'
@@ -109,7 +116,7 @@ try {
     Wait-Expression "location.search.includes('trainingPage=2') && !!document.querySelector('#tab-training.active') && document.readyState==='complete'"
     Evaluate "document.querySelector('#profile-leave-tab').click();document.querySelector('[data-activity-page=leave-next]').click();true" | Out-Null
     Wait-Expression "location.search.includes('leavePage=2') && location.search.includes('trainingPage=2') && !!document.querySelector('#tab-leave.active') && document.readyState==='complete'"
-    if (!(Evaluate "document.querySelectorAll('#tab-leave [data-profile-request-id]').length===7 && document.querySelectorAll('#tab-training [data-profile-assignment-id]').length===6")) { throw 'Profile activity pagination did not retain both page selections.' }
+    if (!(Evaluate "document.querySelectorAll('#tab-leave [data-profile-request-id]').length===8 && document.querySelectorAll('#tab-training [data-profile-assignment-id]').length===6")) { throw 'Profile activity pagination did not retain both page selections.' }
     Invoke-Cdp 'Page.navigate' @{url=($BaseUrl+'/Employees/'+$EmployeeId)} | Out-Null
     Wait-Expression "!!document.querySelector('#tab-job.active') && document.readyState==='complete'"
     Evaluate "document.querySelector('#profile-job-tab').click();true" | Out-Null
