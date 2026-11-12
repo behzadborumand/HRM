@@ -43,7 +43,7 @@ public sealed class EmployeeService(PersonnelDbContext db, IOrganizationDirector
     }
     public async Task<Employee?> GetAsync(ActorScope actor, int id, CancellationToken ct)
     {
-        if (!AccessRules.CanRead(actor, actor.CompanyId)) throw new UnauthorizedAccessException();
+        if (!AccessRules.CanReadEmployee(actor, actor.CompanyId, id)) throw new UnauthorizedAccessException();
         return await db.Employees.AsNoTracking().SingleOrDefaultAsync(x => x.Id == id && x.CompanyId == actor.CompanyId, ct);
     }
 

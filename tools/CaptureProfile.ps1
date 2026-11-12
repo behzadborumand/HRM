@@ -4,7 +4,9 @@
     [Parameter(Mandatory=$true)][string]$Password,
     [Parameter(Mandatory=$true)][int]$EmployeeId,
     [Parameter(Mandatory=$true)][string]$OutputDirectory,
-    [int]$DebugPort = 52329
+    [int]$DebugPort = 52329,
+    [string]$SelfUsername,
+    [string]$SelfPassword
 )
 $ErrorActionPreference='Stop'
 if ([Uri]$BaseUrl -and ([Uri]$BaseUrl).Host -notin @('localhost','127.0.0.1')) { throw 'Visual smoke is restricted to localhost.' }
@@ -107,7 +109,7 @@ try {
     Wait-Expression "location.search.includes('trainingPage=2') && !!document.querySelector('#tab-training.active') && document.readyState==='complete'"
     Evaluate "document.querySelector('#profile-leave-tab').click();document.querySelector('[data-activity-page=leave-next]').click();true" | Out-Null
     Wait-Expression "location.search.includes('leavePage=2') && location.search.includes('trainingPage=2') && !!document.querySelector('#tab-leave.active') && document.readyState==='complete'"
-    if (!(Evaluate "document.querySelectorAll('#tab-leave [data-profile-request-id]').length===6 && document.querySelectorAll('#tab-training [data-profile-assignment-id]').length===6")) { throw 'Profile activity pagination did not retain both page selections.' }
+    if (!(Evaluate "document.querySelectorAll('#tab-leave [data-profile-request-id]').length===7 && document.querySelectorAll('#tab-training [data-profile-assignment-id]').length===6")) { throw 'Profile activity pagination did not retain both page selections.' }
     Invoke-Cdp 'Page.navigate' @{url=($BaseUrl+'/Employees/'+$EmployeeId)} | Out-Null
     Wait-Expression "!!document.querySelector('#tab-job.active') && document.readyState==='complete'"
     Evaluate "document.querySelector('#profile-job-tab').click();true" | Out-Null
@@ -130,6 +132,39 @@ try {
     Evaluate "document.querySelector('.profile-photo-trigger').click();true" | Out-Null
     Wait-Expression "document.querySelector('#photo-modal').classList.contains('show') && getComputedStyle(document.querySelector('#photo-modal')).opacity === '1'"
     Capture 'profile-photo-dialog.png'
+    if ($SelfUsername) {
+        Evaluate "document.querySelector('#photo-modal [data-bs-dismiss=modal]').click();true" | Out-Null
+        Wait-Expression "!document.querySelector('#photo-modal').classList.contains('show')"
+        Evaluate "document.querySelector('form[action=`"/Logout`"]').requestSubmit();true" | Out-Null
+        Wait-Expression "location.pathname==='/Login' && !!document.querySelector('[name=Username]')"
+        $selfUserJson=$SelfUsername | ConvertTo-Json -Compress
+        $selfPasswordJson=$SelfPassword | ConvertTo-Json -Compress
+        Evaluate ("document.querySelector('[name=Username]').value="+$selfUserJson+";document.querySelector('[name=Password]').value="+$selfPasswordJson+";document.querySelector('form[method=post]').requestSubmit();true") | Out-Null
+        Wait-Expression "location.pathname==='/' && !!document.querySelector('.home-personal-leave')"
+        Invoke-Cdp 'Emulation.setDeviceMetricsOverride' @{width=1280;height=850;deviceScaleFactor=1;mobile=$false} | Out-Null
+        Capture 'self-home.png'
+        if (Evaluate "!!document.querySelector('form[role=search]')") { throw 'Owner-only browser sees directory search.' }
+        Invoke-Cdp 'Page.navigate' @{url=($BaseUrl+'/MyInfo')} | Out-Null
+        Wait-Expression "location.pathname==='/Employees/$EmployeeId' && !!document.querySelector('#profile-job-tab') && document.readyState==='complete'"
+        if (Evaluate "!!document.querySelector('.profile-neighbours,.profile-photo-trigger,a[aria-label=`"فهرست کارکنان`"]')") { throw 'Owner-only profile has inaccessible directory/write controls.' }
+        Evaluate "document.querySelector('#profile-training-tab').click();true" | Out-Null
+        Wait-Expression "!!document.querySelector('#tab-training.active')"
+        Capture 'self-training.png'
+        Invoke-Cdp 'Emulation.setDeviceMetricsOverride' @{width=390;height=844;deviceScaleFactor=1;mobile=$true} | Out-Null
+        Wait-Expression "(() => { const tab=document.querySelector('.profile-tabs [aria-selected=true]').getBoundingClientRect(); const strip=document.querySelector('.profile-tabs').getBoundingClientRect(); return tab.left>=strip.left-1 && tab.right<=strip.right+1; })()"
+        Capture 'self-profile-mobile.png'
+        if(!(Evaluate "document.documentElement.scrollWidth<=innerWidth+1")){throw 'Owner profile mobile overflow.'}
+        Invoke-Cdp 'Page.navigate' @{url=($BaseUrl+'/My/Leave')} | Out-Null
+        Wait-Expression "!!document.querySelector('#own-policy') && document.readyState==='complete'"
+        Evaluate "document.querySelector('#own-policy').selectedIndex=1;document.querySelector('#own-start').value='1403/04/10';document.querySelector('#own-end').value='1403/04/10';document.querySelector('#own-reason').value='Browser self-service';document.querySelector('form[action*=Request]').requestSubmit();true" | Out-Null
+        Wait-Expression "!!document.querySelector('[role=status]') && document.querySelector('[role=status]').textContent.includes('ثبت شد')"
+        if(!(Evaluate "document.documentElement.scrollWidth<=innerWidth+1")){throw 'Personal Leave mobile overflow.'}
+        Capture 'self-leave-mobile.png'
+        Invoke-Cdp 'Emulation.setDeviceMetricsOverride' @{width=1280;height=850;deviceScaleFactor=1;mobile=$false} | Out-Null
+        Capture 'self-leave.png'
+        Evaluate "Array.from(document.querySelectorAll('[data-own-request-id]')).find(row => row.textContent.includes('۱۴۰۳/۰۴/۱۰')).querySelector('form').requestSubmit();true" | Out-Null
+        Wait-Expression "!!document.querySelector('[role=status]') && document.querySelector('[role=status]').textContent.includes('لغو شد')"
+    }
     if($script:browserErrors.Count){throw ("JavaScript errors: "+($script:browserErrors -join ', '))}
     Write-Output ("Profile desktop/mobile, keyboard tabs and photo dialog: PASS; screenshots="+$OutputDirectory)
 } finally {

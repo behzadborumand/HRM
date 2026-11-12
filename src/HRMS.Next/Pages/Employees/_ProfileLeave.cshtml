@@ -12,7 +12,8 @@
     <section class="card" aria-labelledby="leave-balances-title">
         <div class="card-header">
             <h3 id="leave-balances-title"><i class="bi bi-hourglass-split" aria-hidden="true"></i> ماندهٔ مرخصی</h3>
-            @if (Model.CanManageActivity) { <a asp-page="/Leave/Index" class="profile-update-link">مدیریت مرخصی <i class="bi bi-chevron-left" aria-hidden="true"></i></a> }
+            @if (Model.IsOwnProfile) { <a asp-page="/My/Leave" class="profile-update-link"><i class="bi bi-calendar-plus" aria-hidden="true"></i> درخواست مرخصی من</a> }
+            else if (Model.CanManageActivity) { <a asp-page="/Leave/Index" class="profile-update-link">مدیریت مرخصی <i class="bi bi-chevron-left" aria-hidden="true"></i></a> }
         </div>
         <div class="card-body">
             <p class="profile-activity-note">سال حساب مانده: @Fa(leave.Year.ToString()) میلادی. همهٔ مقادیر به ساعت است؛ ماندهٔ قابل استفاده پس از کسر درخواست‌های در انتظار محاسبه می‌شود.</p>

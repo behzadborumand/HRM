@@ -83,7 +83,7 @@ public sealed class EmployeeJobService(PersonnelDbContext db, IOrganizationDirec
 
     public async Task<IReadOnlyList<JobHistoryRow>> HistoryAsync(ActorScope actor, int employeeId, CancellationToken ct)
     {
-        if (!AccessRules.CanRead(actor, actor.CompanyId)) throw new UnauthorizedAccessException();
+        if (!AccessRules.CanReadEmployee(actor, actor.CompanyId, employeeId)) throw new UnauthorizedAccessException();
         if (!await db.Employees.AsNoTracking().AnyAsync(x => x.Id == employeeId && x.CompanyId == actor.CompanyId, ct))
             return [];
         return await db.EmployeeJobs.AsNoTracking()

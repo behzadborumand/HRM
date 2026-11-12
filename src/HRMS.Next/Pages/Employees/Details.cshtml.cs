@@ -11,10 +11,13 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 namespace HRMS.Next.Pages.Employees;
 
 [Authorize]
+[ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 public sealed class DetailsModel(AccessService access, EmployeeService employees, IOrganizationDirectory organization, DocumentService documents, EmployeeJobService jobs, EmployeeProfileDirectory directory, EmployeePhotoService photos, EmployeePayService pay, IEmployeeLeaveProfile leave, IEmployeeTrainingProfile training, TimeProvider clock) : PageModel
 {
     public Employee? Employee { get; private set; }
     public bool CanWrite { get; private set; }
+    public bool CanBrowseEmployees { get; private set; }
+    public bool IsOwnProfile { get; private set; }
     public string? DepartmentName { get; private set; }
     public DocumentPage? Documents { get; private set; }
     public IReadOnlyList<JobHistoryRow> JobHistory { get; private set; } = [];
@@ -41,9 +44,11 @@ public sealed class DetailsModel(AccessService access, EmployeeService employees
     public async Task<IActionResult> OnGetAsync(int id, CancellationToken ct, int leavePage = 1, int trainingPage = 1)
     {
         var actor = await access.GetActiveAsync(User, ct);
-        if (actor is null || !AccessRules.CanRead(actor, actor.CompanyId)) return Forbid();
+        if (actor is null || !AccessRules.CanReadEmployee(actor, actor.CompanyId, id)) return Forbid();
         Employee = await employees.GetAsync(actor, id, ct);
         CanWrite = AccessRules.CanWrite(actor, actor.CompanyId);
+        CanBrowseEmployees = AccessRules.CanRead(actor, actor.CompanyId);
+        IsOwnProfile = actor.EmployeeId == id;
         if (Employee is not null)
         {
             DepartmentNames = (await organization.DepartmentsAsync(actor.CompanyId, ct))
@@ -60,8 +65,11 @@ public sealed class DetailsModel(AccessService access, EmployeeService employees
                 TrainingProfile = await training.ReadAsync(actor, id, trainingPage, ct);
             }
             Photo = await photos.SummaryAsync(actor, id, ct);
-            Navigation = await directory.NavigationAsync(actor, id, ct);
-            DirectReports = await directory.DirectReportsAsync(actor, id, ct);
+            if (CanBrowseEmployees)
+            {
+                Navigation = await directory.NavigationAsync(actor, id, ct);
+                DirectReports = await directory.DirectReportsAsync(actor, id, ct);
+            }
             var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(clock.GetUtcNow(), TimeZoneInfo.FindSystemTimeZoneById("Iran Standard Time")).DateTime);
             EmploymentDays = ProfileDisplay.EmploymentDays(Employee.HireDate, Employee.TerminationDate, today);
         }

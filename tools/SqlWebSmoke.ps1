@@ -119,7 +119,7 @@ try {
     $memberPassword = [Guid]::NewGuid().ToString('N') + 'A1!'
     $createdAccount = Invoke-WebRequest "$baseUrl/Settings/Users?handler=Create" -Method Post -WebSession $webSession -UseBasicParsing -Body @{
         NewUsername = $memberUsername; NewPassword = $memberPassword; NewEmployeeId = $employeeId
-        NewCanRead = 'true'; __RequestVerificationToken = $accountToken
+        NewCanRead = 'false'; __RequestVerificationToken = $accountToken
     }
     if ($createdAccount.Content -notmatch $memberUsername -or $createdAccount.Content -notmatch "پروندهٔ $employeeId") { throw 'Employee-linked account was not created.' }
     $memberLogin = Invoke-WebRequest "$baseUrl/Login" -SessionVariable memberSession -UseBasicParsing
@@ -128,6 +128,9 @@ try {
         Username = $memberUsername; Password = $memberPassword; __RequestVerificationToken = $memberToken
     }
     if ($memberHome.BaseResponse.ResponseUri.AbsolutePath -ne '/' -or $memberHome.Content -notmatch $memberUsername) { throw 'Employee-linked account could not sign in.' }    $memberProfile = Invoke-WebRequest "$baseUrl$profilePath" -WebSession $memberSession -UseBasicParsing
+    try { $myInfo = Invoke-WebRequest "$baseUrl/MyInfo" -WebSession $memberSession -UseBasicParsing } catch { throw 'MyInfo self-service route is unavailable.' }
+    if ($myInfo.BaseResponse.ResponseUri.AbsolutePath -ne $profilePath -or $myInfo.Content -notmatch 'data-profile-leave') { throw 'MyInfo did not resolve the linked employee without directory grants.' }
+    if ($memberHome.Content -match 'role="search"|href="/Employees"') { throw 'Owner-only account sees the company directory controls.' }
     if ($memberProfile.Content -notmatch 'data-profile-leave' -or $memberProfile.Content -notmatch 'data-profile-training') { throw 'Own Leave/Training profile tabs were not rendered.' }
     if ($memberProfile.Content -notmatch 'data-pay-history') { throw 'Own pay-history tab was not available to the linked employee.' }
     $readerUsername = 'smoke_reader_' + $suffix.Substring(0, 10)
@@ -278,6 +281,59 @@ try {
     if ($readerActivityProfile.Content -match 'data-profile-request-id|data-profile-assignment-id|Annual smoke|Safety smoke edited') {
         throw 'Private employee activity leaked to a general reader.'
     }
+    $peerCreate = Invoke-WebRequest "$baseUrl/Employees/Create" -WebSession $webSession -UseBasicParsing
+    $peerResult = Invoke-WebRequest "$baseUrl/Employees/Create" -Method Post -WebSession $webSession -UseBasicParsing -Body @{
+        'Form.EmployeeNumber'=($employeeNumber+'_P'); 'Form.FirstName'='Private'; 'Form.LastName'='Peer'
+        'Form.DepartmentId'=$departmentId; 'Form.HireDateJalali'='1403/01/01'; __RequestVerificationToken=(Get-FormToken $peerCreate.Content)
+    }
+    $peerPath=$peerResult.BaseResponse.ResponseUri.AbsolutePath
+    $peerId=[regex]::Match($peerPath,'/Employees/([0-9]+)$').Groups[1].Value
+    if(!$peerId){throw 'Self-service peer fixture was not created.'}
+    foreach($deniedPath in @('/Employees', "$peerPath", "$peerPath/Photo", "$peerPath/Documents", "$profilePath/Edit", '/Leave', '/Training', '/Settings/Users', '/Reports')) {
+        $denied = Invoke-WebRequest ($baseUrl+$deniedPath) -WebSession $memberSession -UseBasicParsing
+        if($denied.BaseResponse.ResponseUri.AbsolutePath -ne '/Denied'){throw "Owner accessed a forbidden route: $deniedPath"}
+    }
+    foreach($unlinkedPath in @('/MyInfo','/My/Leave')) {
+        $denied = Invoke-WebRequest ($baseUrl+$unlinkedPath) -WebSession $readerSession -UseBasicParsing
+        if($denied.BaseResponse.ResponseUri.AbsolutePath -ne '/Denied'){throw 'Unlinked reader accessed employee self-service.'}
+    }
+    $ownLeave = Invoke-WebRequest "$baseUrl/My/Leave" -WebSession $memberSession -UseBasicParsing
+    if($ownLeave.Content -notmatch 'data-own-leave'){throw 'Personal Leave form was not rendered.'}
+    $ownToken=Get-FormToken $ownLeave.Content
+    $invalidOwn=Invoke-WebRequest "$baseUrl/My/Leave?handler=Request" -Method Post -WebSession $memberSession -UseBasicParsing -Body @{
+        PolicyId=$policyId; StartDateJalali='bad'; EndDateJalali='bad'; __RequestVerificationToken=$ownToken
+    }
+    if([Net.WebUtility]::HtmlDecode($invalidOwn.Content) -notmatch 'تاریخ شروع و پایان شمسی معتبر'){throw 'Personal Leave invalid dates were not explained in Persian.'}
+    $ownRequested=Invoke-WebRequest "$baseUrl/My/Leave?handler=Request" -Method Post -WebSession $memberSession -UseBasicParsing -Body @{
+        PolicyId=$policyId; EmployeeId=$peerId; CompanyId='2147483647'; StartDateJalali='1403/03/01'; EndDateJalali='1403/03/01'; Reason='Own smoke'; __RequestVerificationToken=$ownToken
+    }
+    $ownRequestId=[regex]::Match($ownRequested.Content,'data-own-request-id="([0-9]+)"').Groups[1].Value
+    $ownVersion=[Net.WebUtility]::HtmlDecode([regex]::Match($ownRequested.Content,'name="Version" value="([^"]+)"').Groups[1].Value)
+    if(!$ownRequestId -or !$ownVersion){throw 'Own request or cancellation version was not rendered.'}
+    $peerAdminProfile=Invoke-WebRequest "$baseUrl$peerPath" -WebSession $webSession -UseBasicParsing
+    if($peerAdminProfile.Content -match ('data-profile-request-id="'+$ownRequestId+'"')){throw 'Forged EmployeeId changed another employee.'}
+    $ownProfile=Invoke-WebRequest "$baseUrl$profilePath" -WebSession $memberSession -UseBasicParsing
+    if($ownProfile.Content -notmatch ('data-profile-request-id="'+$ownRequestId+'"')){throw 'Request was not attached to the authenticated employee.'}
+    $approveDenied=Invoke-WebRequest "$baseUrl/Leave?handler=Approve" -Method Post -WebSession $memberSession -UseBasicParsing -Body @{
+        RequestId=$ownRequestId; __RequestVerificationToken=$ownToken
+    }
+    if($approveDenied.BaseResponse.ResponseUri.AbsolutePath -ne '/Denied'){throw 'Owner approved a Leave request.'}
+    $stale=Invoke-WebRequest "$baseUrl/My/Leave?handler=Cancel" -Method Post -WebSession $memberSession -UseBasicParsing -Body @{
+        RequestId=$ownRequestId; Version='AA=='; __RequestVerificationToken=$ownToken
+    }
+    if($stale.Content -notmatch ('data-own-request-id="'+$ownRequestId+'"') -or [Net.WebUtility]::HtmlDecode($stale.Content) -notmatch 'درخواست تغییر کرده'){throw 'Stale cancellation was not rejected.'}
+    $csrfStatus=$null
+    try { Invoke-WebRequest "$baseUrl/My/Leave?handler=Cancel" -Method Post -WebSession $memberSession -UseBasicParsing -Body @{ RequestId=$ownRequestId;Version=$ownVersion } | Out-Null }
+    catch { if($_.Exception.Response){$csrfStatus=[int]$_.Exception.Response.StatusCode}else{throw} }
+    if($csrfStatus -ne 400){throw 'Missing CSRF token was not rejected.'}
+    $ownCancelled=Invoke-WebRequest "$baseUrl/My/Leave?handler=Cancel" -Method Post -WebSession $memberSession -UseBasicParsing -Body @{
+        RequestId=$ownRequestId; Version=$ownVersion; __RequestVerificationToken=$ownToken
+    }
+    if($ownCancelled.Content -match ('data-own-request-id="'+$ownRequestId+'"')){throw 'Cancelled personal request remains in the pending list.'}
+    $replay=Invoke-WebRequest "$baseUrl/My/Leave?handler=Cancel" -Method Post -WebSession $memberSession -UseBasicParsing -Body @{
+        RequestId=$ownRequestId;Version=$ownVersion;__RequestVerificationToken=$ownToken
+    }
+    if([Net.WebUtility]::HtmlDecode($replay.Content) -notmatch 'درخواست تغییر کرده'){throw 'Replayed cancellation was accepted.'}
     $documentsPage = Invoke-WebRequest "$baseUrl/Employees/$employeeId/Documents" -WebSession $webSession -UseBasicParsing
     if ($documentsPage.Content -notmatch 'name="UploadFile"') { throw 'Documents page did not load.' }
     $documentToken = Get-FormToken $documentsPage.Content
@@ -316,6 +372,11 @@ try {
     $downloadFile = Join-Path $env:TEMP ('hrm-smoke-document-' + $suffix + '.pdf')
     try {
         Invoke-WebRequest "$baseUrl/Employees/$employeeId/Documents?handler=Download&id=$documentId" -WebSession $webSession -UseBasicParsing -OutFile $downloadFile | Out-Null
+        $ownDownloaded=Join-Path $env:TEMP ('hrm-owner-document-'+$suffix+'.pdf')
+        try {
+            Invoke-WebRequest "$baseUrl/Employees/$employeeId/Documents?handler=Download&id=$documentId" -WebSession $memberSession -UseBasicParsing -OutFile $ownDownloaded | Out-Null
+            if([Convert]::ToBase64String([IO.File]::ReadAllBytes($ownDownloaded)) -ne [Convert]::ToBase64String($fileBytes)){throw 'Owner private file download differs.'}
+        } finally { Remove-Item -LiteralPath $ownDownloaded -ErrorAction SilentlyContinue }
         if ([Convert]::ToBase64String([IO.File]::ReadAllBytes($downloadFile)) -ne [Convert]::ToBase64String($fileBytes)) {
             throw 'Private document download bytes differ from upload.'
         }
@@ -408,9 +469,21 @@ VALUES(@company,@employee,@course,'2026-10-01','2026-10-31');
             $fixtureOutput = sqlcmd -S . -E -C -b -d $Database -i $fixtureFile 2>&1
             if ($LASTEXITCODE -ne 0) { throw "Visual fixture failed: $fixtureOutput" }
         } finally { Remove-Item -LiteralPath $fixtureFile -ErrorAction SilentlyContinue }
-        & (Join-Path $PSScriptRoot 'CaptureProfile.ps1') -BaseUrl $baseUrl -Username $username -Password $password -EmployeeId $employeeId -OutputDirectory $ScreenshotsDirectory
+        & (Join-Path $PSScriptRoot 'CaptureProfile.ps1') -BaseUrl $baseUrl -Username $username -Password $password -EmployeeId $employeeId -OutputDirectory $ScreenshotsDirectory -SelfUsername $memberUsername -SelfPassword $memberPassword
     }
 
+    $accounts=Invoke-WebRequest "$baseUrl/Settings/Users" -WebSession $webSession -UseBasicParsing
+    $memberRow=[regex]::Matches($accounts.Content,'(?s)<tr data-user-id="[0-9]+">.*?</tr>') | Where-Object { $_.Value.Contains($memberUsername) } | Select-Object -First 1
+    $memberId=[regex]::Match($memberRow.Value,'data-user-id="([0-9]+)"').Groups[1].Value
+    $memberVersion=[Net.WebUtility]::HtmlDecode([regex]::Match($memberRow.Value,'name="version" value="([^"]+)"').Groups[1].Value)
+    if(!$memberId -or !$memberVersion){throw 'Self-service account version was not available.'}
+    $revoked=Invoke-WebRequest "$baseUrl/Settings/Users?handler=Update" -Method Post -WebSession $webSession -UseBasicParsing -Body @{
+        id=$memberId; employeeId=$employeeId; canRead='false'; canWrite='false'; isActive='false'; version=$memberVersion; __RequestVerificationToken=(Get-FormToken $accounts.Content)
+    }
+    foreach($revokedPath in @('/MyInfo','/My/Leave', $profilePath, "$profilePath/Photo", "$profilePath/Documents")) {
+        $revokedResponse=Invoke-WebRequest ($baseUrl+$revokedPath) -WebSession $memberSession -UseBasicParsing
+        if($revokedResponse.BaseResponse.ResponseUri.AbsolutePath -ne '/Login'){throw 'Deactivated account retained self-service access.'}
+    }
     Write-Output 'HTTPS login, Home, Settings, accounts, organization links, employee/photo, job change, Leave, Reports, Training, Documents: PASS'
 }
 finally {

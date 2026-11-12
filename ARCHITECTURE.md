@@ -6,7 +6,7 @@ The new application lives under `src/HRMS.Next`, with tests in `tests/HRMS.Next.
 
 | Module | Owns | Public contract |
 | --- | --- | --- |
-| Access | Users, roles, credentials, grants | Current actor and permission checks |
+| Access | Users, roles, credentials, grants | Current actor and company-directory vs employee-specific owner read checks |
 | Organization | Companies, departments, job titles, organization links | Company, department and active title lookup; scoped catalog and link commands |
 | Personnel | Employees, employment history, profile, private portrait bytes, custom fields | Employee lookup and scoped operations; separate admin/owner pay projection and authorized photo use cases |
 | Documents | Private files and metadata | Authorized document retrieval |
@@ -28,3 +28,5 @@ Company and department are owned by Organization. Employee identity and employme
 6. Data transfer is separate from runtime. It reads legacy `dbo` tables, writes new schemas, retains legacy IDs in mapping tables, and compares counts and relationships on every run.
 
 No deployment, production database change, or automatic migration is performed by the host.
+
+Employee-owned self-service reuses the existing module contracts and profile. MyInfo/My Leave derive identity from the current active account; no submitted employee/company ID chooses the personal target. Leave retains Serializable balance rules with bounded whole-operation SQL1205 recovery. See docs/SELF_SERVICE.md.

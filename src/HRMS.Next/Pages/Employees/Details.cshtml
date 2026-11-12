@@ -31,7 +31,8 @@
         <div class="profile-hero-actions">
             <div class="profile-actions">
                 @if (Model.CanWrite) { <a asp-page="Edit" asp-route-id="@employee.Id" class="btn btn-hero btn-sm"><i class="bi bi-pencil" aria-hidden="true"></i> ویرایش پرونده</a> }
-                <a asp-page="Index" class="btn btn-hero btn-sm" aria-label="فهرست کارکنان"><i class="bi bi-grid" aria-hidden="true"></i></a>
+                @if (Model.IsOwnProfile) { <a asp-page="/My/Leave" class="btn btn-hero btn-sm"><i class="bi bi-calendar-plus" aria-hidden="true"></i> درخواست مرخصی</a> }
+                @if (Model.CanBrowseEmployees) { <a asp-page="Index" class="btn btn-hero btn-sm" aria-label="فهرست کارکنان"><i class="bi bi-grid" aria-hidden="true"></i></a> }
             </div>
             @if (Model.Navigation is { } navigation)
             {
@@ -80,12 +81,15 @@
             </section>
             <section class="profile-aside-group">
                 <h2>مدیر مستقیم</h2>
-                @if (Model.CurrentJob?.ManagerEmployeeId is { } managerId)
+                @if (Model.CurrentJob?.ManagerEmployeeId is { } managerId && Model.CanBrowseEmployees)
                 {
                     <a asp-page="Details" asp-route-id="@managerId" class="profile-team-person"><span class="profile-mini-avatar" aria-hidden="true"><i class="bi bi-person-fill"></i></span><span><strong>@Model.CurrentManagerName</strong><small>مشاهدهٔ پرونده</small></span></a>
                 }
+                else if (Model.CurrentManagerName is { } managerName) { <p>@managerName</p> }
                 else { <p class="profile-aside-empty">مدیر مستقیم تعیین نشده است.</p> }
             </section>
+            @if (Model.CanBrowseEmployees)
+            {
             <section class="profile-aside-group">
                 <h2>زیردستان مستقیم <span>(@Fa(Model.DirectReports.Total.ToString()))</span></h2>
                 @if (Model.DirectReports.Total == 0) { <p class="profile-aside-empty">زیردست مستقیمی ثبت نشده است.</p> }
@@ -95,6 +99,7 @@
                 }
                 @if (Model.DirectReports.Total > Model.DirectReports.Rows.Count) { <small>نمایش @Fa(Model.DirectReports.Rows.Count.ToString()) نفر از @Fa(Model.DirectReports.Total.ToString()) نفر</small> }
             </section>
+            }
         </div>
     </aside>
     <div class="employee-content">
@@ -133,7 +138,7 @@
                                     <td>@(job.EndDate is { } end ? Date(end) : "—")</td>
                                     <td>@DetailsModel.EmploymentTypeLabel(job.EmploymentType)</td>
                                     <td>@Model.DepartmentLabel(job.DepartmentId)</td><td>@(job.JobTitle ?? "—")</td>
-                                    <td>@if (job.ManagerEmployeeId is { } jobManager) { <a asp-page="Details" asp-route-id="@jobManager">@job.ManagerName</a> } else { <span>—</span> }</td>
+                                    <td>@if (job.ManagerEmployeeId is { } jobManager && Model.CanBrowseEmployees) { <a asp-page="Details" asp-route-id="@jobManager">@job.ManagerName</a> } else { <span>@(job.ManagerName ?? "—")</span> }</td>
                                 </tr>
                             }
                             </tbody>

@@ -18,7 +18,7 @@
                     <tr data-user-id="@row.Id">
                         <td><strong>@row.Username</strong>@if (row.IsAdmin) { <span class="badge text-bg-primary ms-1">مدیر</span> }</td>
                         <td>@if (row.EmployeeId is { } linkedId) { <a asp-page="/Employees/Details" asp-route-id="@linkedId">پروندهٔ @linkedId</a> } else { <span class="text-muted">بدون پیوند</span> }</td>
-                        <td><span class="badge text-bg-@(row.IsActive ? "success" : "secondary")">@(row.IsActive ? "فعال" : "غیرفعال")</span><div class="small text-muted">@(row.CanWriteEmployees ? "ویرایش کارکنان" : row.CanReadEmployees ? "مشاهده کارکنان" : "بدون دسترسی کارکنان")</div></td>
+                        <td><span class="badge text-bg-@(row.IsActive ? "success" : "secondary")">@(row.IsActive ? "فعال" : "غیرفعال")</span><div class="small text-muted">@(row.CanWriteEmployees ? "ویرایش کارکنان" : row.CanReadEmployees ? "مشاهده کارکنان" : row.EmployeeId is not null ? "فقط سلف‌سرویس" : "بدون دسترسی کارکنان")</div></td>
                         <td>
                             @if (!row.IsAdmin)
                             {
@@ -53,7 +53,7 @@
         <form method="post" asp-page-handler="Create">
             <div class="mb-3"><label asp-for="NewUsername" class="form-label">نام کاربری</label><input asp-for="NewUsername" class="form-control" minlength="3" maxlength="100" autocomplete="off" required /></div>
             <div class="mb-3"><label asp-for="NewPassword" class="form-label">رمز اولیه</label><input asp-for="NewPassword" type="password" class="form-control" minlength="12" maxlength="128" autocomplete="new-password" required /><div class="form-text">حداقل ۱۲ نویسه؛ رمز در گزارش حساب‌ها نمایش داده نمی‌شود.</div></div>
-            <div class="mb-3"><label asp-for="NewEmployeeId" class="form-label">شناسهٔ پروندهٔ کارمند</label><input asp-for="NewEmployeeId" type="number" min="1" class="form-control" /><div class="form-text">شناسه را از <a asp-page="/Employees/Index">فهرست کارکنان</a> بردارید. برای حساب بدون پرونده خالی بگذارید.</div></div>
+            <div class="mb-3"><label asp-for="NewEmployeeId" class="form-label">شناسهٔ پروندهٔ کارمند</label><input asp-for="NewEmployeeId" type="number" min="1" class="form-control" /><div class="form-text">شناسه را از <a asp-page="/Employees/Index">فهرست کارکنان</a> بردارید. پیوند پرونده، دسترسی به اطلاعات و مرخصی خود کارمند را فعال می‌کند. برای حساب بدون پرونده خالی بگذارید.</div></div>
             <label class="d-block mb-2"><input asp-for="NewCanRead" type="checkbox" /> مشاهده کارکنان</label>
             <label class="d-block mb-3"><input asp-for="NewCanWrite" type="checkbox" /> ویرایش کارکنان</label>
             <button type="submit" class="btn btn-primary">ایجاد حساب</button>

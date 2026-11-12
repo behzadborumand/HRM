@@ -11,7 +11,7 @@ Implemented profile data and controls:
 - Real private document metadata and download links.
 - Leave profile through IEmployeeLeaveProfile: current Tehran Gregorian balance year explicitly labelled, accrued/used/all pending/available hours, and 20-row request pages; archived policy balances retained. Negative available hours remain visible.
 - Training profile through IEmployeeTrainingProfile: assigned courses including archived courses, provider, dates, Tehran status, and stable 20-row pages. Both activity tabs are limited to active same-company administrators and the linked owner; employee read/write grants alone are insufficient. Reasons, decision comments and certificate numbers are excluded from these profile DTOs. Only administrators see management links.
-- Activity pagination preserves both page selections and restores the selected tab. The profile route still requires general Personnel read permission; granting a link alone does not implement employee self-service.
+- Activity pagination preserves both page selections and restores the selected tab. The profile route now accepts employee-specific read authorization, including a linked owner without general Personnel read permission. MyInfo resolves that employee server-side; directory/neighbour/team links remain restricted. Personal Leave request/cancel is available from My/Leave. See SELF_SERVICE.md.
 
 The Pay Info reference supplies the shell and summary/history layout. Existing data contains contractual pay rates and Salary/Hourly type, without currency, taxes, deductions or paystub records. The UI therefore shows the stored rate/history and identifies the missing currency; paycheck calculations, paystub downloads and tax charts remain unimplemented.
 

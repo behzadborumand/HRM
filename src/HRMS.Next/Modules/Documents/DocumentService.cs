@@ -15,7 +15,7 @@ public sealed class DocumentService(DocumentDbContext db, IEmployeeDirectory emp
 {
     public async Task<DocumentPage> ListAsync(ActorScope actor, int employeeId, int page, int pageSize, CancellationToken ct)
     {
-        RequireRead(actor);
+        RequireRead(actor, employeeId);
         await RequireEmployeeAsync(actor, employeeId, ct);
         pageSize = Math.Clamp(pageSize, 1, 100);
         page = Math.Max(page, 1);
@@ -73,9 +73,10 @@ public sealed class DocumentService(DocumentDbContext db, IEmployeeDirectory emp
 
     public async Task<DocumentDownload?> DownloadAsync(ActorScope actor, int documentId, CancellationToken ct)
     {
-        RequireRead(actor);
+        var canReadCompany = AccessRules.CanRead(actor, actor.CompanyId);
+        if (!actor.IsActive || actor.CompanyId <= 0 || (!canReadCompany && actor.EmployeeId is not > 0)) throw new UnauthorizedAccessException();
         var row = await db.Documents.AsNoTracking()
-            .SingleOrDefaultAsync(x => x.Id == documentId && x.CompanyId == actor.CompanyId, ct);
+            .SingleOrDefaultAsync(x => x.Id == documentId && x.CompanyId == actor.CompanyId && (canReadCompany || x.EmployeeId == actor.EmployeeId), ct);
         if (row is null) return null;
         if (await employees.GetAsync(actor.CompanyId, row.EmployeeId, ct) is null) return null;
         if (!SHA256.HashData(row.Bytes).SequenceEqual(row.Sha256))
@@ -104,9 +105,9 @@ public sealed class DocumentService(DocumentDbContext db, IEmployeeDirectory emp
             throw new UnauthorizedAccessException("Employee is outside the active company or missing.");
     }
 
-    private static void RequireRead(ActorScope actor)
+    private static void RequireRead(ActorScope actor, int employeeId)
     {
-        if (!AccessRules.CanRead(actor, actor.CompanyId)) throw new UnauthorizedAccessException();
+        if (!AccessRules.CanReadEmployee(actor, actor.CompanyId, employeeId)) throw new UnauthorizedAccessException();
     }
 
     private static void RequireWrite(ActorScope actor)

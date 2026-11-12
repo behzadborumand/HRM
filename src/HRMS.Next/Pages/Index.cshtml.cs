@@ -1,4 +1,5 @@
 using HRMS.Next.Modules.Access;
+using HRMS.Next.Modules.Leave;
 using HRMS.Next.Modules.Organization;
 using HRMS.Next.Modules.Personnel;
 using HRMS.Next.Modules.Reporting;
@@ -9,9 +10,11 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 namespace HRMS.Next.Pages;
 
 [Authorize]
-public sealed class IndexModel(AccessService access, OrganizationLinkService links, EmployeeService employees, HomeHighlightsService highlights, ReportingService reports) : PageModel
+public sealed class IndexModel(AccessService access, OrganizationLinkService links, EmployeeService employees, HomeHighlightsService highlights, ReportingService reports, IEmployeeLeaveProfile leave) : PageModel
 {
     public string Username { get; private set; } = "";
+    public int? LinkedEmployeeId { get; private set; }
+    public EmployeeLeaveProfile? OwnLeave { get; private set; }
     public bool CanBrowsePeople { get; private set; }
     public bool CanWriteEmployees { get; private set; }
     public bool IsAdmin { get; private set; }
@@ -33,6 +36,11 @@ public sealed class IndexModel(AccessService access, OrganizationLinkService lin
             {
             EmployeeCount = (await employees.SearchAsync(actor, null, null, 1, 1, ct)).Total;
             Highlights = await highlights.LoadAsync(actor, ct);
+        }
+        if (actor.EmployeeId is > 0 && await employees.GetAsync(actor, actor.EmployeeId.Value, ct) is { } own)
+        {
+            LinkedEmployeeId = own.Id;
+            OwnLeave = await leave.ReadAsync(actor, own.Id, 1, ct);
         }
         if (IsAdmin) Stats = await reports.DashboardAsync(actor, ct);
         return Page();

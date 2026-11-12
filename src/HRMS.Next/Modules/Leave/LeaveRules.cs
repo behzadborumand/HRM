@@ -27,10 +27,10 @@ public static class LeaveRules
 
     public static void ValidateRange(DateOnly start, DateOnly end, DateOnly hireDate, DateOnly? terminationDate)
     {
-        if (end < start) throw new ArgumentException("End date precedes start date.");
-        if (start < hireDate) throw new ArgumentException("Leave cannot start before hire date.");
+        if (end < start) throw new ArgumentException("تاریخ پایان نباید پیش از تاریخ شروع باشد.");
+        if (start < hireDate) throw new ArgumentException("مرخصی نمی‌تواند پیش از تاریخ استخدام شروع شود.");
         if (terminationDate is { } termination && end > termination)
-            throw new ArgumentException("Leave cannot extend beyond termination date.");
-        if (WorkingHours(start, end) <= 0) throw new ArgumentException("Leave range has no working day.");
+            throw new ArgumentException("مرخصی نمی‌تواند پس از تاریخ پایان همکاری باشد.");
+        if (WorkingHours(start, end) <= 0) throw new ArgumentException("بازهٔ انتخاب‌شده روز کاری ندارد.");
     }
 }

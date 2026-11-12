@@ -6,10 +6,20 @@
     tab.tabIndex = selected ? 0 : -1;
     tab.setAttribute('aria-selected', String(selected));
   });
+  const reveal = tab => {
+    if (!tab) return;
+    const strip = tab.closest('.profile-tabs');
+    const bounds = strip.getBoundingClientRect();
+    const rect = tab.getBoundingClientRect();
+    const offset = rect.left < bounds.left ? rect.left - bounds.left
+      : rect.right > bounds.right ? rect.right - bounds.right : 0;
+    if (offset) strip.scrollBy({ left: offset, behavior: 'instant' });
+  };
+  window.addEventListener('resize', () => reveal(tabs.find(tab => tab.classList.contains('active'))));
   tabs.forEach((tab, index) => {
     tab.addEventListener('shown.bs.tab', () => {
       update(tab);
-      tab.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'instant' });
+      reveal(tab);
       history.replaceState(null, '', tab.dataset.bsTarget);
     });
     tab.addEventListener('keydown', event => {

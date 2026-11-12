@@ -13,6 +13,18 @@
 <div class="home-workspace">
     <aside class="home-sidebar" aria-label="خلاصهٔ کاربر و پیوندها">
         <section class="card home-profile-card"><div class="card-body d-flex align-items-center gap-3"><span class="avatar avatar-md avatar-fallback" aria-hidden="true"><i class="bi bi-person"></i></span><div class="home-profile-text"><strong>@Model.Username</strong><span>حساب کاربری</span></div></div></section>
+        @if (Model.OwnLeave is { } ownLeave)
+        {
+            <section class="card home-personal-leave">
+                <div class="card-header"><h2><i class="bi bi-calendar2-week"></i> مرخصی من</h2><a asp-page="/My/Leave" class="home-header-link">ثبت درخواست</a></div>
+                <div class="card-body">
+                    <p class="small text-muted">سال مانده: @ownLeave.Year میلادی · ساعت</p>
+                    @if (ownLeave.Balances.Count == 0) { <p class="home-empty">مانده‌ای برای این سال ثبت نشده است.</p> }
+                    @foreach (var balance in ownLeave.Balances) { <p class="d-flex justify-content-between gap-2"><span>@balance.PolicyName</span><strong>@balance.AvailableHours.ToString("0.##")</strong></p> }
+                    <a asp-page="/Employees/Details" asp-route-id="@Model.LinkedEmployeeId" asp-fragment="tab-leave" class="home-header-link">مانده و سوابق درخواست‌ها</a>
+                </div>
+            </section>
+        }
         @if (Model.Highlights is { } home)
         {
             <section class="card home-availability">
@@ -60,6 +72,12 @@
         <section class="card home-shortcut-card" aria-labelledby="shortcuts-title">
             <div class="card-header"><h2 id="shortcuts-title"><i class="bi bi-grid"></i> دسترسی سریع</h2><span class="small text-muted">کارهای پرتکرار شما</span></div>
             <div class="card-body"><div class="home-shortcuts">
+                @if (Model.LinkedEmployeeId is { } ownId)
+                {
+                    <a asp-page="/MyInfo" class="home-shortcut"><i class="bi bi-person-vcard"></i><span><strong>اطلاعات من</strong><small>پرونده و مدارک شخصی</small></span><i class="bi bi-chevron-left home-shortcut-arrow"></i></a>
+                    <a asp-page="/My/Leave" class="home-shortcut"><i class="bi bi-calendar-plus"></i><span><strong>مرخصی من</strong><small>ثبت و لغو درخواست</small></span><i class="bi bi-chevron-left home-shortcut-arrow"></i></a>
+                    <a asp-page="/Employees/Details" asp-route-id="@ownId" asp-fragment="tab-training" class="home-shortcut"><i class="bi bi-mortarboard"></i><span><strong>آموزش‌های من</strong><small>دوره‌ها و سررسیدها</small></span><i class="bi bi-chevron-left home-shortcut-arrow"></i></a>
+                }
                 @if (Model.CanBrowsePeople)
                 {
                     <a asp-page="/Employees/Index" class="home-shortcut"><i class="bi bi-people"></i><span><strong>کارکنان</strong><small>جستجو و مشاهدهٔ پرونده‌ها</small></span><i class="bi bi-chevron-left home-shortcut-arrow"></i></a>

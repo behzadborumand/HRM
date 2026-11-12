@@ -8,7 +8,9 @@
     var canAdmin = actor is { IsActive: true, IsAdmin: true };
     var isProfile = path.StartsWith("/Employees/", StringComparison.OrdinalIgnoreCase)
         && int.TryParse(path["/Employees/".Length..], out _);
-    var isEmployees = path.StartsWith("/Employees", StringComparison.OrdinalIgnoreCase);
+    var isMyInfo = path.Equals("/MyInfo", StringComparison.OrdinalIgnoreCase)
+        || (actor?.EmployeeId is { } ownId && path.Equals("/Employees/" + ownId, StringComparison.OrdinalIgnoreCase));
+    var isEmployees = path.StartsWith("/Employees", StringComparison.OrdinalIgnoreCase) && !isMyInfo;
     var isDashboard = path == "/";
     var isLeave = path.StartsWith("/Leave", StringComparison.OrdinalIgnoreCase);
     var isTraining = path.StartsWith("/Training", StringComparison.OrdinalIgnoreCase);
@@ -37,6 +39,11 @@
             {
                 <ul class="topnav">
                     <li><a class="nav-link @(isDashboard ? "active" : null)" aria-current="@(isDashboard ? "page" : null)" asp-page="/Index"><i class="bi bi-speedometer2"></i> خانه</a></li>
+                    @if (actor?.EmployeeId is > 0)
+                    {
+                        <li><a class="nav-link @(isMyInfo ? "active" : null)" aria-current="@(isMyInfo ? "page" : null)" asp-page="/MyInfo"><i class="bi bi-person-vcard"></i> اطلاعات من</a></li>
+                        <li><a class="nav-link @(path.Equals("/My/Leave", StringComparison.OrdinalIgnoreCase) ? "active" : null)" asp-page="/My/Leave"><i class="bi bi-calendar-plus"></i> مرخصی من</a></li>
+                    }
                     @if (canReadEmployees)
                     {
                         <li><a class="nav-link @(isEmployees ? "active" : null)" aria-current="@(isEmployees ? "page" : null)" asp-page="/Employees/Index"><i class="bi bi-person-lines-fill"></i> کارکنان</a></li>

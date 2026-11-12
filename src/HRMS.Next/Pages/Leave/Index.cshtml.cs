@@ -39,6 +39,7 @@ public sealed class IndexModel(AccessService access, LeaveService service, Leave
         var actor = await AdminAsync(ct);
         if (actor is null) return Forbid();
         try { await service.CreatePolicyAsync(actor, Name, AnnualHours, null, null, ct); }
+        catch (LeaveBusyException error) { return await ErrorAsync(actor, error.Message, ct); }
         catch (ArgumentException error) { return await ErrorAsync(actor, error.Message, ct); }
         return RedirectToPage();
     }
@@ -50,6 +51,7 @@ public sealed class IndexModel(AccessService access, LeaveService service, Leave
         if (!JalaliDate.TryParse(StartDateJalali, out var start) || !JalaliDate.TryParse(EndDateJalali, out var end))
             return await ErrorAsync(actor, "تاریخ شمسی معتبر وارد کنید.", ct);
         try { await service.CreateRequestAsync(actor, EmployeeId, PolicyId, start, end, Reason, ct); }
+        catch (LeaveBusyException error) { return await ErrorAsync(actor, error.Message, ct); }
         catch (ArgumentException error) { return await ErrorAsync(actor, error.Message, ct); }
         catch (UnauthorizedAccessException) { return Forbid(); }
         return RedirectToPage();
@@ -63,6 +65,7 @@ public sealed class IndexModel(AccessService access, LeaveService service, Leave
         var actor = await AdminAsync(ct);
         if (actor is null) return Forbid();
         try { await service.CancelAsync(actor, RequestId, ct); }
+        catch (LeaveBusyException error) { return await ErrorAsync(actor, error.Message, ct); }
         catch (ArgumentException error) { return await ErrorAsync(actor, error.Message, ct); }
         catch (UnauthorizedAccessException) { return Forbid(); }
         return RedirectToPage();
@@ -73,6 +76,7 @@ public sealed class IndexModel(AccessService access, LeaveService service, Leave
         var actor = await AdminAsync(ct);
         if (actor is null) return Forbid();
         try { await service.DecideAsync(actor, RequestId, approve, Comments, ct); }
+        catch (LeaveBusyException error) { return await ErrorAsync(actor, error.Message, ct); }
         catch (ArgumentException error) { return await ErrorAsync(actor, error.Message, ct); }
         catch (UnauthorizedAccessException) { return Forbid(); }
         return RedirectToPage();

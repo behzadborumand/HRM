@@ -1,0 +1,63 @@
+@page "/My/Leave"
+@using HRMS.Next.Pages.Employees
+@model HRMS.Next.Pages.My.LeaveModel
+@{
+    ViewData["Title"] = "مرخصی من";
+    var pages = Math.Max(1, (Model.Pending.Total - 1) / Model.Pending.PageSize + 1);
+    string Fa(string value) => string.Concat(value.Select(c => c is >= '0' and <= '9' ? (char)('۰' + c - '0') : c));
+}
+@section Hero {
+    <div class="d-flex justify-content-between align-items-end gap-3 flex-wrap">
+        <div><h1>مرخصی من</h1><p class="hero-sub">@Model.Employee?.FirstName @Model.Employee?.LastName</p></div>
+        <a asp-page="/Employees/Details" asp-route-id="@Model.Employee?.Id" asp-fragment="tab-leave" class="btn btn-hero"><i class="bi bi-calendar2-week"></i> مانده و همهٔ سوابق</a>
+    </div>
+}
+@if (TempData["OwnLeaveSuccess"] is string message) { <div class="alert alert-success" role="status">@message</div> }
+<div asp-validation-summary="All" class="text-danger mb-3" role="alert"></div>
+<div class="row g-3" data-own-leave>
+    <div class="col-lg-5">
+        <section class="card">
+            <div class="card-header"><h2 class="h6 mb-0"><i class="bi bi-calendar-plus"></i> درخواست مرخصی</h2></div>
+            <div class="card-body">
+                @if (!Model.CanSubmit) { <p class="text-muted mb-0">برای همکاری خاتمه‌یافته نمی‌توان درخواست جدید ثبت کرد.</p> }
+                else if (Model.Policies.Count == 0) { <p class="text-muted mb-0">نوع مرخصی فعالی تعریف نشده است؛ با منابع انسانی تماس بگیرید.</p> }
+                else
+                {
+                    <form method="post" asp-page-handler="Request">
+                        <div class="mb-3"><label for="own-policy" class="form-label">نوع مرخصی</label><select id="own-policy" class="form-select" name="PolicyId" required><option value="">انتخاب کنید</option>@foreach (var policy in Model.Policies) { <option value="@policy.Id" selected="@(Model.PolicyId == policy.Id)">@policy.Name</option> }</select></div>
+                        <div class="mb-3"><label for="own-start" class="form-label">از تاریخ (شمسی)</label><input id="own-start" class="form-control" name="StartDateJalali" value="@Model.StartDateJalali" placeholder="۱۴۰۵/۰۸/۰۱" dir="ltr" required /></div>
+                        <div class="mb-3"><label for="own-end" class="form-label">تا تاریخ (شمسی)</label><input id="own-end" class="form-control" name="EndDateJalali" value="@Model.EndDateJalali" placeholder="۱۴۰۵/۰۸/۰۲" dir="ltr" required /></div>
+                        <div class="mb-3"><label for="own-reason" class="form-label">توضیح (اختیاری)</label><textarea id="own-reason" class="form-control" name="Reason" maxlength="1000" rows="3">@Model.Reason</textarea></div>
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-send"></i> ثبت درخواست</button>
+                    </form>
+                }
+            </div>
+        </section>
+    </div>
+    <div class="col-lg-7">
+        <section class="card">
+            <div class="card-header"><h2 class="h6 mb-0"><i class="bi bi-hourglass-split"></i> درخواست‌های من در انتظار تأیید (@Fa(Model.Pending.Total.ToString()))</h2></div>
+            <div class="card-body">
+                @if (Model.Pending.Total == 0) { <p class="text-muted mb-0">درخواست در انتظار تأییدی ندارید.</p> }
+                @foreach (var request in Model.Pending.Rows)
+                {
+                    <div class="border-bottom py-3 d-flex justify-content-between align-items-center gap-3 flex-wrap" data-own-request-id="@request.Id">
+                        <div><strong>@request.PolicyName</strong><p class="small text-muted mb-0">@Fa(JalaliDate.Format(request.StartDate)) تا @Fa(JalaliDate.Format(request.EndDate)) · @Fa(request.Hours.ToString("0.##")) ساعت</p></div>
+                        <form method="post" asp-page-handler="Cancel">
+                            <input type="hidden" name="RequestId" value="@request.Id" /><input type="hidden" name="Version" value="@Convert.ToBase64String(request.RowVersion)" />
+                            <button type="submit" class="btn btn-sm btn-outline-danger" aria-label="لغو درخواست @request.PolicyName از @Fa(JalaliDate.Format(request.StartDate))">لغو درخواست</button>
+                        </form>
+                    </div>
+                }
+                @if (pages > 1)
+                {
+                    <nav class="d-flex gap-3 justify-content-center align-items-center mt-3" aria-label="صفحه‌بندی درخواست‌های در انتظار">
+                        @if (Model.Pending.Page > 1) { <a asp-route-pendingPage="@(Model.Pending.Page - 1)">قبلی</a> }
+                        <span aria-current="page">صفحهٔ @Fa(Model.Pending.Page.ToString()) از @Fa(pages.ToString())</span>
+                        @if (Model.Pending.Page < pages) { <a asp-route-pendingPage="@(Model.Pending.Page + 1)">بعدی</a> }
+                    </nav>
+                }
+            </div>
+        </section>
+    </div>
+</div>

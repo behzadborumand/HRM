@@ -1,0 +1,35 @@
+# Employee self-service implementation plan
+Continue the authorized rewrite on the user's existing HRM branch, preserving BambooHR UI. Original pasted requirements and docs/PROFILE_REFERENCE.md govern the work. Execution: native in-place on rewrite/modular-monolith, no approval pause requested by user.
+
+## Design
+Add employee-specific read authorization without widening company directory access: AccessRules.CanReadEmployee(actor, companyId, employeeId) = active same-company company reader/writer/admin OR linked owner. Existing CanRead remains directory/report authorization. Apply specific checks to Personnel Get/history/photo and private Documents list/download; writes retain existing grants. A no-grant owner must not gain colleagues, neighbours, team directories, personnel editing, administrative Leave/Training or reports.
+
+MyInfo resolves target solely from current active account. Reuse existing profile with no directory/neighbour links for owner-only accounts; keep manager name as a job fact without links. Existing activity/pay checks remain admin/owner. My/Leave derives employee from account for POST (ignores submitted employee/company IDs), uses existing range/balance/overlap/serializable logic, current policies, pending request pages and optimistic rowversion cancellation. Requests/cancellations record actor/time in existing fields. Approval/policy administration remains admin-only. Owner cannot create requests after actual departure; admin retains historical operations.
+Private documents are readable by linked owner but upload/delete and photo changes still require employee-write grant.
+
+Add real My Info / personal Leave / Training links to current header and Home shortcuts. Personal Leave Home card uses the existing scoped projection and links to actual flows. No birthday data or role model is invented. Roles/manager scope remain next, and no new schemas/migrations are needed.
+
+## Tasks / interfaces
+- [x] 1. Owner reads: AccessRules.CanReadEmployee; EmployeeService.GetAsync, EmployeeJobService.HistoryAsync, EmployeePhotoService summary/read, DocumentService list/download and web guards. SQL test no-grant owner own reads succeed, colleague/foreign data and all writes denied, hash download correct, directory denied. Run failing test before changes; full suite after.
+- [x] 2. Own Leave: LeaveService.CreateRequestAsync permits admin or linked target only; RequestPoliciesAsync(actor,ct) validates linked employee; PendingOwnAsync(actor,page,ct) returns OwnLeavePendingPage rows (id,policy,date,hours,rowversion),20 per page; CancelOwnAsync(actor,id,version,ct) scopes to linked employee and requires pending/exact rowversion. Test forgery, inactive/unlinked, other employee/company, admin-only decisions/policies, overlap/insufficient, stale/replayed cancellation and actor/time. Existing admin flows stay green.
+- [x] 3. Razor: MyInfo, My/Leave, existing profile/read endpoints, header and Home. New messages and validation Persian, Jalali dates, CSRF and POST/redirect/GET. No dead links or owner directory links. Web regression uses no-read/no-write member, actual request/cancel, crafted IDs, stale version, missing CSRF, denial of administrator pages and grant revocation.
+- [x] 4. Browser screenshots and keyboard/mobile smoke, independent read-only final review; update docs/checkpoint, refresh owned local app copy, commit/push authorized rewrite remote.
+
+## Verification and review focus
+Trial-only HRMS_Next_Trial_20261108. Baseline full suite59. New SQL regression must first fail against old company-read-only policy/admin-only request. HTTP regression must first detect missing self-service route/no-grant profile. Full suite and existing SQLWebSmoke afterward.
+Focus: do not replace directory rules with broad owner allowance; filter document bytes before materializing unauthorized files; employee/company form tampering ignored at self endpoint; current account linkage and rowversion cookie revocation honored; cancellation cannot affect approved/other-owned requests; preserve all existing admin/reader behavior.
+No production SQL changes, IIS, publish, source repo writes or role grant inference.
+
+## Progress
+Pre-flight: specific read policy consumed by existing services and route guards; Leave ownership reuses Access actor, Personnel directory and module-owned SQL only. Existing profile projections reused on Home; pending cancellations use a distinct workflow DTO with rowversion.
+
+Task1: complete. Real SQL owner/profile and Leave workflows failed against old authorization first, then passed. Existing company grants were preserved. Owner private bytes and denied employee/company access are covered.
+Task2: complete. Own request/cancellation and pending paging verified, including stale/current/replayed versions, metadata and denied approval. An actual parallel approval failure led to a deterministic SQL1205 regression: RED before bounded whole-transaction retry, GREEN afterward. Both approvals consume balances exactly once. Serializable isolation retained.
+Task3: complete. HTTPS initially detected missing no-grant MyInfo. Real browser/HTTP own workflow and security checks passed. A cancellation form binding regression failed, then passed after binding inputs per handler. Fixed Persian concurrency text satisfies the explicit UI language requirement.
+Task4: visual/keyboard/mobile checks passed, screenshots inspected. Desktop-to-mobile active-tab clipping was reproduced and fixed with horizontal-only scrolling on resize. Local app refresh and final Git integration follow; the previous app was preserved when automatic approval review hit a usage limit.
+Review: fresh independent read-only review found owner boundaries/handler binding sound, no Critical/Important finding in the diff. SQL contention gate was resolved by the real regression and green62/62 suite. No deferred minor remains.
+Final: Ruling: full roles and manager scopes are not inferred from an employee link; next slice. Cost if wrong: managers still need existing company grants for administrative workflows.
+Final: Ruling: photo/document upload/delete and personal/employment edits retain existing write grants. Cost if wrong: owner-only accounts cannot self-edit those yet.
+Final: Ruling: visual behavior is tested in installed Chromium at desktop/mobile widths; other browsers and production capacity are not accepted by this local trial. Cost if wrong: browser/performance differences at deployment.
+Final: Ruling: SQL retry applies only to confirmed1205 rollback victims, at most3 whole-operation attempts; ambiguous commits/timeouts are not retried. Cost if wrong: sustained contention returns a retry message rather than an automatic success.
+Task4 finalization: automatic approval review resumed successfully after the user's continue instruction. Final build0 warnings/errors. Verified local app now HRM-SelfService-Verified-f122d433, PID9588, https://localhost:52350. Health/Login/profile JS HTTP200; updated horizontal resize behavior served. Final SQL check fixture companies=0, smoke users=0, verified portrait maps=1. Final Git commit/push is recorded in branch history.

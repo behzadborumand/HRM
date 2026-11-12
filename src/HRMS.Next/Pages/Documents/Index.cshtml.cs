@@ -25,7 +25,7 @@ public sealed class IndexModel(AccessService access, EmployeeService employees, 
     public async Task<IActionResult> OnGetAsync(int employeeId, int page, CancellationToken ct)
     {
         var actor = await access.GetActiveAsync(User, ct);
-        if (actor is null || !AccessRules.CanRead(actor, actor.CompanyId)) return Forbid();
+        if (actor is null || !AccessRules.CanReadEmployee(actor, actor.CompanyId, employeeId)) return Forbid();
         return await LoadAsync(actor, employeeId, ct, page) ? Page() : NotFound();
     }
 
@@ -56,7 +56,7 @@ public sealed class IndexModel(AccessService access, EmployeeService employees, 
     public async Task<IActionResult> OnGetDownloadAsync(int employeeId, int id, CancellationToken ct)
     {
         var actor = await access.GetActiveAsync(User, ct);
-        if (actor is null || !AccessRules.CanRead(actor, actor.CompanyId)) return Forbid();
+        if (actor is null || !AccessRules.CanReadEmployee(actor, actor.CompanyId, employeeId)) return Forbid();
         var file = await documents.DownloadAsync(actor, id, ct);
         if (file is null || file.EmployeeId != employeeId) return NotFound();
         Response.Headers["Cache-Control"] = "no-store";

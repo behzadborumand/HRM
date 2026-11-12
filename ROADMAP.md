@@ -39,8 +39,9 @@
 - [x] Department administration with scoped hierarchy, cycle rejection, archive/restore, headcounts, preserved employee history and SQL/HTTPS verification.
 - [x] Organization links administration, safe active links on legacy Home layout, SQL and HTTPS flow; empty-source trial transfer.
 - [x] Restore scoped Home recent hires, approved absence days, administrator pending queue and report cards in the legacy layout.
-- [ ] Complete personal Leave and birthday/anniversary Home panels after employee-linked accounts and dates are ported.
-- [ ] Finish manager permissions, employee self-service and document retention rules.
+- [x] Real employee self-service profile/files/Training reads and personal Leave request/versioned cancellation, without company directory grants; personal Leave Home panel and real shortcuts.
+- [ ] Complete birthday/anniversary Home panels after the required personal dates are ported.
+- [ ] Finish manager permissions, remaining employee self-service editing and document retention rules.
 - [ ] Implement personnel history, job classification and position requirements, orders and contractors, appraisal, insurance and retirement, welfare and medical.
 - [ ] Implement Tavanir exchange only after validating its ۱۴۰۳ contract and credential requirements.
 - [x] Scoped employee/leave reports, dashboard counts, filters and capped safe CSV exports with SQL/HTTPS checks.
