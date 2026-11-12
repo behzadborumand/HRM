@@ -122,3 +122,6 @@
 @media(max-width:767.98px) {
   .profile-editor #employee-information .row > .col-md-3 { width: 100%; }
 }
+
+/* Creation uses the profile form frame before an employee/portrait exists. */
+.page-profile .profile-create-hero { padding: 24px 0; min-height: 100px; align-items: center; }

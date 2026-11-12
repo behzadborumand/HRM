@@ -2,22 +2,23 @@
 @model HRMS.Next.Pages.Employees.CreateModel
 @{
     ViewData["Title"] = "افزودن کارکنان جدید";
+    ViewData["ProfileLayout"] = true;
 }
 @section Hero {
-    <div class="d-flex justify-content-between align-items-end gap-3 flex-wrap">
-        <h1>افزودن کارمند جدید</h1>
-        <a asp-page="Index" class="btn btn-hero"><i class="bi bi-arrow-right"></i> بازگشت به لیست</a>
+    <div class="profile-hero profile-create-hero">
+        <div class="profile-heading"><h1>افزودن کارمند جدید</h1><p class="hero-sub">اطلاعات پایه و شروع همکاری</p></div>
+        <div class="profile-hero-actions"><a asp-page="Index" class="btn btn-hero"><i class="bi bi-arrow-right" aria-hidden="true"></i> بازگشت به لیست</a></div>
     </div>
 }
-<div class="card">
-    <div class="card-header bg-primary text-white">اطلاعات شخصی و شغلی</div>
+<div class="employee-content profile-editor"><section class="card" id="employee-information" aria-labelledby="create-employee-title">
+    <div class="card-header"><h2 id="create-employee-title" class="profile-page-title"><i class="bi bi-person-plus" aria-hidden="true"></i> اطلاعات شخصی و شغلی</h2></div>
     <div class="card-body">
         <form method="post">
             <partial name="_Form" for="Form" />
-            <div class="mt-4">
+            <div class="profile-form-actions mt-4">
                 <button type="submit" class="btn btn-success"><i class="bi bi-check-circle"></i> ثبت کارمند</button>
-                <a asp-page="Index" class="btn btn-secondary">انصراف</a>
+                <a asp-page="Index" class="btn btn-outline-secondary">انصراف</a>
             </div>
         </form>
     </div>
-</div>
+</section></div>

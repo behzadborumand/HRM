@@ -79,6 +79,7 @@ try {
     $homeResponse = Invoke-WebRequest "$baseUrl/" -WebSession $webSession -UseBasicParsing
     if ($homeResponse.Content -notmatch 'Smoke help' -or $homeResponse.Content -notmatch 'rel="noopener noreferrer"') { throw 'Active organization link was not rendered safely on Home.' }
     $create = Invoke-WebRequest "$baseUrl/Employees/Create" -WebSession $webSession -UseBasicParsing
+    if ($create.Content -notmatch 'class="page-profile"' -or $create.Content -notmatch 'profile-editor' -or $create.Content -notmatch 'profile-create-hero' -or $create.Content -match 'card-header bg-primary') { throw 'Create does not use the shared compact white employee form style.' }
     $createToken = Get-FormToken $create.Content
     $departmentId = [regex]::Match($create.Content, '<option value="([1-9][0-9]*)">').Groups[1].Value
     if (!$departmentId) { throw 'Bootstrap department was not offered in the form.' }
@@ -437,6 +438,7 @@ try {
     if ($photoDeleted.Content -match '<img[^>]+/Photo') { throw 'Deleted photo is still rendered.' }
     & (Join-Path $PSScriptRoot 'TestPersonalWorkflow.ps1') -BaseUrl $baseUrl -AdminSession $webSession -OwnerSession $memberSession -ReaderSession $readerSession -EmployeeId $employeeId -PeerId $peerId
     & (Join-Path $PSScriptRoot 'TestTeamWorkflow.ps1') -BaseUrl $baseUrl -AdminSession $webSession -CompanyName $companyName -EmployeeId $employeeId -PeerId $peerId -PolicyId $policyId -DepartmentId $departmentId -ScreenshotsDirectory $ScreenshotsDirectory
+    & (Join-Path $PSScriptRoot 'TestDirectoryWorkflow.ps1') -BaseUrl $baseUrl -AdminSession $webSession -ReaderSession $readerSession -CompanyName $companyName
     & (Join-Path $PSScriptRoot 'TestEditorWorkflow.ps1') -BaseUrl $baseUrl -AdminSession $webSession -ReaderSession $readerSession -OwnerSession $memberSession -EmployeeId $employeeId
     & (Join-Path $PSScriptRoot 'TestCelebrationsWorkflow.ps1') -BaseUrl $baseUrl -AdminSession $webSession -OwnerSession $memberSession -ReaderSession $readerSession -CompanyName $companyName
     if ($ScreenshotsDirectory) {

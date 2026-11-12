@@ -108,6 +108,46 @@ try {
     Capture 'home-celebrations-mobile.png'
     Invoke-Cdp 'Emulation.setDeviceMetricsOverride' @{width=1280;height=850;deviceScaleFactor=1;mobile=$false} | Out-Null
 
+    Invoke-Cdp 'Page.navigate' @{url=($BaseUrl+'/Employees?query=DIRECTORY_UI_&status=Active')} | Out-Null
+    Wait-Expression "document.readyState==='complete' && document.querySelectorAll('[data-employee-id]').length===20"
+    Wait-Expression "(() => {const i=document.querySelector('[data-directory-photo]');return !!i && i.complete && i.naturalWidth>0;})()"
+    if(!(Evaluate "document.documentElement.scrollWidth<=innerWidth+1")){throw 'Directory desktop page overflow.'}
+    Capture 'directory-desktop.png'
+    Evaluate "document.querySelector('.directory-pagination a').focus();true" | Out-Null
+    Invoke-Cdp 'Input.dispatchKeyEvent' @{type='keyDown';key='Enter';code='Enter';windowsVirtualKeyCode=13;text=([string][char]13);unmodifiedText=([string][char]13)} | Out-Null
+    Invoke-Cdp 'Input.dispatchKeyEvent' @{type='keyUp';key='Enter';code='Enter';windowsVirtualKeyCode=13} | Out-Null
+    Wait-Expression "location.search.includes('pageNumber=2') && document.querySelectorAll('[data-employee-id]').length===4"
+    Capture 'directory-page2.png'
+    Evaluate "document.querySelector('#query').value='DIRECTORY_UI_000';document.querySelector('#query').focus();true" | Out-Null
+    Invoke-Cdp 'Input.dispatchKeyEvent' @{type='keyDown';key='Enter';code='Enter';windowsVirtualKeyCode=13;text=([string][char]13);unmodifiedText=([string][char]13)} | Out-Null
+    Invoke-Cdp 'Input.dispatchKeyEvent' @{type='keyUp';key='Enter';code='Enter';windowsVirtualKeyCode=13} | Out-Null
+    Wait-Expression "location.search.includes('DIRECTORY_UI_000') && document.querySelectorAll('[data-employee-id]').length===1 && !location.search.includes('pageNumber=2')"
+    Capture 'directory-filter.png'
+    Invoke-Cdp 'Page.navigate' @{url=($BaseUrl+'/Employees?query=DIRECTORY_UI_&status=Active')} | Out-Null
+    Wait-Expression "document.readyState==='complete' && document.querySelectorAll('[data-employee-id]').length===20"
+    Invoke-Cdp 'Emulation.setDeviceMetricsOverride' @{width=390;height=844;deviceScaleFactor=1;mobile=$true} | Out-Null
+    if(!(Evaluate "document.documentElement.scrollWidth<=innerWidth+1")){throw 'Directory mobile page overflow.'}
+    if(!(Evaluate "getComputedStyle(document.querySelector('.table-responsive')).overflowX==='auto'")){throw 'Directory mobile table cannot scroll.'}
+    Capture 'directory-mobile.png'
+    Invoke-Cdp 'Page.navigate' @{url=($BaseUrl+'/Employees?query=DIRECTORY_NO_MATCH')} | Out-Null
+    Wait-Expression "document.readyState==='complete' && document.querySelectorAll('[data-employee-id]').length===0 && !!document.querySelector('td[colspan]')"
+    Capture 'directory-empty-mobile.png'
+    Invoke-Cdp 'Emulation.setDeviceMetricsOverride' @{width=1280;height=850;deviceScaleFactor=1;mobile=$false} | Out-Null
+
+    Invoke-Cdp 'Page.navigate' @{url=($BaseUrl+'/Employees/Create')} | Out-Null
+    Wait-Expression "document.readyState==='complete' && !!document.querySelector('#Form_FirstName') && document.body.classList.contains('page-profile')"
+    if(!(Evaluate "getComputedStyle(document.querySelector('#employee-information .card-header')).backgroundColor==='rgb(255, 255, 255)' && !document.querySelector('.profile-hero-avatar')")){throw 'Create form has generic bars or a fictitious employee portrait.'}
+    if(!(Evaluate "document.querySelector('.profile-create-hero')?.getBoundingClientRect().height>=90")){throw 'Create identity header is collapsed.'}
+    Capture 'create-desktop.png'
+    Invoke-Cdp 'Emulation.setDeviceMetricsOverride' @{width=390;height=844;deviceScaleFactor=1;mobile=$true} | Out-Null
+    if(!(Evaluate "document.documentElement.scrollWidth<=innerWidth+1")){throw 'Create mobile overflow.'}
+    Capture 'create-mobile.png'
+    Evaluate "document.querySelector('#Form_LastName').value='Preserved create input';const f=document.querySelector('#employee-information form');f.noValidate=true;f.requestSubmit();true" | Out-Null
+    Wait-Expression "!!document.querySelector('.validation-summary-errors') && document.querySelector('#Form_LastName').value==='Preserved create input' && document.body.classList.contains('page-profile')"
+    Capture 'create-invalid-mobile.png'
+    Invoke-Cdp 'Emulation.setDeviceMetricsOverride' @{width=1280;height=850;deviceScaleFactor=1;mobile=$false} | Out-Null
+
+
     Invoke-Cdp 'Page.navigate' @{url=($BaseUrl+'/Settings/Roles')} | Out-Null
     Wait-Expression "!!document.querySelector('[name=Name]') && document.readyState==='complete'"
     Capture 'roles-desktop.png'

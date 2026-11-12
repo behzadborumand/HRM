@@ -2,6 +2,7 @@
 @model HRMS.Next.Pages.Employees.IndexModel
 @{
     ViewData["Title"] = "لیست کارکنان";
+    string Fa(string value) => string.Concat(value.Select(c => c is >= '0' and <= '9' ? (char)('۰' + c - '0') : c));
 }
 @section Hero {
     <div class="d-flex justify-content-between align-items-end gap-3 flex-wrap">
@@ -52,14 +53,18 @@
 {
     <div class="card">
         <div class="card-body">
-            <p class="text-muted mb-2" role="status">@Model.Result.Total کارمند یافت شد</p>
+                        <p class="text-muted mb-2" role="status">@Fa(Model.Result.Total.ToString()) کارمند یافت شد
+                @if (Model.Result.Total > 0) { <text> · نمایش @Fa(((Model.Result.Page - 1) * Model.Result.PageSize + 1).ToString()) تا @Fa(Math.Min(Model.Result.Page * Model.Result.PageSize, Model.Result.Total).ToString())</text> }
+            </p>
             <div class="table-responsive">
                 <table class="table table-striped table-hover text-center align-middle">
                     <thead class="table-primary">
                         <tr>
                             <th scope="col">کد پرسنلی</th>
                             <th scope="col">نام و نام خانوادگی</th>
+                            <th scope="col">عنوان شغلی</th>
                             <th scope="col">واحد سازمانی</th>
+                            <th scope="col">مدیر مستقیم</th>
                             <th scope="col">ایمیل</th>
                             <th scope="col">تاریخ استخدام</th>
                             <th scope="col">وضعیت</th>
@@ -69,21 +74,27 @@
                     <tbody>
                         @if (Model.Result.Rows.Count == 0)
                         {
-                            <tr><td colspan="7" class="text-muted py-4">کارمندی با این شرایط یافت نشد.</td></tr>
+                            <tr><td colspan="9" class="text-muted py-4">کارمندی با این شرایط یافت نشد.</td></tr>
                         }
                         @foreach (var employee in Model.Result.Rows)
                         {
-                            <tr>
+                            <tr data-employee-id="@employee.Id">
                                 <td>@employee.EmployeeNumber</td>
                                 <td class="fw-semibold">
                                     <div class="d-flex align-items-center gap-2">
-                                        <span class="avatar avatar-sm avatar-fallback" aria-hidden="true">@(employee.FullName.Length > 0 ? employee.FullName[..1] : "؟")</span>
-                                        <span>@employee.FullName</span>
+                                        @if (employee.PhotoSha256 is { } photoVersion)
+                                        {
+                                            <img data-directory-photo src="@Url.Page("/Employees/Photo", new { id = employee.Id, v = photoVersion })" alt="" class="avatar avatar-sm" width="32" height="32" loading="lazy" />
+                                        }
+                                        else { <span class="avatar avatar-sm avatar-fallback" aria-hidden="true">@(employee.FullName.Length > 0 ? employee.FullName[..1] : "؟")</span> }
+                                        <a asp-page="Details" asp-route-id="@employee.Id">@employee.FullName</a>
                                     </div>
                                 </td>
+                                <td>@(employee.JobTitle ?? "—")</td>
                                 <td>@(Model.Departments.FirstOrDefault(x => x.Id == employee.DepartmentId)?.Name ?? "-")</td>
+                                <td>@(employee.ManagerName ?? "—")</td>
                                 <td dir="ltr">@(employee.Email ?? "-")</td>
-                                <td>@JalaliDate.Format(employee.HireDate)</td>
+                                <td>@Fa(JalaliDate.Format(employee.HireDate))</td>
                                 <td><span class="badge text-bg-@(employee.Terminated ? "secondary" : "success")">@(employee.Terminated ? "خروج قطعی" : "فعال")</span></td>
                                 <td>
                                     <a asp-page="Details" asp-route-id="@employee.Id" class="btn btn-sm btn-outline-primary" aria-label="مشاهده پرونده @employee.FullName"><i class="bi bi-eye"></i></a>
@@ -99,15 +110,15 @@
             </div>
             @if (Model.Result.Total > Model.Result.PageSize)
             {
-                <nav class="d-flex justify-content-center gap-1 mt-3" aria-label="صفحه‌بندی کارکنان">
+                <nav class="directory-pagination d-flex justify-content-center gap-1 mt-3" aria-label="صفحه‌بندی کارکنان">
                     @if (Model.Result.Page > 1)
                     {
-                        <a class="btn btn-sm btn-outline-primary" asp-page="Index" asp-route-query="@Model.Query" asp-route-departmentId="@Model.DepartmentId" asp-route-status="@Model.Status" asp-route-page="@(Model.Result.Page - 1)">صفحه قبل</a>
+                        <a class="btn btn-sm btn-outline-primary" asp-page="Index" asp-route-query="@Model.Query" asp-route-departmentId="@Model.DepartmentId" asp-route-status="@Model.Status" asp-route-pageNumber="@(Model.Result.Page - 1)">صفحه قبل</a>
                     }
-                    <span class="btn btn-sm btn-light">صفحه @Model.Result.Page از @Math.Max(1, (int)Math.Ceiling((double)Model.Result.Total / Model.Result.PageSize))</span>
+                    <span class="btn btn-sm btn-light">صفحه @Fa(Model.Result.Page.ToString()) از @Fa(Math.Max(1, (int)Math.Ceiling((double)Model.Result.Total / Model.Result.PageSize)).ToString())</span>
                     @if (Model.Result.Page * Model.Result.PageSize < Model.Result.Total)
                     {
-                        <a class="btn btn-sm btn-outline-primary" asp-page="Index" asp-route-query="@Model.Query" asp-route-departmentId="@Model.DepartmentId" asp-route-status="@Model.Status" asp-route-page="@(Model.Result.Page + 1)">صفحه بعد</a>
+                        <a class="btn btn-sm btn-outline-primary" asp-page="Index" asp-route-query="@Model.Query" asp-route-departmentId="@Model.DepartmentId" asp-route-status="@Model.Status" asp-route-pageNumber="@(Model.Result.Page + 1)">صفحه بعد</a>
                     }
                 </nav>
             }

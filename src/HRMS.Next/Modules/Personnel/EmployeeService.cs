@@ -6,7 +6,12 @@ using System.ComponentModel.DataAnnotations;
 namespace HRMS.Next.Modules.Personnel;
 
 public sealed record EmployeeInput(int DepartmentId, string EmployeeNumber, string FirstName, string LastName, string? Email, DateOnly HireDate);
-public sealed record EmployeeRow(int Id, string EmployeeNumber, string FullName, int DepartmentId, DateOnly HireDate, bool Terminated, string? Email);
+public sealed record EmployeeRow(int Id, string EmployeeNumber, string FullName, int DepartmentId, DateOnly HireDate, bool Terminated, string? Email)
+{
+    public string? JobTitle { get; init; }
+    public string? ManagerName { get; init; }
+    public string? PhotoSha256 { get; init; }
+}
 public sealed record EmployeePage(IReadOnlyList<EmployeeRow> Rows, int Total, int Page, int PageSize);
 
 public sealed class EmployeeService(PersonnelDbContext db, IOrganizationDirectory organization, TimeProvider clock)
@@ -31,6 +36,28 @@ public sealed class EmployeeService(PersonnelDbContext db, IOrganizationDirector
             .Skip((page - 1) * pageSize).Take(pageSize)
             .Select(x => new EmployeeRow(x.Id, x.EmployeeNumber, x.FirstName + " " + x.LastName, x.DepartmentId, x.HireDate, x.TerminationDate != null, x.Email))
             .ToListAsync(ct);
+        if (rows.Count > 0)
+        {
+            //Enrich only this bounded page. Each metadata source is independently tenant scoped.
+            var ids = rows.Select(x => x.Id).ToArray();
+            var facts = await (from employee in db.Employees.AsNoTracking().Where(x => x.CompanyId == actor.CompanyId && ids.Contains(x.Id))
+                               join job in db.EmployeeJobs.AsNoTracking().Where(x => x.CompanyId == actor.CompanyId && x.IsCurrent)
+                                   on employee.Id equals job.EmployeeId into jobs
+                               from job in jobs.DefaultIfEmpty()
+                               join manager in db.Employees.AsNoTracking().Where(x => x.CompanyId == actor.CompanyId)
+                                   on job.ManagerEmployeeId equals (int?)manager.Id into managers
+                               from manager in managers.DefaultIfEmpty()
+                               join photo in db.Photos.AsNoTracking().Where(x => x.CompanyId == actor.CompanyId)
+                                   on employee.Id equals photo.EmployeeId into photos
+                               from photo in photos.DefaultIfEmpty()
+                               select new { employee.Id, JobTitle = job == null ? null : job.JobTitle,
+                                   ManagerName = manager == null ? null : manager.FirstName + " " + manager.LastName,
+                                   PhotoSha256 = photo == null ? null : photo.Sha256 })
+                .ToDictionaryAsync(x => x.Id, ct);
+            rows = rows.Select(row => facts.TryGetValue(row.Id, out var fact)
+                ? row with { JobTitle = fact.JobTitle, ManagerName = fact.ManagerName, PhotoSha256 = fact.PhotoSha256 }
+                : row).ToList();
+        }
         return new EmployeePage(rows, total, page, pageSize);
     }
 
