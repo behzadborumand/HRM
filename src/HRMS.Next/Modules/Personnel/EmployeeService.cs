@@ -75,7 +75,8 @@ public sealed class EmployeeService(PersonnelDbContext db, IOrganizationDirector
     public async Task UpdateAsync(ActorScope actor, int id, EmployeeInput input, byte[] expectedVersion, CancellationToken ct)
     {
         if (!AccessRules.CanWrite(actor, actor.CompanyId)) throw new UnauthorizedAccessException();
-        var employee = await db.Employees.SingleOrDefaultAsync(x => x.Id == id && x.CompanyId == actor.CompanyId, ct)
+        await using var transaction = await db.Database.BeginTransactionAsync(ct);
+        var employee = await db.Employees.FromSqlInterpolated($"SELECT * FROM [personnel].[Employees] WITH (UPDLOCK,HOLDLOCK) WHERE [Id]={id} AND [CompanyId]={actor.CompanyId}").SingleOrDefaultAsync(ct)
             ?? throw new KeyNotFoundException("کارمند یافت نشد.");
         await ValidateAsync(actor.CompanyId, input, ct, input.DepartmentId == employee.DepartmentId);
         if (!employee.RowVersion.SequenceEqual(expectedVersion)) throw new DbUpdateConcurrencyException("پرونده توسط کاربر دیگری تغییر کرده است.");
@@ -83,6 +84,8 @@ public sealed class EmployeeService(PersonnelDbContext db, IOrganizationDirector
             throw new ArgumentException("تغییر واحد سازمانی باید در بخش ثبت تغییر شغل انجام شود.");
         if (await db.EmployeeJobs.AnyAsync(x => x.EmployeeId == id && x.StartDate < input.HireDate, ct))
             throw new ArgumentException("تاریخ استخدام نمی‌تواند پس از شروع یکی از سوابق شغلی باشد.");
+        if (await db.PersonalInfos.AnyAsync(p => p.EmployeeId == id && p.CompanyId == actor.CompanyId && p.DateOfBirth > input.HireDate, ct))
+            throw new ArgumentException("تاریخ استخدام نمی‌تواند پیش از تاریخ تولد باشد.");
         var number = input.EmployeeNumber.Trim();
         if (await db.Employees.AnyAsync(x => x.CompanyId == actor.CompanyId && x.Id != id && x.EmployeeNumber == number, ct))
             throw new ArgumentException("شماره پرسنلی تکراری است.");
@@ -99,6 +102,7 @@ public sealed class EmployeeService(PersonnelDbContext db, IOrganizationDirector
             Summary = before + $" -> Department={employee.DepartmentId};Number={employee.EmployeeNumber};Name={employee.FirstName} {employee.LastName};HireDate={employee.HireDate:yyyy-MM-dd}"
         });
         await db.SaveChangesAsync(ct);
+        await transaction.CommitAsync(ct);
     }
 
     private async Task ValidateAsync(int companyId, EmployeeInput input, CancellationToken ct, bool allowExistingInactiveDepartment = false)

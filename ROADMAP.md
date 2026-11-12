@@ -40,8 +40,9 @@
 - [x] Organization links administration, safe active links on legacy Home layout, SQL and HTTPS flow; empty-source trial transfer.
 - [x] Restore scoped Home recent hires, approved absence days, administrator pending queue and report cards in the legacy layout.
 - [x] Real employee self-service profile/files/Training reads and personal Leave request/versioned cancellation, without company directory grants; personal Leave Home panel and real shortcuts.
+- [x] Private personal/contact/address/emergency profile data, admin identity editing, linked-owner contact editing, version/audit controls and repeatable trial transfer.
 - [ ] Finish the permission catalog, department grants, remaining employee self-service editing and document retention rules.
-- [ ] Complete birthday/anniversary Home panels after the required personal dates are ported.
+- [ ] Complete birthday/anniversary Home panels with a scoped month/day projection that excludes private birth years.
 - [x] Company-owned roles with explicit grants, audited archive/edit, member-cookie revocation, scoped direct-manager profile/team reads and versioned team Leave decisions.
 - [ ] Implement personnel history, job classification and position requirements, orders and contractors, appraisal, insurance and retirement, welfare and medical.
 - [ ] Implement Tavanir exchange only after validating its ۱۴۰۳ contract and credential requirements.

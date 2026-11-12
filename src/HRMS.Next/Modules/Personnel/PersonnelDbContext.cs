@@ -9,8 +9,36 @@ public sealed class PersonnelDbContext(DbContextOptions<PersonnelDbContext> opti
     public DbSet<EmployeeAudit> Audits => Set<EmployeeAudit>();
     public DbSet<EmployeeJob> EmployeeJobs => Set<EmployeeJob>();
 
+    public DbSet<EmployeePersonalInfo> PersonalInfos => Set<EmployeePersonalInfo>();
+
     protected override void OnModelCreating(ModelBuilder model)
     {
+        model.Entity<Employee>().HasAlternateKey(e => new { e.Id, e.CompanyId });
+        model.Entity<EmployeePersonalInfo>(entity =>
+        {
+            entity.ToTable("PersonalInfos", "personnel");
+            entity.HasKey(x => x.EmployeeId);
+            entity.Property(x => x.EmployeeId).ValueGeneratedNever();
+            entity.Property(x => x.RowVersion).IsRowVersion();
+            entity.Property(x => x.DateOfBirth).HasColumnType("date");
+            entity.Property(x => x.PreferredName).HasMaxLength(100);
+            entity.Property(x => x.Phone).HasMaxLength(50);
+            entity.Property(x => x.Gender).HasMaxLength(20);
+            entity.Property(x => x.MaritalStatus).HasMaxLength(20);
+            entity.Property(x => x.AddressLine1).HasMaxLength(200);
+            entity.Property(x => x.AddressLine2).HasMaxLength(200);
+            entity.Property(x => x.City).HasMaxLength(100);
+            entity.Property(x => x.State).HasMaxLength(100);
+            entity.Property(x => x.PostalCode).HasMaxLength(20);
+            entity.Property(x => x.Country).HasMaxLength(100);
+            entity.Property(x => x.HomePhone).HasMaxLength(50);
+            entity.Property(x => x.MobilePhone).HasMaxLength(50);
+            entity.Property(x => x.EmergencyContactName).HasMaxLength(200);
+            entity.Property(x => x.EmergencyContactPhone).HasMaxLength(50);
+            entity.Property(x => x.EmergencyContactRelation).HasMaxLength(100);
+            entity.HasOne<Employee>().WithMany().HasForeignKey(x => new { x.EmployeeId, x.CompanyId })
+                .HasPrincipalKey(x => new { x.Id, x.CompanyId }).OnDelete(DeleteBehavior.Restrict);
+        });
         model.Entity<Employee>(entity =>
         {
             entity.ToTable("Employees", "personnel");

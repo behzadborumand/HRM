@@ -92,6 +92,14 @@ try {
     if(!(Evaluate "document.documentElement.scrollWidth<=innerWidth+1")){throw 'Roles mobile overflow.'}
     Capture 'roles-mobile.png'
     Invoke-Cdp 'Emulation.setDeviceMetricsOverride' @{width=1280;height=850;deviceScaleFactor=1;mobile=$false} | Out-Null
+    Invoke-Cdp 'Page.navigate' @{url=($BaseUrl+'/Employees/'+$EmployeeId+'/Personal')} | Out-Null
+    Wait-Expression "!!document.querySelector('[data-personal-identity]') && document.readyState==='complete'"
+    Capture 'personal-admin-desktop.png'
+    Invoke-Cdp 'Emulation.setDeviceMetricsOverride' @{width=390;height=844;deviceScaleFactor=1;mobile=$true} | Out-Null
+    if(!(Evaluate "document.documentElement.scrollWidth<=innerWidth+1")){throw 'Admin personal mobile overflow.'}
+    Capture 'personal-admin-mobile.png'
+    Invoke-Cdp 'Emulation.setDeviceMetricsOverride' @{width=1280;height=850;deviceScaleFactor=1;mobile=$false} | Out-Null
+
     Invoke-Cdp 'Page.navigate' @{url=($BaseUrl+'/Employees/'+$EmployeeId)} | Out-Null
     Wait-Expression "!!document.querySelector('#profile-job-tab') && document.readyState==='complete'"
     Capture 'profile-desktop.png'
@@ -161,6 +169,20 @@ try {
         Wait-Expression "(() => { const tab=document.querySelector('.profile-tabs [aria-selected=true]').getBoundingClientRect(); const strip=document.querySelector('.profile-tabs').getBoundingClientRect(); return tab.left>=strip.left-1 && tab.right<=strip.right+1; })()"
         Capture 'self-profile-mobile.png'
         if(!(Evaluate "document.documentElement.scrollWidth<=innerWidth+1")){throw 'Owner profile mobile overflow.'}
+        Invoke-Cdp 'Page.navigate' @{url=($BaseUrl+'/My/Personal')} | Out-Null
+        Wait-Expression "!!document.querySelector('[data-personal-contact]') && document.readyState==='complete'"
+        if(Evaluate "!!document.querySelector('[data-personal-identity]')"){throw 'Owner sees admin identity form.'}
+        if(!(Evaluate "document.documentElement.scrollWidth<=innerWidth+1")){throw 'Owner personal mobile overflow.'}
+        Capture 'personal-owner-mobile.png'
+        Invoke-Cdp 'Emulation.setDeviceMetricsOverride' @{width=1280;height=850;deviceScaleFactor=1;mobile=$false} | Out-Null
+        Capture 'personal-owner-desktop.png'
+        Evaluate "document.querySelector('#Contact_City').value='Browser personal city';document.querySelector('[data-personal-contact]').requestSubmit();true" | Out-Null
+        Wait-Expression "location.pathname==='/Employees/$EmployeeId' && !!document.querySelector('#tab-personal.active') && document.body.textContent.includes('Browser personal city')"
+        Capture 'personal-profile-desktop.png'
+        Invoke-Cdp 'Emulation.setDeviceMetricsOverride' @{width=390;height=844;deviceScaleFactor=1;mobile=$true} | Out-Null
+        if(!(Evaluate "document.documentElement.scrollWidth<=innerWidth+1")){throw 'Private personal profile mobile overflow.'}
+        Capture 'personal-profile-mobile.png'
+
         Invoke-Cdp 'Page.navigate' @{url=($BaseUrl+'/My/Leave')} | Out-Null
         Wait-Expression "!!document.querySelector('#own-policy') && document.readyState==='complete'"
         Evaluate "document.querySelector('#own-policy').selectedIndex=1;document.querySelector('#own-start').value='1403/04/10';document.querySelector('#own-end').value='1403/04/10';document.querySelector('#own-reason').value='Browser self-service';document.querySelector('form[action*=Request]').requestSubmit();true" | Out-Null

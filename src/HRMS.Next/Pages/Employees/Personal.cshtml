@@ -1,0 +1,46 @@
+@page "/Employees/{id:int}/Personal"
+@model HRMS.Next.Pages.Employees.PersonalModel
+@{ ViewData["Title"]="اطلاعات شخصی";var employee=Model.Employee!; }
+@section Hero {
+    <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap"><div><h1>اطلاعات شخصی</h1><p class="hero-sub">@employee.FirstName @employee.LastName</p></div><a asp-page="Details" asp-route-id="@employee.Id" asp-fragment="tab-personal" class="btn btn-hero"><i class="bi bi-arrow-right"></i> بازگشت به پرونده</a></div>
+}
+<div asp-validation-summary="All" class="text-danger" role="alert"></div>
+@if(Model.CanEditContact)
+{
+<form method="post" asp-page-handler="Contact" data-personal-contact>
+    <input asp-for="Contact.Version" type="hidden" />
+    <section class="card mb-3"><div class="card-header"><h2 class="fs-6 mb-0"><i class="bi bi-telephone"></i> اطلاعات تماس</h2></div><div class="card-body row g-3">
+        <div class="col-md-4"><label asp-for="Contact.PreferredName" class="form-label">نام ترجیحی</label><input asp-for="Contact.PreferredName" class="form-control" maxlength="100" autocomplete="nickname" type="text" /></div>
+        <div class="col-md-4"><label asp-for="Contact.MobilePhone" class="form-label">تلفن همراه</label><input asp-for="Contact.MobilePhone" class="form-control" maxlength="50" autocomplete="tel" dir="ltr" type="tel" /></div>
+        <div class="col-md-4"><label asp-for="Contact.HomePhone" class="form-label">تلفن منزل</label><input asp-for="Contact.HomePhone" class="form-control" maxlength="50" dir="ltr" type="tel" /></div>
+    </div></section>
+    <section class="card mb-3"><div class="card-header"><h2 class="fs-6 mb-0"><i class="bi bi-geo-alt"></i> نشانی</h2></div><div class="card-body row g-3">
+        <div class="col-md-6"><label asp-for="Contact.AddressLine1" class="form-label">نشانی</label><textarea asp-for="Contact.AddressLine1" class="form-control" maxlength="200" autocomplete="address-line1" rows="2"></textarea></div>
+        <div class="col-md-6"><label asp-for="Contact.AddressLine2" class="form-label">ادامهٔ نشانی</label><textarea asp-for="Contact.AddressLine2" class="form-control" maxlength="200" autocomplete="address-line2" rows="2"></textarea></div>
+        <div class="col-md-3"><label asp-for="Contact.City" class="form-label">شهر</label><input asp-for="Contact.City" class="form-control" maxlength="100" autocomplete="address-level2" type="text" /></div>
+        <div class="col-md-3"><label asp-for="Contact.State" class="form-label">استان</label><input asp-for="Contact.State" class="form-control" maxlength="100" autocomplete="address-level1" type="text" /></div>
+        <div class="col-md-3"><label asp-for="Contact.PostalCode" class="form-label">کدپستی</label><input asp-for="Contact.PostalCode" class="form-control" maxlength="20" autocomplete="postal-code" dir="ltr" type="text" /></div>
+        <div class="col-md-3"><label asp-for="Contact.Country" class="form-label">کشور</label><input asp-for="Contact.Country" class="form-control" maxlength="100" autocomplete="country-name" type="text" /></div>
+    </div></section>
+    <section class="card mb-3"><div class="card-header"><h2 class="fs-6 mb-0"><i class="bi bi-heart-pulse"></i> مخاطب اضطراری</h2></div><div class="card-body row g-3">
+        <div class="col-md-4"><label asp-for="Contact.EmergencyContactName" class="form-label">نام مخاطب</label><input asp-for="Contact.EmergencyContactName" class="form-control" maxlength="200" type="text" /></div>
+        <div class="col-md-4"><label asp-for="Contact.EmergencyContactRelation" class="form-label">نسبت</label><input asp-for="Contact.EmergencyContactRelation" class="form-control" maxlength="100" type="text" /></div>
+        <div class="col-md-4"><label asp-for="Contact.EmergencyContactPhone" class="form-label">شمارهٔ تماس</label><input asp-for="Contact.EmergencyContactPhone" class="form-control" maxlength="50" dir="ltr" type="tel" /></div>
+    </div></section>
+    <button type="submit" class="btn btn-primary mb-4">ذخیره اطلاعات تماس</button>
+</form>
+}
+else{<p class="alert alert-secondary">ویرایش اطلاعات تماس برای همکاری خاتمه‌یافته در اختیار مدیر سامانه است.</p>}
+@if(Model.CanEditIdentity)
+{
+<form method="post" asp-page-handler="Identity" data-personal-identity>
+    <input asp-for="Identity.Version" type="hidden" />
+    <section class="card"><div class="card-header"><h2 class="fs-6 mb-0"><i class="bi bi-person-vcard"></i> اطلاعات هویتی</h2></div><div class="card-body row g-3">
+        <div class="col-md-3"><label asp-for="Identity.Phone" class="form-label">تلفن کاری</label><input asp-for="Identity.Phone" class="form-control" type="tel" dir="ltr" maxlength="50" /></div>
+        <div class="col-md-3"><label asp-for="Identity.DateOfBirthJalali" class="form-label">تاریخ تولد</label><input asp-for="Identity.DateOfBirthJalali" class="form-control" dir="ltr" placeholder="۱۳۷۰/۰۱/۰۱" autocomplete="off" /></div>
+        <div class="col-md-3"><label asp-for="Identity.Gender" class="form-label">جنسیت</label><select asp-for="Identity.Gender" class="form-select"><option value="">ثبت نشده</option><option value="Male">مرد</option><option value="Female">زن</option><option value="Other">سایر</option>@if(Model.Identity.Gender is {} gender && gender is not ("Male" or "Female" or "Other")){<option value="@gender">@gender</option>}</select></div>
+        <div class="col-md-3"><label asp-for="Identity.MaritalStatus" class="form-label">وضعیت تأهل</label><select asp-for="Identity.MaritalStatus" class="form-select"><option value="">ثبت نشده</option><option value="Single">مجرد</option><option value="Married">متأهل</option><option value="Divorced">مطلقه</option><option value="Widowed">همسر فوت‌شده</option>@if(Model.Identity.MaritalStatus is {} status && status is not ("Single" or "Married" or "Divorced" or "Widowed")){<option value="@status">@status</option>}</select></div>
+        <div class="col-12"><button type="submit" class="btn btn-primary">ذخیره اطلاعات هویتی</button></div>
+    </div></section>
+</form>
+}

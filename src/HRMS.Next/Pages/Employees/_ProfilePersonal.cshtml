@@ -1,0 +1,10 @@
+@model HRMS.Next.Pages.Employees.DetailsModel
+@using HRMS.Next.Modules.Personnel
+@{var p=Model.Personal??new EmployeePersonalInfo();string Value(string? v)=>string.IsNullOrWhiteSpace(v)?"—":v;
+string Gender(string? v)=>v switch{"Male"=>"مرد","Female"=>"زن","Other"=>"سایر",_=>Value(v)};
+string Marital(string? v)=>v switch{"Single"=>"مجرد","Married"=>"متأهل","Divorced"=>"مطلقه","Widowed"=>"همسر فوت‌شده",_=>Value(v)};}
+<section class="card" data-private-personal><div class="card-header"><h3><i class="bi bi-telephone" aria-hidden="true"></i> راه‌های ارتباطی و اطلاعات شخصی</h3>@if(Model.CanEditPersonal){<a asp-page="Personal" asp-route-id="@(Model.Employee!.Id)" class="profile-update-link">ویرایش اطلاعات شخصی <i class="bi bi-pencil" aria-hidden="true"></i></a>}</div><div class="card-body">
+<dl class="profile-fields"><dt>نام ترجیحی</dt><dd>@Value(p.PreferredName)</dd><dt>تلفن کاری</dt><dd dir="ltr">@Value(p.Phone)</dd><dt>تلفن همراه</dt><dd dir="ltr">@Value(p.MobilePhone)</dd><dt>تلفن منزل</dt><dd dir="ltr">@Value(p.HomePhone)</dd><dt>تاریخ تولد</dt><dd>@(p.DateOfBirth is {} date?JalaliDate.Format(date):"—")</dd><dt>جنسیت</dt><dd>@Gender(p.Gender)</dd><dt>وضعیت تأهل</dt><dd>@Marital(p.MaritalStatus)</dd></dl>
+</div></section>
+<section class="card"><div class="card-header"><h3><i class="bi bi-geo-alt" aria-hidden="true"></i> نشانی</h3></div><div class="card-body"><dl class="profile-fields"><dt>نشانی</dt><dd class="text-break" style="white-space: pre-line">@Value(p.AddressLine1)</dd><dt>ادامهٔ نشانی</dt><dd class="text-break" style="white-space: pre-line">@Value(p.AddressLine2)</dd><dt>شهر</dt><dd>@Value(p.City)</dd><dt>استان</dt><dd>@Value(p.State)</dd><dt>کشور</dt><dd>@Value(p.Country)</dd><dt>کدپستی</dt><dd dir="ltr">@Value(p.PostalCode)</dd></dl></div></section>
+<section class="card"><div class="card-header"><h3><i class="bi bi-heart-pulse" aria-hidden="true"></i> مخاطب اضطراری</h3></div><div class="card-body"><dl class="profile-fields"><dt>نام</dt><dd>@Value(p.EmergencyContactName)</dd><dt>نسبت</dt><dd>@Value(p.EmergencyContactRelation)</dd><dt>شمارهٔ تماس</dt><dd dir="ltr">@Value(p.EmergencyContactPhone)</dd></dl></div></section>

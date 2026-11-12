@@ -12,8 +12,11 @@ namespace HRMS.Next.Pages.Employees;
 
 [Authorize]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-public sealed class DetailsModel(AccessService access, EmployeeService employees, IOrganizationDirectory organization, DocumentService documents, EmployeeJobService jobs, EmployeeProfileDirectory directory, EmployeePhotoService photos, EmployeePayService pay, IEmployeeLeaveProfile leave, IEmployeeTrainingProfile training, TimeProvider clock) : PageModel
+public sealed class DetailsModel(AccessService access, EmployeeService employees, IOrganizationDirectory organization, DocumentService documents, EmployeeJobService jobs, EmployeeProfileDirectory directory, EmployeePhotoService photos, EmployeePayService pay, EmployeePersonalService personal, IEmployeeLeaveProfile leave, IEmployeeTrainingProfile training, TimeProvider clock) : PageModel
 {
+    public EmployeePersonalInfo? Personal {get;private set;}
+    public bool CanViewPersonal {get;private set;}
+    public bool CanEditPersonal {get;private set;}
     public Employee? Employee { get; private set; }
     public bool CanViewDocuments { get; private set; }
     public bool CanUseTeam { get; private set; }
@@ -54,6 +57,9 @@ public sealed class DetailsModel(AccessService access, EmployeeService employees
         CanUseTeam = AccessRules.CanUseTeam(actor);
         if (Employee is not null)
         {
+            CanViewPersonal=EmployeePersonalService.CanRead(actor,id);
+            CanEditPersonal=CanViewPersonal&&(actor.IsAdmin||Employee.TerminationDate is null);
+            if(CanViewPersonal)Personal=await personal.ReadAsync(actor,id,ct);
             DepartmentNames = (await organization.DepartmentsAsync(actor.CompanyId, ct))
                 .ToDictionary(x => x.Id, x => x.Name);
             DepartmentName = DepartmentLabel(Employee.DepartmentId);

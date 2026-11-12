@@ -42,8 +42,8 @@ if($teamHome.Content -notmatch 'href="/Team"' -or $teamHome.Content -match 'form
 $team=Get '/Team' $teamSession
 if($team.Content -notmatch "data-team-employee=`"$EmployeeId`"" -or $team.Content -match "data-team-employee=`"$PeerId`""){throw 'Team list scope failed.'}
 $profile=Get "/Employees/$EmployeeId" $teamSession
-if($profile.Content -notmatch 'profile-job-tab' -or $profile.Content -match 'profile-pay-tab|profile-documents-tab|profile-leave-tab|profile-training-tab|data-pay-history|data-document-id|photo-modal|profile-neighbours'){throw 'Manager profile leaked private controls/data.'}
-foreach($path in @("/Employees/$PeerId","/Employees/$EmployeeId/Edit","/Employees/$EmployeeId/Documents",'/Employees','/Reports','/Leave','/Training','/Settings/Roles','/Settings/Users')){
+if($profile.Content -notmatch 'profile-job-tab' -or $profile.Content -match 'data-private-personal|PRIVATE_PERSONAL_SMOKE|profile-pay-tab|profile-documents-tab|profile-leave-tab|profile-training-tab|data-pay-history|data-document-id|photo-modal|profile-neighbours'){throw 'Manager profile leaked private controls/data.'}
+foreach($path in @("/Employees/$PeerId","/Employees/$EmployeeId/Edit","/Employees/$EmployeeId/Personal","/Employees/$EmployeeId/Documents",'/Employees','/Reports','/Leave','/Training','/Settings/Roles','/Settings/Users')){
     if((Get $path $teamSession).BaseResponse.ResponseUri.AbsolutePath -ne '/Denied'){throw "Manager accessed forbidden route $path"}
 }
 foreach($target in @($EmployeeId,$PeerId,$managerId)){
