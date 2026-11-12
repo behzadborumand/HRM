@@ -90,7 +90,8 @@ try {
     if(!(Evaluate "document.documentElement.scrollWidth<=innerWidth+1")){throw 'Home desktop overflow.'}
     if(!(Evaluate "!!document.querySelector('.home-sidebar > .home-celebrations')")){throw 'Home card is outside the legacy sidebar.'}
     Capture 'home-desktop.png'
-    Evaluate "document.querySelector('.home-celebrations').scrollIntoView({block:'center'});true" | Out-Null
+    Evaluate "document.querySelector('.home-celebrations').scrollIntoView({block:'center',behavior:'instant'});true" | Out-Null
+    Wait-Expression "(() => { const r=document.querySelector('.home-celebrations').getBoundingClientRect(); return r.top>=0 && r.bottom<=innerHeight; })()"
     Capture 'home-celebrations-desktop.png'
     Evaluate "document.querySelector('[data-celebration]').focus();true" | Out-Null
     Invoke-Cdp 'Input.dispatchKeyEvent' @{type='keyDown';key='Enter';code='Enter';windowsVirtualKeyCode=13;text=([string][char]13);unmodifiedText=([string][char]13)} | Out-Null
@@ -100,7 +101,8 @@ try {
     Wait-Expression "location.pathname==='/' && !!document.querySelector('.home-celebrations') && document.readyState==='complete'"
     Invoke-Cdp 'Emulation.setDeviceMetricsOverride' @{width=390;height=844;deviceScaleFactor=1;mobile=$true} | Out-Null
     if(!(Evaluate "document.documentElement.scrollWidth<=innerWidth+1")){throw 'Home mobile overflow.'}
-    Evaluate "document.querySelector('.home-celebrations').scrollIntoView({block:'center'});true" | Out-Null
+    Evaluate "document.querySelector('.home-celebrations').scrollIntoView({block:'center',behavior:'instant'});true" | Out-Null
+    Wait-Expression "(() => { const r=document.querySelector('.home-celebrations').getBoundingClientRect(); return r.top>=0 && r.bottom<=innerHeight; })()"
     Capture 'home-celebrations-mobile.png'
     Invoke-Cdp 'Emulation.setDeviceMetricsOverride' @{width=1280;height=850;deviceScaleFactor=1;mobile=$false} | Out-Null
 
