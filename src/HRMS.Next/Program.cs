@@ -35,6 +35,7 @@ builder.Services.AddScoped<OrganizationLinkService>();
 builder.Services.AddScoped<ReportingService>();
 builder.Services.AddScoped<HomeHighlightsService>();
 builder.Services.AddScoped<EmployeeService>();
+builder.Services.AddScoped<HRMS.Next.Pages.Employees.EmployeeEditorProfileLoader>();
 builder.Services.AddScoped<EmployeePersonalService>();
 builder.Services.AddScoped<EmployeeCelebrationService>();
 builder.Services.AddScoped<EmployeeProfileDirectory>();

@@ -8,11 +8,12 @@ using Microsoft.EntityFrameworkCore;
 namespace HRMS.Next.Pages.Employees;
 [Authorize]
 [ResponseCache(NoStore=true,Location=ResponseCacheLocation.None)]
-public sealed class PersonalModel(AccessService access,EmployeeService employees,EmployeePersonalService personal):PageModel
+public sealed class PersonalModel(AccessService access,EmployeeService employees,EmployeePersonalService personal,EmployeeEditorProfileLoader profileLoader):PageModel
 {
     [BindProperty,ValidateNever] public PersonalContactForm Contact {get;set;}=new();
     [BindProperty,ValidateNever] public PersonalIdentityForm Identity {get;set;}=new();
     public Employee? Employee {get;private set;}
+    public EmployeeEditorProfile? Profile {get;private set;}
     public bool CanEditIdentity {get;private set;}
     public bool CanEditContact {get;private set;}
     public async Task<IActionResult> OnGetAsync(int id,CancellationToken ct)
@@ -65,6 +66,7 @@ public sealed class PersonalModel(AccessService access,EmployeeService employees
     {
         Employee=await employees.GetAsync(actor,id,ct);
         if(Employee is null)return false;
+        Profile=await profileLoader.LoadAsync(actor,Employee,true,ct);
         var data=await personal.ReadAsync(actor,id,ct);
         CanEditIdentity=actor.IsAdmin;CanEditContact=actor.IsAdmin||Employee.TerminationDate is null;
         Contact=PersonalContactForm.From(data);Identity=PersonalIdentityForm.From(data);return true;

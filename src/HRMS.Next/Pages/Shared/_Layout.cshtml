@@ -6,7 +6,7 @@
     var actor = isAuthed ? await Access.GetActiveAsync(User, Context.RequestAborted) : null;
     var canReadEmployees = actor is not null && AccessRules.CanRead(actor, actor.CompanyId);
     var canAdmin = actor is { IsActive: true, IsAdmin: true };
-    var isProfile = path.StartsWith("/Employees/", StringComparison.OrdinalIgnoreCase)
+    var isProfile = ViewData["ProfileLayout"] is true || path.StartsWith("/Employees/", StringComparison.OrdinalIgnoreCase)
         && int.TryParse(path["/Employees/".Length..], out _);
     var isMyInfo = path.Equals("/MyInfo", StringComparison.OrdinalIgnoreCase)
         || (actor?.EmployeeId is { } ownId && path.Equals("/Employees/" + ownId, StringComparison.OrdinalIgnoreCase));

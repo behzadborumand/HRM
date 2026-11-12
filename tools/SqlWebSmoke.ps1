@@ -97,10 +97,17 @@ try {
     }
 
     $edit = Invoke-WebRequest "$baseUrl$profilePath/Edit" -WebSession $webSession -UseBasicParsing
+    if ($edit.Content -notmatch 'class="page-profile"' -or $edit.Content -notmatch '/css/profile.css' -or $edit.Content -notmatch 'profile-hero-avatar' -or $edit.Content -notmatch 'employee-sidebar' -or $edit.Content -notmatch 'profile-tabs') { throw 'Employee Edit still renders the generic form instead of the BambooHR profile shell.' }
     $editToken = Get-FormToken $edit.Content
     $versionTag = [regex]::Match($edit.Content, '<input[^>]*name="Form.Version"[^>]*>')
     $version = [System.Net.WebUtility]::HtmlDecode([regex]::Match($versionTag.Value, 'value="([^"]+)"').Groups[1].Value)
     if (!$version) { throw 'Concurrency token was not rendered.' }
+    $invalidEdit = Invoke-WebRequest "$baseUrl$profilePath/Edit" -Method Post -WebSession $webSession -UseBasicParsing -Body @{
+        'Form.EmployeeNumber' = $employeeNumber; 'Form.FirstName' = ''; 'Form.LastName' = 'Preserved editor input'
+        'Form.DepartmentId' = $departmentId; 'Form.HireDateJalali' = '1403/01/01'; 'Form.Version' = $version; __RequestVerificationToken = $editToken
+    }
+    if ($invalidEdit.Content -notmatch 'validation-summary-errors' -or $invalidEdit.Content -notmatch 'profile-hero-avatar' -or $invalidEdit.Content -notmatch 'value="Preserved editor input"') { throw 'Invalid employee edit lost the shell or submitted values.' }
+
     $updated = Invoke-WebRequest "$baseUrl$profilePath/Edit" -Method Post -WebSession $webSession -UseBasicParsing -Body @{
         'Form.EmployeeNumber' = $employeeNumber
         'Form.FirstName' = 'Smoke'
@@ -430,6 +437,7 @@ try {
     if ($photoDeleted.Content -match '<img[^>]+/Photo') { throw 'Deleted photo is still rendered.' }
     & (Join-Path $PSScriptRoot 'TestPersonalWorkflow.ps1') -BaseUrl $baseUrl -AdminSession $webSession -OwnerSession $memberSession -ReaderSession $readerSession -EmployeeId $employeeId -PeerId $peerId
     & (Join-Path $PSScriptRoot 'TestTeamWorkflow.ps1') -BaseUrl $baseUrl -AdminSession $webSession -CompanyName $companyName -EmployeeId $employeeId -PeerId $peerId -PolicyId $policyId -DepartmentId $departmentId -ScreenshotsDirectory $ScreenshotsDirectory
+    & (Join-Path $PSScriptRoot 'TestEditorWorkflow.ps1') -BaseUrl $baseUrl -AdminSession $webSession -ReaderSession $readerSession -OwnerSession $memberSession -EmployeeId $employeeId
     & (Join-Path $PSScriptRoot 'TestCelebrationsWorkflow.ps1') -BaseUrl $baseUrl -AdminSession $webSession -OwnerSession $memberSession -ReaderSession $readerSession -CompanyName $companyName
     if ($ScreenshotsDirectory) {
         $visualFixture = @"

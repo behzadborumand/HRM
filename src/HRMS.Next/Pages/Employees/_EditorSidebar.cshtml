@@ -1,0 +1,35 @@
+@model HRMS.Next.Pages.Employees.EmployeeEditorProfile
+@{
+    var employee = Model.Employee;
+    string Fa(string value) => string.Concat(value.Select(c => c is >= '0' and <= '9' ? (char)('۰' + c - '0') : c));
+}
+<aside class="employee-sidebar" aria-label="خلاصهٔ پروندهٔ @employee.FirstName @employee.LastName">
+    <div class="profile-aside">
+        <section class="profile-aside-group profile-contact">
+            <h2 class="visually-hidden">راه ارتباطی</h2>
+            @if (!string.IsNullOrWhiteSpace(employee.Email))
+            {
+                <a href="mailto:@employee.Email" class="profile-fact profile-email"><i class="bi bi-envelope-fill" aria-hidden="true"></i><span dir="ltr">@employee.Email</span></a>
+            }
+            else { <p class="profile-aside-empty"><i class="bi bi-envelope" aria-hidden="true"></i> ایمیل ثبت نشده است.</p> }
+        </section>
+        <section class="profile-aside-group">
+            <h2>تاریخ استخدام</h2><p>@Fa(JalaliDate.Format(employee.HireDate))</p><small>@Fa(Model.EmploymentDays.ToString("N0")) روز همکاری</small>
+        </section>
+        <section class="profile-aside-group profile-facts">
+            <h2 class="visually-hidden">اطلاعات سازمانی</h2>
+            <p class="profile-fact"><i class="bi bi-hash" aria-hidden="true"></i><span>@employee.EmployeeNumber</span></p>
+            <p class="profile-fact"><i class="bi bi-briefcase-fill" aria-hidden="true"></i><span>@DetailsModel.EmploymentTypeLabel(Model.CurrentJob?.EmploymentType)</span></p>
+            <p class="profile-fact"><i class="bi bi-people-fill" aria-hidden="true"></i><span>@Model.DepartmentName</span></p>
+            <p class="profile-fact"><i class="bi bi-circle-fill profile-status-icon" aria-hidden="true"></i><span>@(employee.TerminationDate is null ? "شاغل" : "خارج‌شده")</span></p>
+        </section>
+        <section class="profile-aside-group">
+            <h2>مدیر مستقیم</h2>
+            @if (Model.CurrentJob?.ManagerEmployeeId is { } managerId && Model.CanBrowseEmployees)
+            {
+                <a asp-page="Details" asp-route-id="@managerId" class="profile-team-person"><span class="profile-mini-avatar" aria-hidden="true"><i class="bi bi-person-fill"></i></span><span><strong>@Model.CurrentJob.ManagerName</strong><small>مشاهدهٔ پرونده</small></span></a>
+            }
+            else { <p class="profile-aside-empty">@(Model.CurrentJob?.ManagerName ?? "مدیر مستقیم تعیین نشده است.")</p> }
+        </section>
+    </div>
+</aside>

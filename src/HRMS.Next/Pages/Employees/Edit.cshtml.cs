@@ -11,10 +11,11 @@ namespace HRMS.Next.Pages.Employees;
 
 [Authorize]
 public sealed class EditModel(AccessService access, EmployeeService employees, EmployeeJobService jobs,
-    IOrganizationDirectory organization, JobTitleService titleService) : PageModel
+    IOrganizationDirectory organization, JobTitleService titleService, EmployeeEditorProfileLoader profileLoader) : PageModel
 {
     [BindProperty, ValidateNever] public EmployeeForm Form { get; set; } = new();
     [BindProperty, ValidateNever] public JobChangeForm JobForm { get; set; } = new();
+    public EmployeeEditorProfile? Profile { get; private set; }
     public IReadOnlyList<Employee> Managers { get; private set; } = [];
     public IReadOnlyList<JobTitleOption> JobTitles { get; private set; } = [];
 
@@ -24,6 +25,7 @@ public sealed class EditModel(AccessService access, EmployeeService employees, E
         if (actor is null || !AccessRules.CanWrite(actor, actor.CompanyId)) return Forbid();
         var employee = await employees.GetAsync(actor, id, ct);
         if (employee is null) return NotFound();
+        Profile = await profileLoader.LoadAsync(actor, employee, false, ct);
         await LoadOptionsAsync(actor, id, ct);
         Form = EmployeeForm.From(employee);
         var history = await jobs.HistoryAsync(actor, id, ct);
@@ -41,6 +43,7 @@ public sealed class EditModel(AccessService access, EmployeeService employees, E
         await LoadOptionsAsync(actor, id, ct);
         var employee = await employees.GetAsync(actor, id, ct);
         if (employee is null) return NotFound();
+        Profile = await profileLoader.LoadAsync(actor, employee, false, ct);
         var history = await jobs.HistoryAsync(actor, id, ct);
         JobForm = JobChangeForm.From(employee, history.FirstOrDefault(x => x.IsCurrent));
         if (!ModelState.IsValid) return Page();
@@ -67,6 +70,7 @@ public sealed class EditModel(AccessService access, EmployeeService employees, E
         await LoadOptionsAsync(actor, id, ct);
         var employee = await employees.GetAsync(actor, id, ct);
         if (employee is null) return NotFound();
+        Profile = await profileLoader.LoadAsync(actor, employee, false, ct);
         Form = EmployeeForm.From(employee);
         if (!ModelState.IsValid) return Page();
         try

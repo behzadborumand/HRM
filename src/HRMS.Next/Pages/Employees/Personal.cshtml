@@ -1,9 +1,13 @@
 @page "/Employees/{id:int}/Personal"
 @model HRMS.Next.Pages.Employees.PersonalModel
-@{ ViewData["Title"]="اطلاعات شخصی";var employee=Model.Employee!; }
+@{ ViewData["Title"]="اطلاعات شخصی";ViewData["ProfileLayout"]=true;var employee=Model.Employee!; }
 @section Hero {
-    <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap"><div><h1>اطلاعات شخصی</h1><p class="hero-sub">@employee.FirstName @employee.LastName</p></div><a asp-page="Details" asp-route-id="@employee.Id" asp-fragment="tab-personal" class="btn btn-hero"><i class="bi bi-arrow-right"></i> بازگشت به پرونده</a></div>
+    <partial name="_EditorHero" model="Model.Profile!" />
 }
+<div class="employee-workspace">
+    <partial name="_EditorSidebar" model="Model.Profile!" />
+    <div class="employee-content profile-editor" id="personal-editor">
+        <h2 class="profile-page-title"><i class="bi bi-person-vcard" aria-hidden="true"></i> ویرایش اطلاعات شخصی</h2>
 <div asp-validation-summary="All" class="text-danger" role="alert"></div>
 @if(Model.CanEditContact)
 {
@@ -44,3 +48,6 @@ else{<p class="alert alert-secondary">ویرایش اطلاعات تماس بر�
     </div></section>
 </form>
 }
+
+    </div>
+</div>

@@ -1,0 +1,38 @@
+@model HRMS.Next.Pages.Employees.EmployeeEditorProfile
+@{
+    var employee = Model.Employee;
+    var fullName = employee.FirstName + " " + employee.LastName;
+}
+<div class="profile-hero">
+    <div class="profile-hero-avatar">
+        @if (Model.Photo is not null)
+        {
+            <img src="@Url.Page("/Employees/Photo", new { id = employee.Id, v = Model.Photo.Sha256 })" alt="تصویر @fullName" class="avatar avatar-lg" width="142" height="142" />
+        }
+        else
+        {
+            <span class="avatar avatar-lg avatar-fallback" aria-label="تصویر برای @fullName ثبت نشده است">@(employee.FirstName.Length > 0 ? employee.FirstName[..1] : "؟")</span>
+        }
+    </div>
+    <div class="profile-heading"><h1>@fullName</h1><p class="hero-sub">@(Model.CurrentJob?.JobTitle ?? "بدون عنوان شغلی")</p></div>
+    <div class="profile-hero-actions"><div class="profile-actions">
+        <a asp-page="Details" asp-route-id="@employee.Id" asp-fragment="@(Model.IsPersonalEditor ? "tab-personal" : "tab-job")" class="btn btn-hero btn-sm"><i class="bi bi-arrow-right" aria-hidden="true"></i> مشاهدهٔ پرونده</a>
+        @if (Model.CanBrowseEmployees)
+        {
+            <a asp-page="Index" class="btn btn-hero btn-sm" aria-label="فهرست کارکنان"><i class="bi bi-grid" aria-hidden="true"></i></a>
+        }
+    </div></div>
+</div>
+<nav class="profile-tabs" aria-label="بخش‌های پرونده کارمند">
+    <ul class="nav nav-tabs">
+        <li class="nav-item"><a href="@(Model.IsPersonalEditor ? "#personal-editor" : "#employee-information")" class="nav-link active" aria-current="page">اطلاعات شخصی</a></li>
+        <li class="nav-item">
+            @if (Model.IsPersonalEditor) { <a asp-page="Details" asp-route-id="@employee.Id" asp-fragment="tab-job" class="nav-link">شغل</a> }
+            else { <a href="#job-change" class="nav-link">شغل</a> }
+        </li>
+        @if (Model.CanViewActivity) { <li class="nav-item"><a asp-page="Details" asp-route-id="@employee.Id" asp-fragment="tab-leave" class="nav-link">مرخصی</a></li> }
+        @if (Model.CanViewPay) { <li class="nav-item"><a asp-page="Details" asp-route-id="@employee.Id" asp-fragment="tab-pay" class="nav-link">اطلاعات حقوق</a></li> }
+        @if (Model.CanViewActivity) { <li class="nav-item"><a asp-page="Details" asp-route-id="@employee.Id" asp-fragment="tab-training" class="nav-link">آموزش</a></li> }
+        <li class="nav-item"><a asp-page="Details" asp-route-id="@employee.Id" asp-fragment="tab-documents" class="nav-link">مدارک</a></li>
+    </ul>
+</nav>

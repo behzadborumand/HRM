@@ -106,3 +106,19 @@
 .profile-activity-status.is-overdue { color: #a13429; background: #fbeeea; }
 .profile-pagination { display: flex; gap: 18px; align-items: center; justify-content: flex-end; padding: 16px 0; font-size: 11px; }
 .profile-pagination span { color: #777e77; }
+
+/* Employee editors keep the same profile frame as the read view. */
+.page-profile .profile-editor .card-header { background: #fff; color: #4d534e; }
+.page-profile .profile-editor .profile-page-title { padding: 0; font-size: 14px; font-weight: 500; }
+.profile-editor .form-label { color: #737773; font-size: 11px; margin-bottom: 7px; }
+.profile-editor .form-control, .profile-editor .form-select { min-height: 36px; font-size: 12px; border-color: #d9dfd7; }
+.profile-editor .form-control:focus, .profile-editor .form-select:focus { border-color: #70a969; box-shadow: 0 0 0 2px #e7f2e3; }
+.profile-editor .form-text { font-size: 10px; line-height: 1.8; }
+.profile-editor .text-danger { font-size: 11px; }
+.profile-editor .profile-form-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.profile-editor .btn { font-size: 12px; }
+.profile-editor #employee-information .row > .col-md-3 { width: 50%; }
+.profile-editor #job-change, .profile-editor #employee-information { scroll-margin-top: 20px; }
+@media(max-width:767.98px) {
+  .profile-editor #employee-information .row > .col-md-3 { width: 100%; }
+}

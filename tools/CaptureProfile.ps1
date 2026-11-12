@@ -58,7 +58,9 @@ function Wait-Expression([string]$expression) {
         try { if(Evaluate $expression){return} } catch { }
         Start-Sleep -Milliseconds 150
     }
-    throw 'Browser did not reach the expected UI state.'
+    $state=Evaluate "JSON.stringify({path:location.pathname,hash:location.hash,title:document.title,ready:document.readyState})"
+    Capture 'wait-failure.png'
+    throw ("Browser wait failed: "+$expression+"; actual="+$state)
 }
 function Capture([string]$filename) {
     Evaluate 'document.fonts.ready.then(() => true)' | Out-Null
@@ -113,8 +115,33 @@ try {
     if(!(Evaluate "document.documentElement.scrollWidth<=innerWidth+1")){throw 'Roles mobile overflow.'}
     Capture 'roles-mobile.png'
     Invoke-Cdp 'Emulation.setDeviceMetricsOverride' @{width=1280;height=850;deviceScaleFactor=1;mobile=$false} | Out-Null
+    Invoke-Cdp 'Page.navigate' @{url=($BaseUrl+'/Employees/'+$EmployeeId+'/Edit')} | Out-Null
+    Wait-Expression "document.body.classList.contains('page-profile') && !!document.querySelector('#Form_FirstName') && document.readyState==='complete'"
+    if(!(Evaluate "document.querySelector('.employee-sidebar').getBoundingClientRect().right < document.querySelector('.employee-content').getBoundingClientRect().left")){throw 'Edit desktop profile rail is missing or misplaced.'}
+    if(!(Evaluate "getComputedStyle(document.querySelector('#employee-information .card-header')).backgroundColor==='rgb(255, 255, 255)'")){throw 'Edit retains generic green card bars.'}
+    Capture 'edit-desktop.png'
+    Invoke-Cdp 'Emulation.setDeviceMetricsOverride' @{width=919;height=850;deviceScaleFactor=1;mobile=$false} | Out-Null
+    if(!(Evaluate "document.documentElement.scrollWidth<=innerWidth+1")){throw 'Edit reference-width overflow.'}
+    Capture 'edit-reference-width.png'
+    Invoke-Cdp 'Emulation.setDeviceMetricsOverride' @{width=390;height=844;deviceScaleFactor=1;mobile=$true} | Out-Null
+    if(!(Evaluate "document.documentElement.scrollWidth<=innerWidth+1")){throw 'Edit mobile overflow.'}
+    Capture 'edit-mobile.png'
+    Evaluate "document.querySelector('.profile-tabs a[href$=job-change]').focus();true" | Out-Null
+    Invoke-Cdp 'Input.dispatchKeyEvent' @{type='keyDown';key='Enter';code='Enter';windowsVirtualKeyCode=13;text=([string][char]13);unmodifiedText=([string][char]13)} | Out-Null
+    Invoke-Cdp 'Input.dispatchKeyEvent' @{type='keyUp';key='Enter';code='Enter';windowsVirtualKeyCode=13} | Out-Null
+    Wait-Expression "location.hash==='#job-change' && document.querySelector('#job-change').getBoundingClientRect().top<innerHeight"
+    Evaluate "document.querySelector('#job-change').scrollIntoView({block:'start',behavior:'instant'});true" | Out-Null
+    Capture 'edit-job-mobile.png'
+    Evaluate "document.querySelector('#Form_FirstName').value='';document.querySelector('#Form_LastName').value='Preserved editor input';const f=document.querySelector('#employee-information form');f.noValidate=true;f.requestSubmit();true" | Out-Null
+    Wait-Expression "!!document.querySelector('.validation-summary-errors') && !!document.querySelector('.profile-hero-avatar') && document.querySelector('#Form_LastName').value==='Preserved editor input'"
+    if(!(Evaluate "document.body.classList.contains('page-profile') && document.documentElement.scrollWidth<=innerWidth+1")){throw 'Invalid Edit POST lost its profile layout.'}
+    Evaluate "document.querySelector('#employee-information').scrollIntoView({block:'start',behavior:'instant'});true" | Out-Null
+    Capture 'edit-invalid-mobile.png'
+    Invoke-Cdp 'Emulation.setDeviceMetricsOverride' @{width=1280;height=850;deviceScaleFactor=1;mobile=$false} | Out-Null
+
     Invoke-Cdp 'Page.navigate' @{url=($BaseUrl+'/Employees/'+$EmployeeId+'/Personal')} | Out-Null
     Wait-Expression "!!document.querySelector('[data-personal-identity]') && document.readyState==='complete'"
+    if(!(Evaluate "document.body.classList.contains('page-profile') && !!document.querySelector('.profile-hero-avatar') && !!document.querySelector('.employee-sidebar')")){throw 'Personal admin editor lacks profile shell.'}
     Capture 'personal-admin-desktop.png'
     Invoke-Cdp 'Emulation.setDeviceMetricsOverride' @{width=390;height=844;deviceScaleFactor=1;mobile=$true} | Out-Null
     if(!(Evaluate "document.documentElement.scrollWidth<=innerWidth+1")){throw 'Admin personal mobile overflow.'}
@@ -196,6 +223,7 @@ try {
         if(!(Evaluate "document.documentElement.scrollWidth<=innerWidth+1")){throw 'Owner personal mobile overflow.'}
         Capture 'personal-owner-mobile.png'
         Invoke-Cdp 'Emulation.setDeviceMetricsOverride' @{width=1280;height=850;deviceScaleFactor=1;mobile=$false} | Out-Null
+        if(!(Evaluate "document.body.classList.contains('page-profile') && !!document.querySelector('.profile-hero-avatar') && !document.querySelector('.employee-sidebar .profile-team-person')")){throw 'Owner editor shell/navigation privacy failed.'}
         Capture 'personal-owner-desktop.png'
         Evaluate "document.querySelector('#Contact_City').value='Browser personal city';document.querySelector('[data-personal-contact]').requestSubmit();true" | Out-Null
         Wait-Expression "location.pathname==='/Employees/$EmployeeId' && !!document.querySelector('#tab-personal.active') && document.body.textContent.includes('Browser personal city')"
