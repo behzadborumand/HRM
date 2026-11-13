@@ -439,6 +439,7 @@ try {
     & (Join-Path $PSScriptRoot 'TestPersonalWorkflow.ps1') -BaseUrl $baseUrl -AdminSession $webSession -OwnerSession $memberSession -ReaderSession $readerSession -EmployeeId $employeeId -PeerId $peerId
     & (Join-Path $PSScriptRoot 'TestTeamWorkflow.ps1') -BaseUrl $baseUrl -AdminSession $webSession -CompanyName $companyName -EmployeeId $employeeId -PeerId $peerId -PolicyId $policyId -DepartmentId $departmentId -ScreenshotsDirectory $ScreenshotsDirectory
     & (Join-Path $PSScriptRoot 'TestDirectoryWorkflow.ps1') -BaseUrl $baseUrl -AdminSession $webSession -ReaderSession $readerSession -CompanyName $companyName
+    & (Join-Path $PSScriptRoot 'TestBulkJobWorkflow.ps1') -BaseUrl $baseUrl -AdminSession $webSession -ReaderSession $readerSession -CompanyName $companyName
     & (Join-Path $PSScriptRoot 'TestEditorWorkflow.ps1') -BaseUrl $baseUrl -AdminSession $webSession -ReaderSession $readerSession -OwnerSession $memberSession -EmployeeId $employeeId
     & (Join-Path $PSScriptRoot 'TestCelebrationsWorkflow.ps1') -BaseUrl $baseUrl -AdminSession $webSession -OwnerSession $memberSession -ReaderSession $readerSession -CompanyName $companyName
     if ($ScreenshotsDirectory) {

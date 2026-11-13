@@ -58,7 +58,7 @@ SELECT @department;
         $terminated=Invoke-WebRequest ($BaseUrl+"/Employees?query=DIRECTORY_UI_&departmentId=$department&status=Terminated") -WebSession $session -UseBasicParsing
         if((Rows $terminated.Content).Count -ne 1 -or $terminated.Content -notmatch 'DIRECTORY_UI_024'){throw 'Terminated directory filter failed.'}
         $empty=Invoke-WebRequest ($BaseUrl+'/Employees?query=DIRECTORY_NO_MATCH_'+[Guid]::NewGuid().ToString('N')) -WebSession $session -UseBasicParsing
-        if($empty.Content -notmatch 'colspan="9"'){throw 'Directory empty state does not span its real columns.'}
+        if($empty.Content -notmatch 'colspan="(?:9|10)"'){throw 'Directory empty state does not span its real columns.'}
     }
     Write-Output 'Directory scoped current title/manager/portrait,20+4 paging, filters, empty state and private-data exclusion: PASS'
 }

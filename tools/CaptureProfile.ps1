@@ -148,6 +148,41 @@ try {
     Invoke-Cdp 'Emulation.setDeviceMetricsOverride' @{width=1280;height=850;deviceScaleFactor=1;mobile=$false} | Out-Null
 
 
+    Invoke-Cdp 'Page.navigate' @{url=($BaseUrl+'/Employees?query=BULK_UI_&status=Active')} | Out-Null
+    Wait-Expression "document.readyState==='complete' && document.querySelectorAll('[data-select-employee]').length===2"
+    if(!(Evaluate "document.querySelector('[data-bulk-submit]').disabled")){throw 'Bulk action enabled without selection.'}
+    Evaluate "document.querySelector('[data-select-all]').focus();true" | Out-Null
+    Invoke-Cdp 'Input.dispatchKeyEvent' @{type='keyDown';key=' ';code='Space';windowsVirtualKeyCode=32;text=' ';unmodifiedText=' '} | Out-Null
+    Invoke-Cdp 'Input.dispatchKeyEvent' @{type='keyUp';key=' ';code='Space';windowsVirtualKeyCode=32} | Out-Null
+    Wait-Expression "document.querySelectorAll('[data-select-employee]:checked').length===2 && !document.querySelector('[data-bulk-submit]').disabled"
+    Evaluate "document.querySelector('[data-select-employee]').focus();true" | Out-Null
+    Invoke-Cdp 'Input.dispatchKeyEvent' @{type='keyDown';key=' ';code='Space';windowsVirtualKeyCode=32;text=' ';unmodifiedText=' '} | Out-Null
+    Invoke-Cdp 'Input.dispatchKeyEvent' @{type='keyUp';key=' ';code='Space';windowsVirtualKeyCode=32} | Out-Null
+    Wait-Expression "document.querySelector('[data-select-all]').indeterminate && document.querySelectorAll('[data-select-employee]:checked').length===1"
+    Evaluate "document.querySelector('[data-select-all]').click();document.querySelector('[data-bulk-submit]').focus();true" | Out-Null
+    Capture 'bulk-selection-desktop.png'
+    Invoke-Cdp 'Input.dispatchKeyEvent' @{type='keyDown';key='Enter';code='Enter';windowsVirtualKeyCode=13;text=([string][char]13);unmodifiedText=([string][char]13)} | Out-Null
+    Invoke-Cdp 'Input.dispatchKeyEvent' @{type='keyUp';key='Enter';code='Enter';windowsVirtualKeyCode=13} | Out-Null
+    Wait-Expression "location.pathname==='/Employees/BulkEdit' && document.querySelectorAll('[data-bulk-employee]').length===2 && !!document.querySelector('#bulkPreview li')"
+    if(!(Evaluate "document.documentElement.scrollWidth<=innerWidth+1 && document.querySelector('.profile-create-hero').getBoundingClientRect().height>=90")){throw 'Bulk desktop layout overflow/header collapse.'}
+    Evaluate "document.querySelector('#Form_EmploymentType').value='Contract';document.querySelector('#Form_EmploymentType').dispatchEvent(new Event('change',{bubbles:true}));true" | Out-Null
+    Wait-Expression "document.querySelector('#bulkPreview').textContent.includes('قراردادی')"
+    Capture 'bulk-edit-desktop.png'
+    Invoke-Cdp 'Emulation.setDeviceMetricsOverride' @{width=390;height=844;deviceScaleFactor=1;mobile=$true} | Out-Null
+    if(!(Evaluate "document.documentElement.scrollWidth<=innerWidth+1 && getComputedStyle(document.querySelector('.table-responsive')).overflowX==='auto'")){throw 'Bulk mobile table/page overflow.'}
+    Capture 'bulk-edit-mobile.png'
+    Evaluate "document.querySelector('#bulk-job-form').scrollIntoView({block:'start',behavior:'instant'});true" | Out-Null
+    Capture 'bulk-form-mobile.png'
+    Evaluate "document.querySelector('#Form_EffectiveDateJalali').value='invalid-bulk-date';const f=document.querySelector('#bulk-job-form');f.noValidate=true;f.requestSubmit();true" | Out-Null
+    Wait-Expression "!!document.querySelector('.validation-summary-errors') && document.querySelector('#Form_EffectiveDateJalali').value==='invalid-bulk-date' && document.querySelector('#Form_EmploymentType').value==='Contract' && document.querySelectorAll('[data-bulk-employee]').length===2"
+    if(!(Evaluate "document.querySelector('#bulkPreview').textContent.includes('قراردادی') && document.documentElement.scrollWidth<=innerWidth+1")){throw 'Bulk invalid state lost preview/layout.'}
+    Evaluate "document.querySelector('#bulk-job-form').scrollIntoView({block:'start',behavior:'instant'});true" | Out-Null
+    Capture 'bulk-invalid-mobile.png'
+    Evaluate "document.querySelector('#Form_EffectiveDateJalali').value='1404/01/01';document.querySelector('#bulk-job-form').requestSubmit();true" | Out-Null
+    Wait-Expression "!!document.querySelector('[data-bulk-result]') && !document.querySelector('.validation-summary-errors') && document.querySelectorAll('[data-bulk-employee]').length===2"
+    Capture 'bulk-saved-mobile.png'
+    Invoke-Cdp 'Emulation.setDeviceMetricsOverride' @{width=1280;height=850;deviceScaleFactor=1;mobile=$false} | Out-Null
+
     Invoke-Cdp 'Page.navigate' @{url=($BaseUrl+'/Settings/Roles')} | Out-Null
     Wait-Expression "!!document.querySelector('[name=Name]') && document.readyState==='complete'"
     Capture 'roles-desktop.png'

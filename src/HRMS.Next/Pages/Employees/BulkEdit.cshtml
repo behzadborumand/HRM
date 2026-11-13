@@ -1,0 +1,57 @@
+@page "/Employees/BulkEdit"
+@model HRMS.Next.Pages.Employees.BulkEditModel
+@{
+    ViewData["Title"] = "ویرایش گروهی کارکنان";
+    ViewData["ProfileLayout"] = true;
+    string Fa(string value) => string.Concat(value.Select(c => c is >= '0' and <= '9' ? (char)('۰' + c - '0') : c));
+}
+@section Hero {
+    <div class="profile-hero profile-create-hero">
+        <div class="profile-heading"><h1>ویرایش گروهی کارکنان</h1><p class="hero-sub">@Fa(Model.Employees.Count.ToString()) کارمند انتخاب شده · فیلد خالی یعنی «تغییر نده»</p></div>
+        <div class="profile-hero-actions"><a asp-page="Index" class="btn btn-hero"><i class="bi bi-arrow-right" aria-hidden="true"></i> بازگشت به لیست</a></div>
+    </div>
+}
+@if (Model.Message is { } message) { <div class="alert alert-success" role="status" data-bulk-result>@message</div> }
+<div class="row g-3 profile-editor" data-bulk-editor>
+    <section class="col-lg-7" aria-labelledby="bulk-current-title">
+        <div class="card">
+            <div class="card-header"><h2 class="profile-page-title" id="bulk-current-title"><i class="bi bi-people" aria-hidden="true"></i> وضعیت فعلی انتخاب‌شده‌ها</h2></div>
+            <div class="card-body table-responsive">
+                <table class="table table-sm table-striped align-middle text-center mb-0">
+                    <thead><tr><th scope="col">کارمند</th><th scope="col">واحد</th><th scope="col">عنوان شغلی</th><th scope="col">مدیر</th><th scope="col">وضعیت</th></tr></thead>
+                    <tbody>@foreach (var employee in Model.Employees) {
+                        <tr data-bulk-employee="@employee.Id">
+                            <td><a asp-page="Details" asp-route-id="@employee.Id">@employee.FullName</a><div class="text-muted small">@employee.EmployeeNumber</div></td>
+                            <td>@(Model.AllDepartments.FirstOrDefault(x => x.Id == employee.DepartmentId)?.Name ?? "—")</td>
+                            <td>@(employee.JobTitle ?? "—")</td><td>@(employee.ManagerName ?? "—")</td>
+                            <td><span class="badge text-bg-@(employee.Terminated ? "secondary" : "success")">@(employee.Terminated ? "خروج قطعی" : "فعال")</span></td>
+                        </tr>
+                    }</tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+    <section class="col-lg-5" aria-labelledby="bulk-change-title">
+        <div class="card">
+            <div class="card-header"><h2 class="profile-page-title" id="bulk-change-title"><i class="bi bi-arrow-left-right" aria-hidden="true"></i> تغییرات موردنظر</h2></div>
+            <div class="card-body">
+                <form method="post" id="bulk-job-form">
+                    <div asp-validation-summary="All" class="text-danger" role="alert"></div>
+                    @for (var i = 0; i < Model.Form.Selected.Count; i++) {
+                        <input type="hidden" asp-for="Form.Selected[i].EmployeeId" />
+                        <input type="hidden" asp-for="Form.Selected[i].Version" />
+                    }
+                    <div class="mb-3"><label asp-for="Form.DepartmentId" class="form-label">واحد سازمانی</label><select asp-for="Form.DepartmentId" class="form-select" data-preview="واحد سازمانی"><option value="">تغییر نده</option>@foreach (var department in Model.Departments) { <option value="@department.Id">@department.Name</option> }</select></div>
+                    <div class="mb-3"><label asp-for="Form.JobTitle" class="form-label">عنوان شغلی</label><select asp-for="Form.JobTitle" class="form-select" data-preview="عنوان شغلی"><option value="">تغییر نده</option>@foreach (var title in Model.JobTitles) { <option value="@title.Name">@title.Name</option> }</select></div>
+                    <div class="mb-3"><label asp-for="Form.ManagerEmployeeId" class="form-label">مدیر مستقیم</label><select asp-for="Form.ManagerEmployeeId" class="form-select" data-preview="مدیر مستقیم"><option value="">تغییر نده</option>@foreach (var manager in Model.Managers) { <option value="@manager.Id">@manager.FirstName @manager.LastName</option> }</select><div class="form-text">برای کارمندی که خودش مدیر انتخابی است، مدیر قبلی حفظ می‌شود.</div></div>
+                    <div class="mb-3"><label asp-for="Form.EmploymentType" class="form-label">نوع استخدام</label><select asp-for="Form.EmploymentType" class="form-select" data-preview="نوع استخدام"><option value="">تغییر نده</option><option value="FullTime">تمام وقت</option><option value="PartTime">پاره وقت</option><option value="Contract">قراردادی</option><option value="Intern">کارآموز</option></select></div>
+                    <div class="mb-3"><label asp-for="Form.EffectiveDateJalali" class="form-label">تاریخ مؤثر شمسی</label><input asp-for="Form.EffectiveDateJalali" type="text" class="form-control" dir="ltr" autocomplete="off" placeholder="۱۴۰۵/۰۸/۲۲" /><div class="form-text">تغییرات در سابقهٔ شغلی ثبت می‌شود و حقوق قبلی حفظ می‌شود.</div></div>
+                    <div class="border rounded p-2 mb-3 bg-light"><div class="fw-semibold small mb-1">پیش‌نمایش تغییرات</div><ul class="mb-0 small" id="bulkPreview" aria-live="polite"></ul></div>
+                    <div class="profile-form-actions"><button type="submit" class="btn btn-success"><i class="bi bi-check-circle" aria-hidden="true"></i> اعمال روی انتخاب‌شده‌ها</button><a asp-page="Index" class="btn btn-outline-secondary">انصراف</a></div>
+                    <a class="small d-inline-block mt-3" href="@Url.Page("BulkEdit", new { ids = Model.Form.Selected.Select(x => x.EmployeeId).ToArray() })" data-bulk-reload>بارگذاری مجدد انتخاب‌ها</a>
+                </form>
+            </div>
+        </div>
+    </section>
+</div>
+@section Scripts { <script src="~/js/employee-bulk.js" asp-append-version="true"></script> }
