@@ -49,7 +49,7 @@ public sealed class BulkEditModel(AccessService access, EmployeeBulkJobService b
         {
             if (!JalaliDate.TryParse(Form.EffectiveDateJalali, out var date)) throw new ArgumentException("تاریخ مؤثر شمسی معتبر نیست.");
             var selection = Form.Selected.Select(x => new BulkJobSelection(x.EmployeeId, Convert.FromBase64String(x.Version))).ToArray();
-            var changed = await bulk.ApplyAsync(actor, selection, new(Form.DepartmentId, Form.JobTitle, Form.ManagerEmployeeId, Form.EmploymentType, date), ct);
+            var changed = await bulk.ApplyAsync(actor, selection, new(Form.DepartmentId, Form.JobTitle, Form.ManagerEmployeeId, Form.EmploymentType, date) { EmploymentStatus = Form.EmploymentStatus }, ct);
             Message = changed == 0 ? "هیچ تغییری لازم نبود؛ سابقهٔ تکراری ثبت نشد." : $"تغییرات برای {changed} کارمند ثبت شد.";
             return RedirectToPage(new { ids = Form.Selected.Select(x => x.EmployeeId).ToArray() });
         }
@@ -75,6 +75,7 @@ public sealed class BulkJobForm
     [Range(1, int.MaxValue)] public int? DepartmentId { get; set; }
     [StringLength(200)] public string? JobTitle { get; set; }
     [Range(1, int.MaxValue)] public int? ManagerEmployeeId { get; set; }
+    [StringLength(20)] public string? EmploymentStatus { get; set; }
     [StringLength(50)] public string? EmploymentType { get; set; }
     [Required(ErrorMessage = "تاریخ مؤثر الزامی است.")] public string EffectiveDateJalali { get; set; } = "";
 }

@@ -12,7 +12,7 @@ namespace HRMS.Next.Pages.Employees;
 
 [Authorize]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-public sealed class DetailsModel(AccessService access, EmployeeService employees, IOrganizationDirectory organization, DocumentService documents, EmployeeJobService jobs, EmployeeProfileDirectory directory, EmployeePhotoService photos, EmployeePayService pay, EmployeePersonalService personal, IEmployeeLeaveProfile leave, IEmployeeTrainingProfile training, TimeProvider clock) : PageModel
+public sealed class DetailsModel(AccessService access, EmployeeService employees, IOrganizationDirectory organization, DocumentService documents, EmployeeJobService jobs, EmployeeProfileDirectory directory, EmployeePhotoService photos, EmployeePayService pay, EmployeePersonalService personal, IEmployeeLeaveProfile leave, IEmployeeTrainingProfile training, TimeProvider clock, EmployeeEmploymentService employment) : PageModel
 {
     public EmployeePersonalInfo? Personal {get;private set;}
     public bool CanViewPersonal {get;private set;}
@@ -25,6 +25,7 @@ public sealed class DetailsModel(AccessService access, EmployeeService employees
     public bool IsOwnProfile { get; private set; }
     public string? DepartmentName { get; private set; }
     public DocumentPage? Documents { get; private set; }
+    public IReadOnlyList<EmploymentStatusRow> StatusHistory { get; private set; } = [];
     public IReadOnlyList<JobHistoryRow> JobHistory { get; private set; } = [];
     public JobHistoryRow? CurrentJob => JobHistory.FirstOrDefault(x => x.IsCurrent);
     public PhotoSummary? Photo { get; private set; }
@@ -64,6 +65,7 @@ public sealed class DetailsModel(AccessService access, EmployeeService employees
                 .ToDictionary(x => x.Id, x => x.Name);
             DepartmentName = DepartmentLabel(Employee.DepartmentId);
             JobHistory = await jobs.HistoryAsync(actor, id, ct);
+            StatusHistory = await employment.HistoryAsync(actor, id, ct);
             CanViewDocuments = AccessRules.CanReadEmployee(actor, actor.CompanyId, id);
             if (CanViewDocuments) Documents = await documents.ListAsync(actor, id, 1, 20, ct);
             CanViewPay = AccessRules.CanReadPay(actor, actor.CompanyId, id);

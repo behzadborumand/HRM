@@ -32,6 +32,7 @@
 - [x] Training administrator course/assignment/completion flow, SQL tests and HTTPS smoke.
 - [x] Documents private list/upload/download/delete flow, SQL tests and HTTPS smoke.
 - [x] Personnel job change closes dated history, updates current department and audit atomically; trial SQL and HTTPS flows pass.
+- [x] Versioned Active/OnLeave individual/bulk status changes, separate safe dated history, exact directory status filtering and repeatable legacy status transfer with drift protection; SQL/HTTPS/desktop/mobile verified.
 - [x] Legacy current-page bulk selection and atomic dated job edits with exact rowversions, whole-group validation, private pay preservation, no-op protection, live preview and SQL/HTTPS/mobile/keyboard verification.
 - [x] Legacy employee directory fields restored (current title, same-company manager and real portrait), bounded tenant-safe metadata, filtered pageNumber pagination and compact Create form parity.
 - [x] Reference-aligned profile shell including employee/base/job and private personal editors, scoped employee neighbours/direct reports, private audited photos and checksum-verified trial portrait transfer; desktop/mobile/keyboard checks.

@@ -79,7 +79,7 @@
                 <p class="profile-fact"><i class="bi bi-hash" aria-hidden="true"></i><span>@employee.EmployeeNumber</span></p>
                 <p class="profile-fact"><i class="bi bi-briefcase-fill" aria-hidden="true"></i><span>@DetailsModel.EmploymentTypeLabel(Model.CurrentJob?.EmploymentType)</span></p>
                 <p class="profile-fact"><i class="bi bi-people-fill" aria-hidden="true"></i><span>@(Model.DepartmentName ?? "واحد ثبت نشده")</span></p>
-                <p class="profile-fact"><i class="bi bi-circle-fill profile-status-icon" aria-hidden="true"></i><span>@(employee.TerminationDate is null ? "شاغل" : "خارج‌شده")</span></p>
+                <p class="profile-fact"><i class="bi bi-circle-fill profile-status-icon" aria-hidden="true"></i><span>@ProfileDisplay.EmploymentStatusLabel(employee.TerminationDate is not null, employee.IsOnLeave)</span></p>
             </section>
             <section class="profile-aside-group">
                 <h2>مدیر مستقیم</h2>
@@ -116,14 +116,15 @@
             <div class="tab-pane show active" id="tab-job" role="tabpanel" aria-labelledby="profile-job-tab" tabindex="0">
                 <h2 class="profile-page-title"><i class="bi bi-briefcase-fill" aria-hidden="true"></i> شغل</h2>
                 <section class="card" aria-labelledby="employment-title">
-                    <div class="card-header"><h3 id="employment-title"><i class="bi bi-person-badge" aria-hidden="true"></i> وضعیت استخدام</h3></div>
+                    <div class="card-header"><h3 id="employment-title"><i class="bi bi-person-badge" aria-hidden="true"></i> وضعیت استخدام</h3>@if (Model.CanWrite) { <a asp-page="Edit" asp-route-id="@employee.Id" asp-fragment="employment-status-change" class="profile-update-link"><i class="bi bi-plus-circle-fill" aria-hidden="true"></i> به‌روزرسانی وضعیت اشتغال</a> }</div>
                     <div class="card-body table-responsive">
                         <table class="table align-middle mb-0"><caption class="visually-hidden">وضعیت استخدام @fullName</caption>
                             <thead><tr><th scope="col">تاریخ استخدام</th><th scope="col">وضعیت اشتغال</th><th scope="col">نوع استخدام</th><th scope="col">تاریخ خروج</th></tr></thead>
-                            <tbody><tr class="profile-current-row"><td>@Date(employee.HireDate)</td><td>@(employee.TerminationDate is null ? "فعال" : "خروج قطعی")</td><td>@DetailsModel.EmploymentTypeLabel(Model.CurrentJob?.EmploymentType)</td><td>@(employee.TerminationDate is { } termination ? Date(termination) : "—")</td></tr></tbody>
+                            <tbody><tr class="profile-current-row"><td>@Date(employee.HireDate)</td><td>@ProfileDisplay.EmploymentStatusLabel(employee.TerminationDate is not null, employee.IsOnLeave)</td><td>@DetailsModel.EmploymentTypeLabel(Model.CurrentJob?.EmploymentType)</td><td>@(employee.TerminationDate is { } termination ? Date(termination) : "—")</td></tr></tbody>
                         </table>
                     </div>
                 </section>
+                <partial name="_EmploymentStatusHistory" model="Model.StatusHistory" />
                 <section class="card" aria-labelledby="job-history-title">
                     <div class="card-header">
                         <h3 id="job-history-title"><i class="bi bi-briefcase-fill" aria-hidden="true"></i> اطلاعات و سوابق شغلی</h3>

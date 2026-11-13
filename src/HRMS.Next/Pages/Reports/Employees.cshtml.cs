@@ -36,7 +36,7 @@ public sealed class EmployeesModel(AccessService access, ReportingService report
         {
             var result = await reports.EmployeesAsync(actor, keyword, departmentId, NormalizeStatus(status), page, 100, ct);
             rows.AddRange(result.Rows.Select(x => new[] { x.EmployeeNumber, x.FullName, x.JobTitle ?? "", x.DepartmentName,
-                x.ManagerName ?? "", x.Email ?? "", JalaliDate.Format(x.HireDate), x.Terminated ? "خروج قطعی" : "فعال" }));
+                x.ManagerName ?? "", x.Email ?? "", JalaliDate.Format(x.HireDate), ProfileDisplay.EmploymentStatusLabel(x.Terminated, x.IsOnLeave) }));
             if (rows.Count >= Math.Min(result.Total, 500)) break;
         }
         var bytes = CsvReport.ToUtf8(["کد پرسنلی", "نام و نام خانوادگی", "عنوان شغلی", "واحد سازمانی", "مدیر مستقیم", "ایمیل", "تاریخ استخدام", "وضعیت"], rows);

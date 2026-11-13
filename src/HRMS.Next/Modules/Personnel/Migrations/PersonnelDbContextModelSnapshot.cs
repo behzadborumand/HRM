@@ -53,6 +53,11 @@ namespace HRMS.Next.Modules.Personnel.Migrations
                     b.Property<DateOnly>("HireDate")
                         .HasColumnType("date");
 
+                    b.Property<bool>("IsOnLeave")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
                     b.Property<string>("LastName")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -110,6 +115,52 @@ namespace HRMS.Next.Modules.Personnel.Migrations
                     b.HasIndex("EmployeeId", "AtUtc");
 
                     b.ToTable("EmployeeAudits", "personnel");
+                });
+
+            modelBuilder.Entity("HRMS.Next.Modules.Personnel.EmployeeEmploymentStatusChange", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<int?>("ActorUserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("AtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly?>("EffectiveDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FromStatus")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("ToStatus")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId", "CompanyId");
+
+                    b.HasIndex("CompanyId", "EmployeeId", "EffectiveDate", "Id");
+
+                    b.ToTable("EmploymentStatusChanges", "personnel", t =>
+                        {
+                            t.HasCheckConstraint("CK_EmploymentStatusChanges_Baseline", "([EffectiveDate] IS NULL AND [FromStatus] IS NULL AND [ActorUserId] IS NULL) OR ([EffectiveDate] IS NOT NULL AND [FromStatus] IS NOT NULL AND [ActorUserId] IS NOT NULL)");
+
+                            t.HasCheckConstraint("CK_EmploymentStatusChanges_Status", "[ToStatus] IN (N'Active',N'OnLeave') AND ([FromStatus] IS NULL OR ([FromStatus] IN (N'Active',N'OnLeave') AND [FromStatus]<>[ToStatus]))");
+                        });
                 });
 
             modelBuilder.Entity("HRMS.Next.Modules.Personnel.EmployeeJob", b =>
@@ -296,6 +347,16 @@ namespace HRMS.Next.Modules.Personnel.Migrations
                     b.HasIndex("CompanyId");
 
                     b.ToTable("EmployeePhotos", "personnel");
+                });
+
+            modelBuilder.Entity("HRMS.Next.Modules.Personnel.EmployeeEmploymentStatusChange", b =>
+                {
+                    b.HasOne("HRMS.Next.Modules.Personnel.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("EmployeeId", "CompanyId")
+                        .HasPrincipalKey("Id", "CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("HRMS.Next.Modules.Personnel.EmployeeJob", b =>

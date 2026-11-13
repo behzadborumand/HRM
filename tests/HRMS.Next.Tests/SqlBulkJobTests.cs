@@ -151,7 +151,7 @@ public sealed class SqlBulkJobTests
             return result;
         }
     }
-    private sealed class Fixture : IAsyncDisposable
+    internal sealed class Fixture : IAsyncDisposable
     {
         public PersonnelDbContext Db {get;}
         public readonly OrganizationDbContext org;
@@ -183,6 +183,7 @@ public sealed class SqlBulkJobTests
         public async ValueTask DisposeAsync()
         {
             Db.ChangeTracker.Clear();
+            await Db.Database.ExecuteSqlInterpolatedAsync($"IF OBJECT_ID(N'personnel.EmploymentStatusChanges',N'U') IS NOT NULL DELETE FROM personnel.EmploymentStatusChanges WHERE CompanyId={Company} OR CompanyId={Foreign}");
             var ids=Db.Employees.Where(x=>x.CompanyId==Company||x.CompanyId==Foreign).Select(x=>x.Id);
             await Db.Audits.Where(x=>ids.Contains(x.EmployeeId)).ExecuteDeleteAsync();
             await Db.EmployeeJobs.Where(x=>x.CompanyId==Company||x.CompanyId==Foreign).ExecuteDeleteAsync();

@@ -148,7 +148,7 @@ try {
     Invoke-Cdp 'Emulation.setDeviceMetricsOverride' @{width=1280;height=850;deviceScaleFactor=1;mobile=$false} | Out-Null
 
 
-    Invoke-Cdp 'Page.navigate' @{url=($BaseUrl+'/Employees?query=BULK_UI_&status=Active')} | Out-Null
+    Invoke-Cdp 'Page.navigate' @{url=($BaseUrl+'/Employees?query=BULK_UI_&status=OnLeave')} | Out-Null
     Wait-Expression "document.readyState==='complete' && document.querySelectorAll('[data-select-employee]').length===2"
     if(!(Evaluate "document.querySelector('[data-bulk-submit]').disabled")){throw 'Bulk action enabled without selection.'}
     Evaluate "document.querySelector('[data-select-all]').focus();true" | Out-Null
@@ -165,7 +165,7 @@ try {
     Invoke-Cdp 'Input.dispatchKeyEvent' @{type='keyUp';key='Enter';code='Enter';windowsVirtualKeyCode=13} | Out-Null
     Wait-Expression "location.pathname==='/Employees/BulkEdit' && document.querySelectorAll('[data-bulk-employee]').length===2 && !!document.querySelector('#bulkPreview li')"
     if(!(Evaluate "document.documentElement.scrollWidth<=innerWidth+1 && document.querySelector('.profile-create-hero').getBoundingClientRect().height>=90")){throw 'Bulk desktop layout overflow/header collapse.'}
-    Evaluate "document.querySelector('#Form_EmploymentType').value='Contract';document.querySelector('#Form_EmploymentType').dispatchEvent(new Event('change',{bubbles:true}));true" | Out-Null
+    Evaluate "document.querySelector('#Form_EmploymentType').value='Contract';document.querySelector('#Form_EmploymentType').dispatchEvent(new Event('change',{bubbles:true}));document.querySelector('#Form_EmploymentStatus').value='Active';document.querySelector('#Form_EmploymentStatus').dispatchEvent(new Event('change',{bubbles:true}));true" | Out-Null
     Wait-Expression "document.querySelector('#bulkPreview').textContent.includes('قراردادی')"
     Capture 'bulk-edit-desktop.png'
     Invoke-Cdp 'Emulation.setDeviceMetricsOverride' @{width=390;height=844;deviceScaleFactor=1;mobile=$true} | Out-Null
@@ -182,6 +182,25 @@ try {
     Wait-Expression "!!document.querySelector('[data-bulk-result]') && !document.querySelector('.validation-summary-errors') && document.querySelectorAll('[data-bulk-employee]').length===2"
     Capture 'bulk-saved-mobile.png'
     Invoke-Cdp 'Emulation.setDeviceMetricsOverride' @{width=1280;height=850;deviceScaleFactor=1;mobile=$false} | Out-Null
+
+    Invoke-Cdp 'Page.navigate' @{url=($BaseUrl+'/Employees/'+$EmployeeId+'/Edit#employment-status-change')} | Out-Null
+    Wait-Expression "document.readyState==='complete' && !!document.querySelector('#StatusForm_Status') && !!document.querySelector('.employee-sidebar')"
+    Evaluate "document.querySelector('#StatusForm_Status').value='OnLeave';document.querySelector('#StatusForm_EffectiveDateJalali').value='invalid-status-date';const f=document.querySelector('#employment-status-change form');f.noValidate=true;f.requestSubmit();true" | Out-Null
+    Wait-Expression "!!document.querySelector('.validation-summary-errors') && document.querySelector('#StatusForm_EffectiveDateJalali').value==='invalid-status-date' && document.querySelector('#StatusForm_Status').value==='OnLeave' && document.querySelectorAll('.validation-summary-errors').length===1"
+    Evaluate "document.querySelector('#employment-status-change').scrollIntoView({block:'start',behavior:'instant'});true" | Out-Null
+    Capture 'status-invalid-desktop.png'
+    Invoke-Cdp 'Emulation.setDeviceMetricsOverride' @{width=390;height=844;deviceScaleFactor=1;mobile=$true} | Out-Null
+    if(!(Evaluate "document.documentElement.scrollWidth<=innerWidth+1 && document.body.classList.contains('page-profile')")){throw 'Status invalid mobile lost profile layout.'}
+    Evaluate "document.querySelector('#employment-status-change').scrollIntoView({block:'start',behavior:'instant'});true" | Out-Null
+    Capture 'status-invalid-mobile.png'
+    Evaluate "document.querySelector('#StatusForm_EffectiveDateJalali').value='1405/01/01';document.querySelector('#employment-status-change form').requestSubmit();true" | Out-Null
+    Wait-Expression "!!document.querySelector('#tab-job') && document.querySelectorAll('[data-employment-status]').length===3 && document.querySelector('[data-employment-status]').dataset.employmentStatus==='OnLeave'"
+    if(!(Evaluate "document.documentElement.scrollWidth<=innerWidth+1")){throw 'Status history mobile overflow.'}
+    Evaluate "document.querySelector('#employment-title').closest('section').scrollIntoView({block:'start',behavior:'instant'});true" | Out-Null
+    Capture 'status-history-mobile.png'
+    Invoke-Cdp 'Emulation.setDeviceMetricsOverride' @{width=1280;height=850;deviceScaleFactor=1;mobile=$false} | Out-Null
+    Evaluate "document.querySelector('#employment-title').closest('section').scrollIntoView({block:'start',behavior:'instant'});true" | Out-Null
+    Capture 'status-history-desktop.png'
 
     Invoke-Cdp 'Page.navigate' @{url=($BaseUrl+'/Settings/Roles')} | Out-Null
     Wait-Expression "!!document.querySelector('[name=Name]') && document.readyState==='complete'"
@@ -267,11 +286,11 @@ try {
         if(!(Evaluate "(() => { const tab=document.querySelector('.profile-tabs [aria-selected=true]').getBoundingClientRect(); const strip=document.querySelector('.profile-tabs').getBoundingClientRect(); return tab.left >= strip.left-1 && tab.right <= strip.right+1; })()")) { throw 'Selected mobile tab is clipped outside the tab strip.' }
         Capture ("profile-mobile-"+$activityTab+".png")
     }
-    Evaluate "document.querySelector('.profile-photo-trigger').click();true" | Out-Null
+    Evaluate "new Promise(resolve => { const modal=document.querySelector('#photo-modal'); modal.addEventListener('shown.bs.modal',()=>resolve(true),{once:true}); document.querySelector('.profile-photo-trigger').click(); })" | Out-Null
     Wait-Expression "document.querySelector('#photo-modal').classList.contains('show') && getComputedStyle(document.querySelector('#photo-modal')).opacity === '1'"
     Capture 'profile-photo-dialog.png'
     if ($SelfUsername) {
-        Evaluate "document.querySelector('#photo-modal [data-bs-dismiss=modal]').click();true" | Out-Null
+        Evaluate "new Promise(resolve => { const modal=document.querySelector('#photo-modal'); modal.addEventListener('hidden.bs.modal',()=>resolve(true),{once:true}); modal.querySelector('[data-bs-dismiss=modal]').click(); })" | Out-Null
         Wait-Expression "!document.querySelector('#photo-modal').classList.contains('show')"
         Evaluate "document.querySelector('form[action=`"/Logout`"]').requestSubmit();true" | Out-Null
         Wait-Expression "location.pathname==='/Login' && !!document.querySelector('[name=Username]')"

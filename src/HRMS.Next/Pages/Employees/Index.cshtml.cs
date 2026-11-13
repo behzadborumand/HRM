@@ -23,7 +23,7 @@ public sealed class IndexModel(AccessService access, EmployeeService employees, 
         if (actor is null || !AccessRules.CanRead(actor, actor.CompanyId)) return Forbid();
         Query = query;
         DepartmentId = departmentId;
-        Status = status is "Active" or "Terminated" ? status : null;
+        Status = status is "Active" or "Terminated" or "OnLeave" ? status : null;
         CanWrite = AccessRules.CanWrite(actor, actor.CompanyId);
         Departments = await organization.DepartmentsAsync(actor.CompanyId, ct);
         Result = await employees.SearchAsync(actor, query, departmentId, pageNumber, 20, ct, Status);

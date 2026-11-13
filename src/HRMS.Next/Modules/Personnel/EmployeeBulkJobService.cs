@@ -5,8 +5,10 @@ using Microsoft.EntityFrameworkCore;
 namespace HRMS.Next.Modules.Personnel;
 
 public sealed record BulkJobSelection(int EmployeeId, byte[] Version);
-public sealed record BulkJobChangeInput(int? DepartmentId, string? JobTitle, int? ManagerEmployeeId, string? EmploymentType, DateOnly EffectiveDate);
-public sealed record BulkJobEmployee(int Id, string EmployeeNumber, string FullName, int DepartmentId, string? JobTitle, string? ManagerName, string? EmploymentType, bool Terminated, byte[] Version);
+public sealed record BulkJobChangeInput(int? DepartmentId, string? JobTitle, int? ManagerEmployeeId, string? EmploymentType, DateOnly EffectiveDate)
+{ public string? EmploymentStatus { get; init; } }
+public sealed record BulkJobEmployee(int Id, string EmployeeNumber, string FullName, int DepartmentId, string? JobTitle, string? ManagerName, string? EmploymentType, bool Terminated, byte[] Version)
+{ public bool IsOnLeave { get; init; } }
 
 public sealed class EmployeeBulkJobService(PersonnelDbContext db, IOrganizationDirectory organization, TimeProvider clock)
 {
@@ -25,7 +27,7 @@ public sealed class EmployeeBulkJobService(PersonnelDbContext db, IOrganizationD
                           select new BulkJobEmployee(employee.Id, employee.EmployeeNumber, employee.FirstName + " " + employee.LastName,
                               employee.DepartmentId, job == null ? null : job.JobTitle,
                               manager == null ? null : manager.FirstName + " " + manager.LastName,
-                              job == null ? null : job.EmploymentType, employee.TerminationDate != null, employee.RowVersion))
+                              job == null ? null : job.EmploymentType, employee.TerminationDate != null, employee.RowVersion) { IsOnLeave = employee.IsOnLeave })
             .ToListAsync(ct);
         if (rows.Count != ids.Count) throw new KeyNotFoundException("یک یا چند کارمند انتخاب‌شده در دسترس نیست.");
         return rows;
@@ -39,7 +41,10 @@ public sealed class EmployeeBulkJobService(PersonnelDbContext db, IOrganizationD
         if (selection.Any(x => x.Version is not { Length: 8 })) throw new ArgumentException("نسخهٔ پرونده معتبر نیست؛ انتخاب‌ها را دوباره بارگذاری کنید.");
         var title = string.IsNullOrWhiteSpace(input.JobTitle) ? null : input.JobTitle.Trim();
         var type = string.IsNullOrWhiteSpace(input.EmploymentType) ? null : input.EmploymentType.Trim();
-        if (input.DepartmentId is null && title is null && input.ManagerEmployeeId is null && type is null)
+        var status = string.IsNullOrWhiteSpace(input.EmploymentStatus) ? null : input.EmploymentStatus.Trim();
+        if (status is not null && status is not ("Active" or "OnLeave")) throw new ArgumentException("وضعیت اشتغال معتبر نیست.");
+        var changesJob = input.DepartmentId is not null || title is not null || input.ManagerEmployeeId is not null || type is not null;
+        if (!changesJob && status is null)
             throw new ArgumentException("دست‌کم یک فیلد برای تغییر انتخاب کنید.");
         if (type is not null && type is not ("FullTime" or "PartTime" or "Contract" or "Intern"))
             throw new ArgumentException("نوع استخدام معتبر نیست.");
@@ -65,15 +70,27 @@ public sealed class EmployeeBulkJobService(PersonnelDbContext db, IOrganizationD
                 throw new ArgumentException("واحد سازمانی فعال متعلق به شرکت نیست.");
             if (title is not null && (title.Length > 200 || !await organization.ActiveJobTitleExistsAsync(actor.CompanyId, title, ct)))
                 throw new ArgumentException("عنوان شغلی فعال در شرکت یافت نشد.");
-            var currentJobs = await db.EmployeeJobs.Where(x => ids.Contains(x.EmployeeId) && x.IsCurrent).ToListAsync(ct);
+            var currentJobs = changesJob ? await db.EmployeeJobs.Where(x => ids.Contains(x.EmployeeId) && x.IsCurrent).ToListAsync(ct) : [];
             if (currentJobs.Any(x => x.CompanyId != actor.CompanyId) || currentJobs.GroupBy(x => x.EmployeeId).Any(g => g.Count() != 1))
                 throw new ArgumentException("سابقهٔ شغلی جاری با پرونده سازگار نیست.");
+            var latestDates = await db.EmploymentStatusChanges.Where(x => x.CompanyId == actor.CompanyId && ids.Contains(x.EmployeeId) && x.EffectiveDate != null)
+                .GroupBy(x => x.EmployeeId).Select(g => new { EmployeeId = g.Key, Date = g.Max(x => x.EffectiveDate) }).ToDictionaryAsync(x => x.EmployeeId, x => x.Date, ct);
+            var statusPlans = new List<(Employee Employee, EmployeeEmploymentStatusChange Change)>();
             var plans = new List<(Employee Employee, EmployeeJob? Current, EmployeeJob Next)>();
             foreach (var id in ids.Order())
             {
                 var employee = locked[id];
                 if (employee.TerminationDate is not null) throw new ArgumentException("کارمند خارج‌شده در انتخاب‌ها وجود دارد؛ انتخاب را اصلاح کنید.");
                 if (input.EffectiveDate < employee.HireDate) throw new ArgumentException("تاریخ مؤثر نمی‌تواند پیش از استخدام یکی از کارکنان باشد.");
+                if (status is not null && employee.IsOnLeave != (status == "OnLeave"))
+                {
+                    if (latestDates.TryGetValue(id, out var latest) && input.EffectiveDate < latest)
+                        throw new ArgumentException("تاریخ مؤثر نمی‌تواند پیش از آخرین تغییر وضعیت اشتغال باشد.");
+                    statusPlans.Add((employee, new EmployeeEmploymentStatusChange { CompanyId = actor.CompanyId, EmployeeId = id,
+                        EffectiveDate = input.EffectiveDate, FromStatus = employee.IsOnLeave ? "OnLeave" : "Active", ToStatus = status,
+                        ActorUserId = actor.Id, AtUtc = clock.GetUtcNow() }));
+                }
+                if (!changesJob) continue;
                 var current = currentJobs.SingleOrDefault(x => x.EmployeeId == id);
                 var next = new EmployeeJob
                 {
@@ -100,7 +117,12 @@ public sealed class EmployeeBulkJobService(PersonnelDbContext db, IOrganizationD
                 db.Entry(plan.Employee).Property(x => x.DepartmentId).IsModified = true;
                 if (plan.Current is { } current) { current.IsCurrent = false; current.EndDate = input.EffectiveDate.AddDays(-1); }
             }
-            if (plans.Count > 0)
+            foreach (var plan in statusPlans)
+            {
+                plan.Employee.IsOnLeave = plan.Change.ToStatus == "OnLeave";
+                db.Entry(plan.Employee).Property(x => x.IsOnLeave).IsModified = true;
+            }
+            if (plans.Count > 0 || statusPlans.Count > 0)
             {
                 await db.SaveChangesAsync(ct);
                 foreach (var plan in plans)
@@ -109,10 +131,16 @@ public sealed class EmployeeBulkJobService(PersonnelDbContext db, IOrganizationD
                     db.Audits.Add(new EmployeeAudit { EmployeeId = plan.Employee.Id, ActorUserId = actor.Id,
                         AtUtc = clock.GetUtcNow(), Action = "BulkJobChange", Summary = $"EffectiveDate={input.EffectiveDate:yyyy-MM-dd};Department={plan.Next.DepartmentId};Title={plan.Next.JobTitle}" });
                 }
+                foreach (var plan in statusPlans)
+                {
+                    db.EmploymentStatusChanges.Add(plan.Change);
+                    db.Audits.Add(new EmployeeAudit { EmployeeId = plan.Employee.Id, ActorUserId = actor.Id, AtUtc = clock.GetUtcNow(),
+                        Action = "EmploymentStatusChange", Summary = $"EffectiveDate={input.EffectiveDate:yyyy-MM-dd};From={plan.Change.FromStatus};To={plan.Change.ToStatus}" });
+                }
                 await db.SaveChangesAsync(ct);
             }
             await transaction.CommitAsync(ct);
-            return plans.Count;
+            return plans.Select(x => x.Employee.Id).Concat(statusPlans.Select(x => x.Employee.Id)).Distinct().Count();
         }
         catch
         {

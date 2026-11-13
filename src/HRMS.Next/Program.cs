@@ -43,6 +43,7 @@ builder.Services.AddScoped<EmployeePhotoService>();
 builder.Services.AddScoped<EmployeePayService>();
 builder.Services.AddScoped<EmployeeJobService>();
 builder.Services.AddScoped<EmployeeBulkJobService>();
+builder.Services.AddScoped<EmployeeEmploymentService>();
 builder.Services.AddScoped<IEmployeeDirectory, PersonnelDirectory>();
 builder.Services.AddScoped<LeaveService>();
 builder.Services.AddScoped<IEmployeeLeaveProfile, LeaveProfileService>();

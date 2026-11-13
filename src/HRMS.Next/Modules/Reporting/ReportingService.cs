@@ -9,7 +9,7 @@ namespace HRMS.Next.Modules.Reporting;
 public sealed record ReportingDashboard(int TotalEmployees, int ActiveEmployees, int OnLeaveEmployees,
     int PendingRequests, int NewHiresThisYear, int DepartmentCount, decimal AverageTeamSize);
 public sealed record EmployeeReportRow(int EmployeeId, string EmployeeNumber, string FullName,
-    string? Email, string DepartmentName, string? JobTitle, string? ManagerName, DateOnly HireDate, bool Terminated);
+    string? Email, string DepartmentName, string? JobTitle, string? ManagerName, DateOnly HireDate, bool Terminated) { public bool IsOnLeave { get; init; } }
 public sealed record EmployeeReportPage(IReadOnlyList<EmployeeReportRow> Rows, int Total, int Page, int PageSize);
 public sealed record LeaveReportRow(int EmployeeId, string EmployeeName, string DepartmentName,
     string PolicyName, decimal AccruedHours, decimal UsedHours, decimal AvailableHours, int RequestCount);
@@ -65,7 +65,7 @@ public sealed class ReportingService(PersonnelDbContext people, LeaveDbContext l
         page = Math.Min(page, Math.Max(1, (total + pageSize - 1) / pageSize));
         var selected = await query.OrderBy(x => x.LastName).ThenBy(x => x.FirstName).ThenBy(x => x.Id)
             .Skip((page - 1) * pageSize).Take(pageSize)
-            .Select(x => new { x.Id, x.EmployeeNumber, x.FirstName, x.LastName, x.Email, x.DepartmentId, x.HireDate, x.TerminationDate })
+            .Select(x => new { x.Id, x.EmployeeNumber, x.FirstName, x.LastName, x.Email, x.DepartmentId, x.HireDate, x.TerminationDate, x.IsOnLeave })
             .ToListAsync(ct);
         var employeeIds = selected.Select(x => x.Id).ToArray();
         var departmentIds = selected.Select(x => x.DepartmentId).Distinct().ToArray();
@@ -83,7 +83,7 @@ public sealed class ReportingService(PersonnelDbContext people, LeaveDbContext l
             return new EmployeeReportRow(x.Id, x.EmployeeNumber, x.FirstName + " " + x.LastName,
                 x.Email, departmentNames.GetValueOrDefault(x.DepartmentId, "-"), job?.JobTitle,
                 job?.ManagerEmployeeId is { } managerId ? managers.GetValueOrDefault(managerId) : null,
-                x.HireDate, x.TerminationDate != null);
+                x.HireDate, x.TerminationDate != null) { IsOnLeave = x.IsOnLeave };
         }).ToList();
         return new EmployeeReportPage(rows, total, page, pageSize);
     }

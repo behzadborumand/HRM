@@ -8,6 +8,7 @@ namespace HRMS.Next.Modules.Personnel;
 public sealed record EmployeeInput(int DepartmentId, string EmployeeNumber, string FirstName, string LastName, string? Email, DateOnly HireDate);
 public sealed record EmployeeRow(int Id, string EmployeeNumber, string FullName, int DepartmentId, DateOnly HireDate, bool Terminated, string? Email)
 {
+    public bool IsOnLeave { get; init; }
     public string? JobTitle { get; init; }
     public string? ManagerName { get; init; }
     public string? PhotoSha256 { get; init; }
@@ -28,13 +29,14 @@ public sealed class EmployeeService(PersonnelDbContext db, IOrganizationDirector
             employees = employees.Where(x => x.EmployeeNumber.Contains(term) || x.FirstName.Contains(term) || x.LastName.Contains(term) || (x.Email != null && x.Email.Contains(term)));
         }
         if (departmentId is > 0) employees = employees.Where(x => x.DepartmentId == departmentId);
-        if (status == "Active") employees = employees.Where(x => x.TerminationDate == null);
+        if (status == "Active") employees = employees.Where(x => x.TerminationDate == null && !x.IsOnLeave);
+        if (status == "OnLeave") employees = employees.Where(x => x.TerminationDate == null && x.IsOnLeave);
         if (status == "Terminated") employees = employees.Where(x => x.TerminationDate != null);
         var total = await employees.CountAsync(ct);
         page = Math.Min(page, Math.Max(1, (int)Math.Ceiling((double)total / pageSize)));
         var rows = await employees.OrderBy(x => x.LastName).ThenBy(x => x.FirstName).ThenBy(x => x.Id)
             .Skip((page - 1) * pageSize).Take(pageSize)
-            .Select(x => new EmployeeRow(x.Id, x.EmployeeNumber, x.FirstName + " " + x.LastName, x.DepartmentId, x.HireDate, x.TerminationDate != null, x.Email))
+            .Select(x => new EmployeeRow(x.Id, x.EmployeeNumber, x.FirstName + " " + x.LastName, x.DepartmentId, x.HireDate, x.TerminationDate != null, x.Email) { IsOnLeave = x.IsOnLeave })
             .ToListAsync(ct);
         if (rows.Count > 0)
         {
@@ -111,6 +113,8 @@ public sealed class EmployeeService(PersonnelDbContext db, IOrganizationDirector
             throw new ArgumentException("تغییر واحد سازمانی باید در بخش ثبت تغییر شغل انجام شود.");
         if (await db.EmployeeJobs.AnyAsync(x => x.EmployeeId == id && x.StartDate < input.HireDate, ct))
             throw new ArgumentException("تاریخ استخدام نمی‌تواند پس از شروع یکی از سوابق شغلی باشد.");
+        if (await db.EmploymentStatusChanges.AnyAsync(x => x.EmployeeId == id && x.CompanyId == actor.CompanyId && x.EffectiveDate < input.HireDate, ct))
+            throw new ArgumentException("تاریخ استخدام نمی‌تواند پس از یکی از تغییرات وضعیت اشتغال باشد.");
         if (await db.PersonalInfos.AnyAsync(p => p.EmployeeId == id && p.CompanyId == actor.CompanyId && p.DateOfBirth > input.HireDate, ct))
             throw new ArgumentException("تاریخ استخدام نمی‌تواند پیش از تاریخ تولد باشد.");
         var number = input.EmployeeNumber.Trim();

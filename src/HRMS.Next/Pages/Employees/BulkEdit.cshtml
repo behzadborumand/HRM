@@ -18,13 +18,13 @@
             <div class="card-header"><h2 class="profile-page-title" id="bulk-current-title"><i class="bi bi-people" aria-hidden="true"></i> وضعیت فعلی انتخاب‌شده‌ها</h2></div>
             <div class="card-body table-responsive">
                 <table class="table table-sm table-striped align-middle text-center mb-0">
-                    <thead><tr><th scope="col">کارمند</th><th scope="col">واحد</th><th scope="col">عنوان شغلی</th><th scope="col">مدیر</th><th scope="col">وضعیت</th></tr></thead>
+                    <thead><tr><th scope="col">کارمند</th><th scope="col">واحد</th><th scope="col">عنوان شغلی</th><th scope="col">مدیر</th><th scope="col">نوع استخدام</th><th scope="col">وضعیت</th></tr></thead>
                     <tbody>@foreach (var employee in Model.Employees) {
                         <tr data-bulk-employee="@employee.Id">
                             <td><a asp-page="Details" asp-route-id="@employee.Id">@employee.FullName</a><div class="text-muted small">@employee.EmployeeNumber</div></td>
                             <td>@(Model.AllDepartments.FirstOrDefault(x => x.Id == employee.DepartmentId)?.Name ?? "—")</td>
                             <td>@(employee.JobTitle ?? "—")</td><td>@(employee.ManagerName ?? "—")</td>
-                            <td><span class="badge text-bg-@(employee.Terminated ? "secondary" : "success")">@(employee.Terminated ? "خروج قطعی" : "فعال")</span></td>
+                            <td>@DetailsModel.EmploymentTypeLabel(employee.EmploymentType)</td><td><span class="badge text-bg-@(employee.Terminated ? "secondary" : employee.IsOnLeave ? "warning" : "success")">@ProfileDisplay.EmploymentStatusLabel(employee.Terminated, employee.IsOnLeave)</span></td>
                         </tr>
                     }</tbody>
                 </table>
@@ -45,6 +45,7 @@
                     <div class="mb-3"><label asp-for="Form.JobTitle" class="form-label">عنوان شغلی</label><select asp-for="Form.JobTitle" class="form-select" data-preview="عنوان شغلی"><option value="">تغییر نده</option>@foreach (var title in Model.JobTitles) { <option value="@title.Name">@title.Name</option> }</select></div>
                     <div class="mb-3"><label asp-for="Form.ManagerEmployeeId" class="form-label">مدیر مستقیم</label><select asp-for="Form.ManagerEmployeeId" class="form-select" data-preview="مدیر مستقیم"><option value="">تغییر نده</option>@foreach (var manager in Model.Managers) { <option value="@manager.Id">@manager.FirstName @manager.LastName</option> }</select><div class="form-text">برای کارمندی که خودش مدیر انتخابی است، مدیر قبلی حفظ می‌شود.</div></div>
                     <div class="mb-3"><label asp-for="Form.EmploymentType" class="form-label">نوع استخدام</label><select asp-for="Form.EmploymentType" class="form-select" data-preview="نوع استخدام"><option value="">تغییر نده</option><option value="FullTime">تمام وقت</option><option value="PartTime">پاره وقت</option><option value="Contract">قراردادی</option><option value="Intern">کارآموز</option></select></div>
+                    <div class="mb-3"><label asp-for="Form.EmploymentStatus" class="form-label">وضعیت اشتغال</label><select asp-for="Form.EmploymentStatus" class="form-select" data-preview="وضعیت اشتغال"><option value="">تغییر نده</option><option value="Active">فعال</option><option value="OnLeave">در مرخصی</option></select><div class="form-text">وضعیت اشتغال، درخواست و ماندهٔ مرخصی را تغییر نمی‌دهد.</div></div>
                     <div class="mb-3"><label asp-for="Form.EffectiveDateJalali" class="form-label">تاریخ مؤثر شمسی</label><input asp-for="Form.EffectiveDateJalali" type="text" class="form-control" dir="ltr" autocomplete="off" placeholder="۱۴۰۵/۰۸/۲۲" /><div class="form-text">تغییرات در سابقهٔ شغلی ثبت می‌شود و حقوق قبلی حفظ می‌شود.</div></div>
                     <div class="border rounded p-2 mb-3 bg-light"><div class="fw-semibold small mb-1">پیش‌نمایش تغییرات</div><ul class="mb-0 small" id="bulkPreview" aria-live="polite"></ul></div>
                     <div class="profile-form-actions"><button type="submit" class="btn btn-success"><i class="bi bi-check-circle" aria-hidden="true"></i> اعمال روی انتخاب‌شده‌ها</button><a asp-page="Index" class="btn btn-outline-secondary">انصراف</a></div>

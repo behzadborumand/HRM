@@ -5,6 +5,7 @@ namespace HRMS.Next.Modules.Personnel;
 public sealed class PersonnelDbContext(DbContextOptions<PersonnelDbContext> options) : DbContext(options)
 {
     public DbSet<Employee> Employees => Set<Employee>();
+    public DbSet<EmployeeEmploymentStatusChange> EmploymentStatusChanges => Set<EmployeeEmploymentStatusChange>();
     public DbSet<EmployeePhoto> Photos => Set<EmployeePhoto>();
     public DbSet<EmployeeAudit> Audits => Set<EmployeeAudit>();
     public DbSet<EmployeeJob> EmployeeJobs => Set<EmployeeJob>();
@@ -14,6 +15,21 @@ public sealed class PersonnelDbContext(DbContextOptions<PersonnelDbContext> opti
     protected override void OnModelCreating(ModelBuilder model)
     {
         model.Entity<Employee>().HasAlternateKey(e => new { e.Id, e.CompanyId });
+        model.Entity<EmployeeEmploymentStatusChange>(entity =>
+        {
+            entity.ToTable("EmploymentStatusChanges", "personnel", table =>
+            {
+                table.HasCheckConstraint("CK_EmploymentStatusChanges_Status", "[ToStatus] IN (N'Active',N'OnLeave') AND ([FromStatus] IS NULL OR ([FromStatus] IN (N'Active',N'OnLeave') AND [FromStatus]<>[ToStatus]))");
+                table.HasCheckConstraint("CK_EmploymentStatusChanges_Baseline", "([EffectiveDate] IS NULL AND [FromStatus] IS NULL AND [ActorUserId] IS NULL) OR ([EffectiveDate] IS NOT NULL AND [FromStatus] IS NOT NULL AND [ActorUserId] IS NOT NULL)");
+            });
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.EffectiveDate).HasColumnType("date");
+            entity.Property(x => x.FromStatus).HasMaxLength(20);
+            entity.Property(x => x.ToStatus).HasMaxLength(20).IsRequired();
+            entity.HasIndex(x => new { x.CompanyId, x.EmployeeId, x.EffectiveDate, x.Id });
+            entity.HasOne<Employee>().WithMany().HasForeignKey(x => new { x.EmployeeId, x.CompanyId })
+                .HasPrincipalKey(x => new { x.Id, x.CompanyId }).OnDelete(DeleteBehavior.Restrict);
+        });
         model.Entity<EmployeePersonalInfo>(entity =>
         {
             entity.ToTable("PersonalInfos", "personnel");
@@ -48,6 +64,7 @@ public sealed class PersonnelDbContext(DbContextOptions<PersonnelDbContext> opti
             entity.Property(x => x.LastName).HasMaxLength(100).IsRequired();
             entity.Property(x => x.Email).HasMaxLength(256);
             entity.Property(x => x.RowVersion).IsRowVersion();
+            entity.Property(x => x.IsOnLeave).HasDefaultValue(false);
             entity.HasIndex(x => new { x.CompanyId, x.EmployeeNumber }).IsUnique();
             entity.HasIndex(x => new { x.CompanyId, x.DepartmentId, x.LastName });
             entity.HasIndex(x => new { x.CompanyId, x.LastName, x.FirstName, x.Id });
@@ -98,6 +115,7 @@ public sealed class Employee
     public string? Email { get; set; }
     public DateOnly HireDate { get; set; }
     public DateOnly? TerminationDate { get; set; }
+    public bool IsOnLeave { get; set; }
     public byte[] RowVersion { get; set; } = [];
 }
 

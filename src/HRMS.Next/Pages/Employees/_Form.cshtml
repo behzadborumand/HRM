@@ -1,5 +1,5 @@
 @model HRMS.Next.Pages.Employees.EmployeeForm
-<div asp-validation-summary="All" class="text-danger" role="alert"></div>
+<partial name="_EmployeeValidation" model="@ViewData.TemplateInfo.HtmlFieldPrefix" />
 <div class="row g-3">
     <div class="col-12">
         <h6 class="text-primary border-bottom pb-2"><i class="bi bi-person-vcard"></i> اطلاعات شخصی</h6>
